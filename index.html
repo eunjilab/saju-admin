@@ -3516,6 +3516,22 @@
             alert(`마이그레이션 완료!\n✅ 성공: ${success}건\n⚠️ 스킵: ${skipped}건\n❌ 실패: ${failed}건`);
         }
 
+        // ★ 엑셀 → Supabase 자동 동기화 (백그라운드)
+        async function syncSheetsToSupabase(sheetsCustomers) {
+            let synced = 0;
+            for (const customer of sheetsCustomers) {
+                if (!customer.orderCode) continue;
+                try {
+                    // upsert 모드로 업데이트 (있으면 업데이트, 없으면 추가)
+                    await supabaseInsertCustomer(customer, true);
+                    synced++;
+                } catch (e) {
+                    // 에러는 무시 (백그라운드 동기화)
+                }
+            }
+            console.log(`⚡ 엑셀 → Supabase 동기화 완료: ${synced}건`);
+        }
+
         // ========== 사주 계산 데이터 ==========
         const CHEONGAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
         const JIJI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
@@ -3616,6 +3632,15 @@
                         customers = newCustomers;
                         localStorage.setItem('saju_customers', JSON.stringify(customers));
                         updated = true;
+                    }
+                }
+
+                // ★ 엑셀 수정분 Supabase에 자동 동기화 (강제 새로고침 시)
+                if (forceFromServer && sheetsData) {
+                    const sheetsCustomers = Array.isArray(sheetsData) ? sheetsData.filter(c => c.name) : (sheetsData.data || []);
+                    if (sheetsCustomers.length > 0) {
+                        console.log('🔄 엑셀 → Supabase 동기화 시작...');
+                        syncSheetsToSupabase(sheetsCustomers);
                     }
                 }
 
@@ -5414,6 +5439,13 @@
             }).catch(error => {
                 console.log('Google Sheets 동기화 실패 (로컬에는 저장됨):', error);
             });
+
+            // ★ Supabase도 동시에 업데이트
+            supabaseUpdateCustomer(customer.orderCode, updates).then(result => {
+                if (result) console.log('⚡ Supabase 고객 정보 업데이트 완료');
+            }).catch(error => {
+                console.log('Supabase 동기화 실패:', error);
+            });
             
             // 추가질문 시트 저장 (별도 API)
             if (questionContent && customer.orderCode) {
@@ -6248,8 +6280,15 @@ ${questionList}
                 // paymentDate 업데이트
                 const url3 = `${SAJU_CONFIG.googleSheets.webAppUrl}?action=update&rowIndex=${customer._rowIndex}&field=paymentDate&value=${encodeURIComponent(newPaymentDate)}`;
                 const res3 = await fetch(url3);
-                
+
                 console.log('✅ Google Sheets 동기화 완료');
+
+                // ★ Supabase도 동시에 업데이트
+                supabaseUpdateCustomer(customer.orderCode, {
+                    status: newStatus,
+                    paymentStatus: newPaymentStatus,
+                    paymentDate: newPaymentDate
+                }).then(() => console.log('⚡ Supabase 상태 동기화 완료'));
             } catch (error) {
                 console.log('❌ Google Sheets 동기화 실패 - 롤백:', error);
                 
@@ -7010,6 +7049,13 @@ ${questionList}
 
                 // localStorage 즉시 저장 (상태 포함)
                 localStorage.setItem('saju_customers', JSON.stringify(customers));
+
+                // ★ Supabase에도 사주결과/프롬프트 저장
+                supabaseUpdateCustomer(customer.orderCode, {
+                    sajuResult: sajuResult.result,
+                    promptResult: promptResult.result,
+                    status: customer.status
+                }).then(() => console.log('⚡ Supabase 변환결과 동기화 완료'));
                 
                 // 8. 전체 프롬프트 클립보드 복사 (V6: 통합)
                 let clipboardSuccess = false;
@@ -7271,6 +7317,9 @@ ${questionList}
                 await fetch(url);
                 badge.textContent = memo ? '✓' : '-';
                 badge.style.color = memo ? '#7cb88a' : '#a89068';
+
+                // ★ Supabase도 동시에 업데이트
+                supabaseUpdateCustomer(customer.orderCode, { memo });
             } catch (error) {
                 console.error('메모 저장 실패:', error);
                 badge.textContent = '✗';
