@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>운명을 듣다 - 추가 질문</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Serif KR', serif;
+            background: linear-gradient(135deg, #f5f0e8 0%, #e8e0d0 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: linear-gradient(180deg, #fdfbf7 0%, #f8f4eb 100%);
+            border: 2px solid #8b7355;
+            border-radius: 12px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.18);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c2416 0%, #4a3c2a 100%);
+            color: #f0e6d3;
+            text-align: center;
+            padding: 35px 20px;
+            position: relative;
+        }
+
+        .header::after {
+            content: '問';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 120px;
+            opacity: 0.05;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 6px;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header .subtitle {
+            font-size: 13px;
+            opacity: 0.8;
+            letter-spacing: 2px;
+        }
+
+        .form-section {
+            padding: 30px 25px;
+            border-bottom: 1px solid #e0d5c5;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            color: #3d3225;
+        }
+
+        .section-title .icon {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #8b7355 0%, #6b5744 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .section-title h2 {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #5a4a3a;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #d4c5a9;
+            border-radius: 8px;
+            font-family: 'Noto Serif KR', serif;
+            font-size: 14px;
+            background: #fff;
+            color: #3d3225;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #8b7355;
+            box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+            line-height: 1.8;
+        }
+
+        /* 코드 입력 영역 */
+        .code-input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        .code-input-wrapper input {
+            flex: 1;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        .verify-btn {
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #8b7355 0%, #6b5744 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Noto Serif KR', serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .verify-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(139, 115, 85, 0.3);
+        }
+
+        .verify-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 검증 결과 */
+        .verify-result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .verify-result.success {
+            display: block;
+            background: linear-gradient(135deg, #f0f9f0 0%, #e8f5e8 100%);
+            border: 1px solid #a8d5a8;
+        }
+
+        .verify-result.error {
+            display: block;
+            background: linear-gradient(135deg, #fdf0f0 0%, #fce8e8 100%);
+            border: 1px solid #e8a8a8;
+        }
+
+        .verify-result .customer-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .verify-result .name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #3d3225;
+        }
+
+        .verify-result .package-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .verify-result .package-badge.light { background: #7c9a5e; }
+        .verify-result .package-badge.standard { background: #d4af82; }
+        .verify-result .package-badge.premium { background: #9b6b4a; }
+
+        .verify-result .remaining {
+            font-size: 13px;
+            color: #5a4a3a;
+        }
+
+        .verify-result .remaining strong {
+            color: #8b7355;
+            font-size: 16px;
+        }
+
+        .verify-result.error .error-msg {
+            color: #c41e3a;
+            font-size: 14px;
+        }
+
+        /* 질문 폼 (검증 후 표시) */
+        .question-form {
+            display: none;
+        }
+
+        .question-form.show {
+            display: block;
+        }
+
+        /* 질문 가이드 */
+        .question-guide {
+            background: linear-gradient(135deg, #f9f5ef 0%, #f0ebe0 100%);
+            border: 1px solid #e5dccb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .question-guide-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #3d3225;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .question-guide-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .question-guide-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 13px;
+            color: #5a4a3a;
+            line-height: 1.6;
+        }
+
+        .question-guide-item .emoji {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .question-guide-item .example {
+            color: #8b7355;
+            font-style: italic;
+        }
+
+        .question-guide-item .tip {
+            color: #7a9a6a;
+            font-size: 12px;
+            margin-top: 4px;
+            display: inline-block;
+        }
+
+        /* 질문 칸들 */
+        .question-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .question-input-item {
+            position: relative;
+        }
+
+        .question-input-item .question-number {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #8b7355 0%, #6b5744 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .question-input-item input {
+            width: 100%;
+            padding: 14px 16px 14px 48px;
+            border: 1px solid #d4c5a9;
+            border-radius: 8px;
+            font-family: 'Noto Serif KR', serif;
+            font-size: 14px;
+            background: #fff;
+            color: #3d3225;
+            transition: all 0.3s ease;
+        }
+
+        .question-input-item input:focus {
+            outline: none;
+            border-color: #8b7355;
+            box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+        }
+
+        .question-input-item input::placeholder {
+            color: #b0a090;
+            font-style: italic;
+        }
+
+        /* 질문 개수 안내 */
+        .question-count-info {
+            text-align: center;
+            padding: 15px;
+            background: #f9f5ef;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .question-count-info .count {
+            font-size: 14px;
+            color: #5a4a3a;
+        }
+
+        .question-count-info .count strong {
+            color: #8b7355;
+            font-size: 18px;
+        }
+
+        /* 제출 버튼 */
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #8b7355 0%, #6b5744 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Noto Serif KR', serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 2px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 115, 85, 0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 완료 페이지 */
+        .complete-page {
+            display: none;
+            padding: 40px 25px;
+            text-align: center;
+        }
+
+        .complete-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .complete-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #3d3225;
+            margin-bottom: 10px;
+        }
+
+        .complete-subtitle {
+            font-size: 14px;
+            color: #7a6a5a;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+
+        .complete-info {
+            background: #f9f5ef;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .complete-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5dccb;
+        }
+
+        .complete-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .complete-info-label {
+            color: #7a6a5a;
+            font-size: 14px;
+        }
+
+        .complete-info-value {
+            font-weight: 600;
+            color: #3d3225;
+            font-size: 14px;
+        }
+
+        .another-btn {
+            width: 100%;
+            padding: 15px;
+            background: #f5f0e8;
+            border: none;
+            color: #7a6a5a;
+            border-radius: 8px;
+            font-family: 'Noto Serif KR', serif;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .another-btn:hover {
+            background: #ebe5db;
+        }
+
+        /* 로딩 */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #8b7355;
+        }
+
+        .loading.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>운명을 듣다</h1>
+            <p class="subtitle">추가 질문하기</p>
+        </div>
+
+        <!-- 메인 폼 -->
+        <div id="mainForm">
+            <!-- 주문코드 입력 -->
+            <div class="form-section">
+                <div class="section-title">
+                    <span class="icon">1</span>
+                    <h2>주문코드 확인</h2>
+                </div>
+
+                <div class="form-group">
+                    <label>상담 시 받으신 주문코드를 입력해주세요</label>
+                    <div class="code-input-wrapper">
+                        <input type="text" id="orderCodeInput" placeholder="예: S-251216-1423-XYZ" maxlength="20">
+                        <button type="button" class="verify-btn" id="verifyBtn" onclick="verifyCode()">확인</button>
+                    </div>
+                </div>
+
+                <div class="verify-result" id="verifyResult">
+                    <!-- JS로 내용 채움 -->
+                </div>
+
+                <div class="loading" id="verifyLoading">
+                    ⏳ 확인 중...
+                </div>
+            </div>
+
+            <!-- 질문 작성 (검증 후 표시) -->
+            <div class="question-form" id="questionForm">
+                <div class="form-section">
+                    <div class="section-title">
+                        <span class="icon">2</span>
+                        <h2>질문 작성</h2>
+                    </div>
+
+                    <!-- 질문 가이드 -->
+                    <div class="question-guide">
+                        <div class="question-guide-title">💫 이렇게 물어보시면 더 정확해요</div>
+                        <div class="question-guide-list">
+                            <div class="question-guide-item">
+                                <span class="emoji">💕</span>
+                                <span>연애: <span class="example">"새 인연은 언제쯤 들어올까요?"</span><br><span class="tip">👉 현재 연애 상태나 고민 포인트를 말해주시면 좋아요</span></span>
+                            </div>
+                            <div class="question-guide-item">
+                                <span class="emoji">💼</span>
+                                <span>직업: <span class="example">"이직 시기가 언제가 좋을까요?"</span><br><span class="tip">👉 현재 직종이나 고민 상황을 말해주시면 좋아요</span></span>
+                            </div>
+                            <div class="question-guide-item">
+                                <span class="emoji">💰</span>
+                                <span>재물: <span class="example">"2026년에 투자해도 괜찮을까요?"</span><br><span class="tip">👉 투자 종류나 목표 금액을 말해주시면 좋아요</span></span>
+                            </div>
+                            <div class="question-guide-item">
+                                <span class="emoji">⏰</span>
+                                <span>시기: <span class="example">"지금 시작하면 잘 풀릴까요?"</span><br><span class="tip">👉 무엇을 시작하려는지 구체적으로 말해주시면 좋아요</span></span>
+                            </div>
+                            <div class="question-guide-item">
+                                <span class="emoji">🏥</span>
+                                <span>건강: <span class="example">"2026년 건강 관리 어떻게 하면 좋을까요?"</span><br><span class="tip">👉 현재 증상이나 걱정되는 부위를 말해주시면 좋아요</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 질문 개수 안내 -->
+                    <div class="question-count-info">
+                        <div class="count">
+                            총 <strong id="questionLimit">0</strong>개의 질문을 작성할 수 있어요
+                        </div>
+                    </div>
+
+                    <!-- 질문 입력칸들 (JS로 동적 생성) -->
+                    <div class="question-inputs" id="questionInputs">
+                        <!-- JS로 생성 -->
+                    </div>
+                </div>
+
+                <div class="form-section" style="border-bottom: none;">
+                    <button type="button" class="submit-btn" id="submitBtn" onclick="submitQuestions()">
+                        ✨ 질문 모두 보내기
+                    </button>
+
+                    <div class="loading" id="submitLoading">
+                        ⏳ 전송 중...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 완료 페이지 -->
+        <div class="complete-page" id="completePage">
+            <div class="complete-icon">✨</div>
+            <h2 class="complete-title">질문이 접수되었습니다!</h2>
+            <p class="complete-subtitle">
+                전문가에게 전달되어 정밀 분석 후<br>
+                카카오톡으로 답변 안내드릴게요.
+            </p>
+
+            <div class="complete-info">
+                <div class="complete-info-row">
+                    <span class="complete-info-label">주문코드</span>
+                    <span class="complete-info-value" id="completeOrderCode">-</span>
+                </div>
+                <div class="complete-info-row">
+                    <span class="complete-info-label">접수된 질문</span>
+                    <span class="complete-info-value" id="completeQuestionCount">-</span>
+                </div>
+                <div class="complete-info-row">
+                    <span class="complete-info-label">예상 답변</span>
+                    <span class="complete-info-value">영업일 기준 1~3일</span>
+                </div>
+            </div>
+
+            <button class="another-btn" onclick="resetAll()">
+                처음으로 돌아가기
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ★ Apps Script URL (관리자페이지와 동일)
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlnTB3d3tO_qvRNKgiLkGgy3EmH_92eYslv4mODGzV7QCiVHYTDLEl4duNlp3PO_kclA/exec';
+
+        // ★ 서버 미리 깨우기 (Cold Start 방지)
+        fetch(`${SCRIPT_URL}?action=ping`).catch(() => {});
+
+        // 현재 검증된 고객 정보
+        let verifiedCustomer = null;
+        let questionLimit = 0;
+
+        // 패키지별 질문 개수
+        const QUESTION_LIMITS = {
+            'light': 2,
+            'standard': 5,
+            'premium': 10,
+            '라이트': 2,
+            '스탠다드': 5,
+            '프리미엄': 10
+        };
+
+        // 패키지 표시 정보
+        const PACKAGE_INFO = {
+            'light': { name: '라이트', emoji: '🌱', class: 'light' },
+            'standard': { name: '스탠다드', emoji: '⭐', class: 'standard' },
+            'premium': { name: '프리미엄', emoji: '👑', class: 'premium' },
+            '라이트': { name: '라이트', emoji: '🌱', class: 'light' },
+            '스탠다드': { name: '스탠다드', emoji: '⭐', class: 'standard' },
+            '프리미엄': { name: '프리미엄', emoji: '👑', class: 'premium' }
+        };
+
+        // placeholder 예시들
+        const PLACEHOLDER_EXAMPLES = [
+            "예: 2026년에 좋은 인연 들어올까요?",
+            "예: 이직 시기가 언제가 좋을까요?",
+            "예: 지금 투자해도 괜찮을까요?",
+            "예: 자녀운은 어떤가요?",
+            "예: 2026년 건강 관리 어떻게 하면 좋을까요?",
+            "예: 이 사람과 계속 만나도 될까요?",
+            "예: 창업 시기가 맞을까요?",
+            "예: 미래 배우자는 어떤 사람일까요?",
+            "예: 2026년 재물운이 어떤가요?",
+            "예: 요즘 의욕이 없는데 이유가 있을까요?"
+        ];
+
+        // 주문코드 검증
+        async function verifyCode() {
+            const orderCode = document.getElementById('orderCodeInput').value.trim().toUpperCase();
+            
+            if (!orderCode) {
+                alert('주문코드를 입력해주세요.');
+                return;
+            }
+
+            // 로딩 표시
+            document.getElementById('verifyBtn').disabled = true;
+            document.getElementById('verifyLoading').classList.add('show');
+            document.getElementById('verifyResult').className = 'verify-result';
+            document.getElementById('verifyResult').style.display = 'none';
+
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=verify&orderCode=${encodeURIComponent(orderCode)}`);
+                const result = await response.json();
+
+                document.getElementById('verifyLoading').classList.remove('show');
+                document.getElementById('verifyBtn').disabled = false;
+
+                if (result.success) {
+                    // 검증 성공
+                    verifiedCustomer = result.customer;
+                    
+                    // 이미 질문을 사용했는지 확인
+                    if (result.usedCount > 0) {
+                        document.getElementById('verifyResult').className = 'verify-result error';
+                        document.getElementById('verifyResult').innerHTML = `
+                            <div class="error-msg">⚠️ 이미 질문을 제출하셨습니다. 추가 질문은 불가능합니다.</div>
+                        `;
+                        document.getElementById('questionForm').classList.remove('show');
+                        return;
+                    }
+
+                    questionLimit = QUESTION_LIMITS[result.customer.package] || 2;
+                    const pkgInfo = PACKAGE_INFO[result.customer.package] || PACKAGE_INFO['standard'];
+
+                    document.getElementById('verifyResult').className = 'verify-result success';
+                    document.getElementById('verifyResult').innerHTML = `
+                        <div class="customer-info">
+                            <span class="name">👋 ${result.customer.name}님</span>
+                            <span class="package-badge ${pkgInfo.class}">${pkgInfo.emoji} ${pkgInfo.name}</span>
+                        </div>
+                        <div class="remaining">
+                            작성 가능한 질문: <strong>${questionLimit}개</strong>
+                        </div>
+                    `;
+
+                    // 질문 폼 표시 + 입력칸 생성
+                    document.getElementById('questionForm').classList.add('show');
+                    document.getElementById('questionLimit').textContent = questionLimit;
+                    generateQuestionInputs(questionLimit);
+
+                } else {
+                    // 검증 실패
+                    document.getElementById('verifyResult').className = 'verify-result error';
+                    document.getElementById('verifyResult').innerHTML = `
+                        <div class="error-msg">❌ ${result.error}</div>
+                    `;
+                    document.getElementById('questionForm').classList.remove('show');
+                    verifiedCustomer = null;
+                }
+            } catch (error) {
+                document.getElementById('verifyLoading').classList.remove('show');
+                document.getElementById('verifyBtn').disabled = false;
+                
+                document.getElementById('verifyResult').className = 'verify-result error';
+                document.getElementById('verifyResult').innerHTML = `
+                    <div class="error-msg">❌ 연결 오류가 발생했습니다. 잠시 후 다시 시도해주세요.</div>
+                `;
+                console.error('검증 오류:', error);
+            }
+        }
+
+        // 질문 입력칸 동적 생성
+        function generateQuestionInputs(count) {
+            const container = document.getElementById('questionInputs');
+            container.innerHTML = '';
+
+            for (let i = 0; i < count; i++) {
+                const placeholder = PLACEHOLDER_EXAMPLES[i] || PLACEHOLDER_EXAMPLES[i % PLACEHOLDER_EXAMPLES.length];
+                
+                const item = document.createElement('div');
+                item.className = 'question-input-item';
+                item.innerHTML = `
+                    <span class="question-number">${i + 1}</span>
+                    <input type="text" name="question" placeholder="${placeholder}" data-index="${i}">
+                `;
+                container.appendChild(item);
+            }
+        }
+
+        // 질문 모두 제출
+        async function submitQuestions() {
+            if (!verifiedCustomer) {
+                alert('먼저 주문코드를 확인해주세요.');
+                return;
+            }
+
+            // 질문들 수집
+            const inputs = document.querySelectorAll('input[name="question"]');
+            const questions = [];
+            
+            inputs.forEach((input, index) => {
+                const value = input.value.trim();
+                if (value) {
+                    questions.push({
+                        index: index + 1,
+                        content: value
+                    });
+                }
+            });
+
+            if (questions.length === 0) {
+                alert('최소 1개 이상의 질문을 작성해주세요.');
+                return;
+            }
+
+            // 로딩 표시
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('submitLoading').classList.add('show');
+
+            try {
+                // 모든 질문을 한 번에 전송 (구분자로 묶어서)
+                const allQuestions = questions.map(q => `[${q.index}] ${q.content}`).join(' || ');
+                
+                const url = `${SCRIPT_URL}?action=addQuestion&orderCode=${encodeURIComponent(verifiedCustomer.orderCode)}&category=복합&content=${encodeURIComponent(allQuestions)}`;
+                
+                const response = await fetch(url);
+                const result = await response.json();
+
+                document.getElementById('submitLoading').classList.remove('show');
+                document.getElementById('submitBtn').disabled = false;
+
+                if (result.success) {
+                    // 성공 - 완료 페이지 표시
+                    document.getElementById('completeOrderCode').textContent = verifiedCustomer.orderCode;
+                    document.getElementById('completeQuestionCount').textContent = questions.length + '개';
+
+                    document.getElementById('mainForm').style.display = 'none';
+                    document.getElementById('completePage').style.display = 'block';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    alert('오류: ' + result.error);
+                }
+            } catch (error) {
+                document.getElementById('submitLoading').classList.remove('show');
+                document.getElementById('submitBtn').disabled = false;
+                alert('연결 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+                console.error('제출 오류:', error);
+            }
+        }
+
+        // 완전 초기화
+        function resetAll() {
+            verifiedCustomer = null;
+            questionLimit = 0;
+
+            document.getElementById('orderCodeInput').value = '';
+            document.getElementById('questionInputs').innerHTML = '';
+            
+            document.getElementById('verifyResult').className = 'verify-result';
+            document.getElementById('verifyResult').style.display = 'none';
+            document.getElementById('questionForm').classList.remove('show');
+
+            document.getElementById('mainForm').style.display = 'block';
+            document.getElementById('completePage').style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Enter 키로 검증
+        document.getElementById('orderCodeInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                verifyCode();
+            }
+        });
+    </script>
+<!-- 플로팅 관리자 버튼 -->
+<a href="index.html" style="position:fixed; bottom:20px; right:20px; z-index:9999; width:50px; height:50px; background:linear-gradient(135deg,#d4af82,#b8956a); border-radius:50%; display:flex; align-items:center; justify-content:center; text-decoration:none; font-size:24px; box-shadow:0 4px 15px rgba(0,0,0,0.3);">🏠</a>
+</body>
+</html>

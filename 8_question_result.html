@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>추가질문 결과 생성기 | 운명을 듣다</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+            line-height: 1.7;
+        }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 30px 20px; }
+        
+        .header { text-align: center; margin-bottom: 30px; }
+        .header .step-badge { display: inline-block; background: rgba(212, 175, 130, 0.2); border: 1px solid #d4af82; padding: 5px 15px; border-radius: 20px; font-size: 12px; color: #d4af82; margin-bottom: 10px; }
+        .header h1 { font-size: 28px; color: #d4af82; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .header p { color: #888; font-size: 14px; }
+        .version-badge { display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #fff; font-size: 11px; font-weight: bold; padding: 3px 10px; border-radius: 12px; }
+        
+        .main-layout { display: grid; grid-template-columns: 450px 1fr; gap: 30px; }
+        @media (max-width: 1100px) { .main-layout { grid-template-columns: 1fr; } }
+        
+        .input-section { background: linear-gradient(135deg, rgba(212, 175, 130, 0.1) 0%, rgba(212, 175, 130, 0.05) 100%); border: 2px solid #d4af82; border-radius: 16px; padding: 25px; }
+        .input-section h3 { font-size: 16px; color: #d4af82; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        .input-section p.hint { font-size: 13px; color: #aaa; margin-bottom: 15px; line-height: 1.7; }
+        .hint-box { background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 15px; }
+        .hint-box code { background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; font-size: 11px; color: #a78bfa; }
+        .input-textarea { width: 100%; height: 500px; background: #1a1a2e; border: 1px solid #444; border-radius: 8px; color: #e0e0e0; padding: 15px; font-size: 12px; font-family: monospace; resize: vertical; line-height: 1.6; }
+        .input-textarea:focus { outline: none; border-color: #d4af82; }
+        
+        .meta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .meta-input { width: 100%; padding: 10px 12px; background: #1a1a2e; border: 1px solid #444; border-radius: 8px; color: #e0e0e0; font-size: 13px; }
+        .meta-input:focus { outline: none; border-color: #d4af82; }
+        .meta-input::placeholder { color: #666; }
+        .meta-textarea { width: 100%; height: 80px; background: #1a1a2e; border: 1px solid #444; border-radius: 8px; color: #e0e0e0; padding: 12px; font-size: 13px; font-family: 'Nanum Gothic', sans-serif; resize: none; line-height: 1.6; margin-bottom: 15px; }
+        .meta-textarea:focus { outline: none; border-color: #d4af82; }
+        .meta-textarea::placeholder { color: #666; }
+        
+        .btn-row { display: flex; gap: 10px; margin-top: 15px; }
+        .btn { flex: 1; padding: 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; transition: all 0.3s; }
+        .btn-primary { background: linear-gradient(135deg, #d4af82 0%, #b8956a 100%); color: #1a1a2e; }
+        .btn-secondary { background: rgba(255, 255, 255, 0.1); color: #e0e0e0; border: 1px solid #444; }
+        .btn:hover { transform: translateY(-2px); }
+        
+        .parse-result { margin-top: 15px; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 10px; font-size: 12px; display: none; }
+        .parse-result.show { display: block; }
+        .parse-result.success { border-left: 4px solid #4ade80; }
+        .parse-result.error { border-left: 4px solid #ef4444; }
+        .question-list { margin-top: 10px; }
+        .question-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: rgba(255,255,255,0.03); border-radius: 6px; margin-bottom: 6px; }
+        .question-item .num { width: 22px; height: 22px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
+        .question-item .text { flex: 1; font-size: 12px; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .preview-panel { background: #fff; border-radius: 16px; overflow: hidden; }
+        .preview-header { background: linear-gradient(135deg, #1a1a2e 0%, #2d2d4a 100%); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+        .preview-header h2 { font-size: 14px; color: #d4af82; }
+        .btn-download { padding: 10px 20px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%); color: #fff; transition: all 0.3s; }
+        .btn-download:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(74, 222, 128, 0.3); }
+        .preview-content { max-height: calc(100vh - 180px); overflow-y: auto; }
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 500px; color: #888; background: #f8f6f1; }
+        .empty-state .icon { font-size: 64px; margin-bottom: 20px; opacity: 0.3; }
+    </style>
+    
+    <!-- 결과지 스타일 -->
+    <style id="resultStyles">
+        .result-container {
+            font-family: 'Nanum Myeongjo', serif;
+            background: #fffef9;
+            color: #2d2418;
+            line-height: 2.0;
+            word-break: keep-all;
+            padding-bottom: 40px;
+            background-image: radial-gradient(circle at 20% 50%, rgba(212,175,130,0.03) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 20%, rgba(212,175,130,0.03) 0%, transparent 40%);
+        }
+        :root {
+            --gold: #d4af82;
+            --gold-dark: #b8956a;
+            --gold-light: #e8d4b8;
+            --navy: #3d4a6b;
+            --navy-light: #4d5a7b;
+            --purple: #7c3aed;
+            --purple-light: #a78bfa;
+        }
+        
+        /* 헤더 - 프리미엄 커버 스타일 */
+        .qa-header {
+            background: linear-gradient(175deg, #1a1612 0%, #2d2418 40%, #3d3225 100%);
+            color: #e8dcc8;
+            text-align: center;
+            padding: 50px 25px 45px;
+            position: relative;
+        }
+        .qa-header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(circle at 15% 20%, rgba(212,175,130,0.06) 0%, transparent 30%),
+                              radial-gradient(circle at 85% 30%, rgba(212,175,130,0.06) 0%, transparent 30%),
+                              radial-gradient(circle at 50% 80%, rgba(212,175,130,0.04) 0%, transparent 40%);
+            pointer-events: none;
+        }
+        .qa-header .top-line {
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #a89068, transparent);
+            margin: 0 auto 20px;
+        }
+        .qa-header .brand {
+            font-size: 11px;
+            letter-spacing: 6px;
+            color: #a89068;
+            margin-bottom: 15px;
+        }
+        .qa-header .icon-circle {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 20px;
+            border: 2px solid rgba(168, 144, 104, 0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            position: relative;
+        }
+        .qa-header .icon-circle::after {
+            content: '';
+            position: absolute;
+            top: -8px; left: -8px; right: -8px; bottom: -8px;
+            border: 1px solid rgba(168, 144, 104, 0.2);
+            border-radius: 50%;
+        }
+        .qa-header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 10px;
+            color: #f5efe3;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .qa-header .subtitle {
+            font-size: 12px;
+            color: #a89068;
+            letter-spacing: 4px;
+            margin-bottom: 25px;
+        }
+        .qa-header .divider {
+            width: 120px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #a89068, transparent);
+            margin: 0 auto 25px;
+        }
+        .qa-header .user-section {
+            position: relative;
+            z-index: 1;
+        }
+        .qa-header .pkg-badge {
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: var(--gold);
+            background: rgba(212, 175, 130, 0.15);
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 15px;
+            border: 1px solid rgba(212, 175, 130, 0.3);
+        }
+        .qa-header .user-name {
+            font-size: 32px;
+            font-weight: 700;
+            color: #f5efe3;
+            margin-bottom: 12px;
+        }
+        .qa-header .user-birth {
+            font-size: 14px;
+            color: #c4b5a0;
+            margin-bottom: 8px;
+        }
+        .qa-header .user-ilju {
+            font-size: 22px;
+            letter-spacing: 8px;
+            color: var(--gold);
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        .qa-header .count-badge {
+            display: inline-block;
+            background: rgba(212, 175, 130, 0.2);
+            border: 1px solid rgba(212, 175, 130, 0.4);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--gold);
+        }
+        
+        /* 질문 카드 */
+        .question-card {
+            margin: 30px 20px;
+            background: #fffef9;
+            border: 1px solid #e5dccb;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(139,115,85,0.1);
+        }
+        .question-card-header {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+            padding: 20px 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .question-number {
+            width: 40px;
+            height: 40px;
+            background: rgba(212, 175, 130, 0.2);
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--gold);
+        }
+        .question-title {
+            flex: 1;
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.6;
+        }
+        .question-card-body { padding: 0; }
+        
+        /* 해석 섹션 */
+        .interpretation-section {
+            padding: 25px;
+            border-bottom: 1px solid #f0ebe0;
+        }
+        .interpretation-section:last-child { border-bottom: none; }
+        .interpretation-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .interpretation-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .interpretation-icon.myeongri { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+        .interpretation-icon.juyeok { background: linear-gradient(135deg, #e0e7ff, #c7d2fe); }
+        .interpretation-icon.taegil { background: linear-gradient(135deg, #dcfce7, #bbf7d0); }
+        .interpretation-icon.pungsu { background: linear-gradient(135deg, #fed7aa, #fdba74); }
+        .interpretation-icon.gunghap { background: linear-gradient(135deg, #fce7f3, #f9a8d4); }
+        .interpretation-icon.advice { background: linear-gradient(135deg, #fce7f3, #fbcfe8); }
+        .interpretation-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--navy);
+        }
+        .interpretation-content {
+            font-size: 15px;
+            line-height: 2.2;
+            color: #4a3d30;
+        }
+        .interpretation-content p { margin-bottom: 12px; }
+        .interpretation-content strong { color: #3d3225; }
+        
+        /* 핵심 조언 박스 */
+        .advice-box {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 1px solid #fcd34d;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px;
+        }
+        .advice-box-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .advice-box-header .icon { font-size: 20px; }
+        .advice-box-header .title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #92400e;
+        }
+        .advice-box-content {
+            font-size: 15px;
+            line-height: 2.0;
+            color: #78350f;
+        }
+        
+        /* 푸터 */
+        .qa-footer {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(180deg, #f8f6f1 0%, #f0ebe0 100%);
+        }
+        .qa-footer .divider {
+            width: 60px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 0 auto 20px;
+        }
+        .qa-footer .brand {
+            font-size: 12px;
+            letter-spacing: 4px;
+            color: #a89068;
+            margin-bottom: 8px;
+        }
+        .qa-footer .message {
+            font-size: 14px;
+            color: #6b5a30;
+            line-height: 1.8;
+        }
+        .qa-footer .channel-box {
+            margin-top: 25px;
+            padding: 20px;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 1px solid #fcd34d;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .qa-footer .channel-box:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(252, 211, 77, 0.4);
+            border-color: #f59e0b;
+        }
+        .qa-footer .channel-box .icon { font-size: 24px; margin-bottom: 8px; }
+        .qa-footer .channel-box .title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 6px;
+        }
+        .qa-footer .channel-box .desc {
+            font-size: 13px;
+            color: #78350f;
+            line-height: 1.7;
+        }
+        .qa-footer .consultation-box {
+            margin-top: 25px;
+            padding: 25px;
+            background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+            border: 1px solid #c4b5fd;
+            border-radius: 12px;
+            text-align: left;
+        }
+        .qa-footer .consultation-box .consult-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #5b21b6;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .qa-footer .consultation-box .consult-desc {
+            font-size: 14px;
+            color: #6b21a8;
+            line-height: 2.0;
+            text-align: center;
+            margin-bottom: 18px;
+        }
+        .qa-footer .consultation-box .consult-cta {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            color: #fff;
+            padding: 15px 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .qa-footer .consultation-box .consult-cta .cta-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .qa-footer .consultation-box .consult-cta .cta-price {
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .qa-footer .consultation-box .consult-cta .cta-price .original {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+        .qa-footer .consultation-box .consult-cta .cta-price .discount {
+            font-weight: 700;
+            color: #fde68a;
+        }
+        .qa-footer .consultation-box .consult-cta .cta-action {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        /* 인트로 설명 박스 */
+        .intro-box {
+            margin: 30px 20px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #7dd3fc;
+            border-radius: 16px;
+            text-align: center;
+        }
+        .intro-box .intro-icon { font-size: 32px; margin-bottom: 12px; }
+        .intro-box .intro-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0369a1;
+            margin-bottom: 12px;
+        }
+        .intro-box .intro-desc {
+            font-size: 14px;
+            color: #0c4a6e;
+            line-height: 2.0;
+        }
+        
+        /* 종합 요약 섹션 */
+        .summary-section {
+            margin: 35px 20px;
+            background: linear-gradient(135deg, #3d3225 0%, #2a2115 100%);
+            border-radius: 20px;
+            padding: 30px 25px;
+            color: #e8dcc8;
+            border: 2px solid var(--gold);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+        .summary-section .section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .summary-section .section-title .icon { font-size: 24px; }
+        .summary-section .section-title h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f5efe3;
+            letter-spacing: 2px;
+        }
+        .summary-section .summary-content {
+            font-size: 15px;
+            line-height: 2.2;
+            color: #f0e8da;
+        }
+        .summary-section .summary-content strong { color: var(--gold); }
+        
+        /* Claude 출력 HTML 클래스 스타일 - 전체 종합 */
+        .final-summary {
+            margin: 35px 20px;
+            background: linear-gradient(135deg, #2d2418 0%, #1a1612 100%);
+            border-radius: 20px;
+            padding: 35px 28px;
+            color: #e8dcc8;
+            border: 2px solid var(--gold);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+            position: relative;
+            overflow: hidden;
+        }
+        .final-summary::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--gold-dark), var(--gold), var(--gold-dark));
+        }
+        .final-summary .summary-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #f5efe3;
+            margin-bottom: 25px;
+            letter-spacing: 3px;
+            text-align: center;
+            padding-bottom: 18px;
+            border-bottom: 1px solid rgba(212, 175, 130, 0.3);
+        }
+        .final-summary .summary-content {
+            font-size: 15px;
+            line-height: 2.4;
+            color: #f0e8da;
+            white-space: pre-line;
+        }
+        .final-summary .summary-content strong {
+            color: var(--gold);
+            font-weight: 700;
+        }
+        .final-summary .summary-content em {
+            color: var(--gold-light);
+            font-style: italic;
+        }
+        .final-summary .summary-content br {
+            display: block;
+            content: '';
+            margin-top: 8px;
+        }
+        .final-summary .luck-point {
+            margin-top: 30px;
+            padding: 20px 22px;
+            background: rgba(212, 175, 130, 0.12);
+            border: 1px solid rgba(212, 175, 130, 0.35);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 15px;
+            color: var(--gold);
+            font-weight: 600;
+        }
+        .final-summary .luck-point .luck-icon {
+            font-size: 24px;
+        }
+        .final-summary .luck-point {
+            margin-top: 25px;
+            padding: 18px 20px;
+            background: rgba(212, 175, 130, 0.15);
+            border: 1px solid rgba(212, 175, 130, 0.3);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--gold);
+        }
+        .final-summary .luck-point .luck-icon {
+            font-size: 20px;
+        }
+        
+        /* 추가 Claude 출력 클래스들 */
+        .total-summary, .overall-summary {
+            margin: 35px 20px;
+            background: linear-gradient(135deg, #3d3225 0%, #2a2115 100%);
+            border-radius: 20px;
+            padding: 30px 25px;
+            color: #e8dcc8;
+            border: 2px solid var(--gold);
+        }
+        .summary-title, .total-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #f5efe3;
+            margin-bottom: 20px;
+        }
+        .key-point, .highlight-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(212, 175, 130, 0.1);
+            border-left: 3px solid var(--gold);
+            border-radius: 0 10px 10px 0;
+        }
+        .keyword-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .keyword-item {
+            background: rgba(212, 175, 130, 0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--gold);
+        }
+        
+        /* 행운 아이템 섹션 (독립형) */
+        .luck-point {
+            margin: 25px 20px;
+            padding: 18px 22px;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 1px solid #fcd34d;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 15px;
+            color: #92400e;
+            font-weight: 600;
+        }
+        .luck-point .luck-icon {
+            font-size: 24px;
+        }
+        
+        .luck-items {
+            margin: 25px 20px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 1px solid #86efac;
+            border-radius: 16px;
+        }
+        .luck-items .luck-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #166534;
+            margin-bottom: 18px;
+            text-align: center;
+        }
+        .luck-items .luck-content {
+            font-size: 14px;
+            line-height: 2.2;
+            color: #15803d;
+        }
+        .luck-items .luck-content p {
+            margin-bottom: 12px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 10px;
+        }
+        .luck-items .luck-content strong {
+            color: #14532d;
+        }
+        
+        /* 마크다운 변환 스타일 */
+        .interpretation-content ul {
+            margin: 15px 0 15px 15px;
+            list-style: none;
+        }
+        .interpretation-content li {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        .interpretation-content li::before {
+            content: '✦';
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-size: 10px;
+        }
+        .interpretation-content blockquote {
+            border-left: 3px solid var(--gold);
+            padding-left: 15px;
+            color: #6b5744;
+            font-style: italic;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="step-badge">STEP 5 · 추가 질문</div>
+            <h1>🔮 추가질문 결과 생성기 <span class="version-badge">Premium</span></h1>
+            <p>Claude 출력물을 붙여넣으면 예쁜 추가질문 답변 결과지가 생성됩니다</p>
+        </div>
+        
+        <div class="main-layout">
+            <div class="input-section">
+                <h3>✨ Claude 출력 붙여넣기</h3>
+                <div class="hint-box">
+                    <p class="hint" style="margin:0;">
+                        💡 <strong>최대 10개 질문</strong>까지 한 번에 처리 가능<br>
+                        각 질문은 <code>&lt;div class="question-block"&gt;</code> 또는<br>
+                        <code>## 질문 N:</code> 형식으로 구분됩니다
+                    </p>
+                </div>
+                <textarea id="claudeInput" class="input-textarea" placeholder="Claude가 생성한 추가질문 답변을 여기에 붙여넣으세요...
+
+예시 형식:
+<!-- ★ 질문 1 -->
+<div class=&quot;question-block&quot;>
+  <div class=&quot;question-title&quot;>❓ 질문 1: 이직 시기가 언제일까요?</div>
+  <div class=&quot;route-section&quot;>
+    <div class=&quot;route-title&quot;>💫 명리 해석</div>
+    <div class=&quot;route-content&quot;>해석 내용...</div>
+  </div>
+  ...
+</div>
+
+또는 마크다운 형식:
+## 질문 1: 이직 시기가 언제일까요?
+
+### 💫 명리 해석
+해석 내용...
+
+### 🔮 주역 해석
+해석 내용...
+"></textarea>
+                
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="generateResult()">✨ 결과지 생성</button>
+                    <button class="btn btn-secondary" onclick="clearInput()">🗑️ 초기화</button>
+                </div>
+                
+                <div id="parseResult" class="parse-result">
+                    <div id="parseMessage"></div>
+                    <div id="questionList" class="question-list"></div>
+                </div>
+            </div>
+            
+            <div class="preview-panel">
+                <div class="preview-header">
+                    <h2>📄 결과지 미리보기</h2>
+                    <button class="btn-download" onclick="downloadHTML()">📥 HTML 다운로드</button>
+                    <button class="btn-download" onclick="uploadToNetlify()" style="background:linear-gradient(135deg,#00ad9f,#008f82);">🔗 링크 생성</button>
+                    <div id="upload-status" style="margin-left:10px;color:#00ad9f;font-size:13px;"></div>
+                </div>
+                <div class="preview-content" id="previewContent">
+                    <div class="empty-state">
+                        <div class="icon">🔮</div>
+                        <p>Claude 추가질문 답변을 붙여넣으면<br>결과지가 생성됩니다</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let parsedQuestions = [];
+        let metaInfo = {};
+        let summaryContent = '';
+        let luckPointContent = '';
+        let luckItemsContent = '';
+        
+        function parseLuckContent(input) {
+            // luck-point 파싱
+            const luckPointMatch = input.match(/<div[^>]*class="luck-point"[^>]*>([\s\S]*?)<\/div>/i);
+            if (luckPointMatch) {
+                luckPointContent = luckPointMatch[0];
+            }
+            
+            // luck-items 파싱 (중첩 div 처리)
+            const luckItemsStart = input.indexOf('class="luck-items"');
+            if (luckItemsStart !== -1) {
+                let divStart = input.lastIndexOf('<div', luckItemsStart);
+                if (divStart !== -1) {
+                    let depth = 0;
+                    let i = divStart;
+                    let started = false;
+                    while (i < input.length) {
+                        if (input.substring(i, i + 4) === '<div') {
+                            depth++;
+                            started = true;
+                        } else if (input.substring(i, i + 6) === '</div>') {
+                            depth--;
+                            if (started && depth === 0) {
+                                luckItemsContent = input.substring(divStart, i + 6);
+                                break;
+                            }
+                        }
+                        i++;
+                    }
+                }
+            }
+        }
+        
+        function parseSummary(input) {
+            // 방법 1: final-summary 클래스 전체 블록 찾기
+            const finalSummaryStart = input.indexOf('class="final-summary"');
+            if (finalSummaryStart !== -1) {
+                // 시작 div 태그 찾기
+                let divStart = input.lastIndexOf('<div', finalSummaryStart);
+                if (divStart !== -1) {
+                    // 중첩된 div 카운트해서 닫는 태그 찾기
+                    let depth = 0;
+                    let i = divStart;
+                    let started = false;
+                    while (i < input.length) {
+                        if (input.substring(i, i + 4) === '<div') {
+                            depth++;
+                            started = true;
+                        } else if (input.substring(i, i + 6) === '</div>') {
+                            depth--;
+                            if (started && depth === 0) {
+                                return input.substring(divStart, i + 6);
+                            }
+                        }
+                        i++;
+                    }
+                }
+            }
+            
+            // 방법 2: summary 관련 클래스 찾기 (같은 로직)
+            const summaryStart = input.search(/class="(?:summary|total-summary|overall-summary)"/i);
+            if (summaryStart !== -1) {
+                let divStart = input.lastIndexOf('<div', summaryStart);
+                if (divStart !== -1) {
+                    let depth = 0;
+                    let i = divStart;
+                    let started = false;
+                    while (i < input.length) {
+                        if (input.substring(i, i + 4) === '<div') {
+                            depth++;
+                            started = true;
+                        } else if (input.substring(i, i + 6) === '</div>') {
+                            depth--;
+                            if (started && depth === 0) {
+                                return input.substring(divStart, i + 6);
+                            }
+                        }
+                        i++;
+                    }
+                }
+            }
+            
+            // 방법 3: <!-- 종합 --> 주석 형식
+            const commentMatch = input.match(/<!--\s*(?:★\s*)?(?:전체\s*)?종합[^>]*-->([\s\S]*?)(?=<!--|<div[^>]*class="question|$)/i);
+            if (commentMatch) {
+                return commentMatch[1].trim();
+            }
+            
+            // 방법 4: 마크다운 형식
+            const mdSummaryMatch = input.match(/##\s*(?:전체\s*)?(?:종합|요약)[^\n]*\n([\s\S]*?)(?=##|$)/i);
+            if (mdSummaryMatch) {
+                return mdSummaryMatch[1].trim();
+            }
+            
+            return '';
+        }
+        
+        function parseMetaInfo(text) {
+            const info = {};
+            
+            // 주문코드 파싱
+            const orderCodeMatch = text.match(/주문코드\s*[:：]\s*([^\n\r]+?)(?=\s*이름|\s*$)/i);
+            if (orderCodeMatch) info.orderCode = orderCodeMatch[1].trim();
+            
+            // 이름 파싱
+            const nameMatch = text.match(/이름\s*[:：]\s*([^\n\r]+?)(?=\s*생년월일|\s*일주|$)/i);
+            if (nameMatch) info.name = nameMatch[1].trim();
+            
+            // 생년월일 파싱
+            const birthMatch = text.match(/생년월일\s*[:：]\s*([^\n\r]+?)(?=\s*일주|$)/i);
+            if (birthMatch) {
+                const birthText = birthMatch[1].trim();
+                info.birthFull = birthText;
+                
+                // 연월일 추출
+                const dateMatch = birthText.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
+                if (dateMatch) {
+                    info.year = dateMatch[1];
+                    info.month = dateMatch[2];
+                    info.day = dateMatch[3];
+                }
+                
+                // 시간 추출
+                const timeMatch = birthText.match(/(\d{1,2})시\s*(\d{1,2})분/);
+                if (timeMatch) {
+                    info.hour = timeMatch[1];
+                    info.minute = timeMatch[2];
+                }
+                
+                // 양력/음력
+                if (birthText.includes('음력')) info.calendar = '음력';
+                else if (birthText.includes('양력')) info.calendar = '양력';
+                
+                // 성별
+                if (birthText.includes('여자') || birthText.includes('여')) info.gender = '여';
+                else if (birthText.includes('남자') || birthText.includes('남')) info.gender = '남';
+            }
+            
+            // 일주 파싱
+            const iljuMatch = text.match(/일주\s*[:：]\s*([甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥])/);
+            if (iljuMatch) info.ilju = iljuMatch[1];
+            
+            // Claude 출력에서 일주 추출 시도 (없으면)
+            if (!info.ilju) {
+                const claudeIljuMatch = document.getElementById('claudeInput').value.match(/([甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥])일주/);
+                if (claudeIljuMatch) info.ilju = claudeIljuMatch[1];
+            }
+            
+            return info;
+        }
+        
+        function generateResult() {
+            const input = document.getElementById('claudeInput').value.trim();
+            
+            if (!input) {
+                showParseResult('error', '❌ Claude 출력 내용을 입력해주세요.');
+                return;
+            }
+            
+            // 메타 정보 파싱 (Claude 출력에서 추출)
+            metaInfo = parseMetaInfo(input);
+            
+            // 질문 파싱
+            parsedQuestions = parseQuestions(input);
+            
+            if (parsedQuestions.length === 0) {
+                showParseResult('error', '❌ 질문을 찾을 수 없습니다. 형식을 확인해주세요.');
+                return;
+            }
+            
+            // 질문 번호 순서대로 재정렬 (1, 2, 3...)
+            parsedQuestions = parsedQuestions.map((q, idx) => ({
+                ...q,
+                num: idx + 1
+            }));
+            
+            // 파싱 결과 표시
+            let listHTML = '';
+            parsedQuestions.forEach((q, i) => {
+                listHTML += `<div class="question-item">
+                    <span class="num">${i + 1}</span>
+                    <span class="text">${escapeHTML(q.title)}</span>
+                </div>`;
+            });
+            
+            const metaSummary = metaInfo.name ? ` (${metaInfo.name}님)` : '';
+            showParseResult('success', `✅ ${parsedQuestions.length}개의 질문이 파싱되었습니다${metaSummary}`, listHTML);
+            
+            // 종합 요약 파싱
+            summaryContent = parseSummary(input);
+            
+            // 행운 아이템 파싱
+            luckPointContent = '';
+            luckItemsContent = '';
+            parseLuckContent(input);
+            
+            // 결과지 생성
+            renderResult();
+        }
+        
+        function parseQuestions(input) {
+            const questions = [];
+            
+            // final-summary 이전까지만 파싱하도록 input 자르기
+            let questionInput = input;
+            const summaryIdx = input.indexOf('class="final-summary"');
+            if (summaryIdx !== -1) {
+                const divStart = input.lastIndexOf('<div', summaryIdx);
+                if (divStart !== -1) {
+                    questionInput = input.substring(0, divStart);
+                }
+            }
+            
+            // 방법 1: HTML div.question-block 형식
+            const htmlBlockRegex = /<div[^>]*class="question-block"[^>]*>([\s\S]*?)(?=<div[^>]*class="question-block"|<div[^>]*class="final-summary"|$)/gi;
+            let htmlMatches = [...questionInput.matchAll(htmlBlockRegex)];
+            
+            if (htmlMatches.length > 0) {
+                htmlMatches.forEach((match, idx) => {
+                    const block = match[1];
+                    const question = parseHTMLBlock(block, idx + 1);
+                    if (question) questions.push(question);
+                });
+                return questions;
+            }
+            
+            // 방법 2: <!-- ★ 질문 N --> 주석 형식
+            const commentRegex = /<!--\s*★?\s*질문\s*(\d+)\s*-->([\s\S]*?)(?=<!--\s*★?\s*질문\s*\d+\s*-->|$)/gi;
+            let commentMatches = [...input.matchAll(commentRegex)];
+            
+            if (commentMatches.length > 0) {
+                commentMatches.forEach((match) => {
+                    const num = parseInt(match[1]);
+                    const block = match[2];
+                    const question = parseHTMLBlock(block, num);
+                    if (question) questions.push(question);
+                });
+                return questions;
+            }
+            
+            // 방법 3: ## 질문 N: 마크다운 형식
+            const mdRegex = /##\s*질문\s*(\d+)\s*[:：]\s*([^\n]+)([\s\S]*?)(?=##\s*질문\s*\d+|$)/gi;
+            let mdMatches = [...input.matchAll(mdRegex)];
+            
+            if (mdMatches.length > 0) {
+                mdMatches.forEach((match) => {
+                    const num = parseInt(match[1]);
+                    const title = match[2].trim();
+                    const content = match[3];
+                    const question = parseMarkdownBlock(title, content, num);
+                    if (question) questions.push(question);
+                });
+                return questions;
+            }
+            
+            // 방법 4: 단일 질문 (섹션만 있는 경우)
+            if (input.includes('명리 해석') || input.includes('주역 해석') || input.includes('택일')) {
+                const singleQ = parseSingleQuestion(input);
+                if (singleQ) questions.push(singleQ);
+            }
+            
+            return questions;
+        }
+        
+        function parseHTMLBlock(block, num) {
+            // 질문 제목 추출
+            let title = '';
+            const titleMatch = block.match(/class="question-title"[^>]*>([\s\S]*?)<\/div>/i);
+            if (titleMatch) {
+                title = titleMatch[1].replace(/<[^>]+>/g, '').replace(/❓\s*질문\s*\d+\s*[:：]?\s*/i, '').trim();
+            }
+            
+            // 각 섹션 추출
+            const sections = {};
+            const sectionRegex = /<div[^>]*class="route-section"[^>]*>([\s\S]*?)(?=<div[^>]*class="route-section"|<div[^>]*class="question-advice"|$)/gi;
+            let sectionMatches = [...block.matchAll(sectionRegex)];
+            
+            sectionMatches.forEach(match => {
+                const sectionContent = match[1];
+                const typeMatch = sectionContent.match(/class="route-title"[^>]*>([^<]+)/i);
+                const contentMatch = sectionContent.match(/class="route-content"[^>]*>([\s\S]*?)(?=<\/div>\s*$|<\/div>\s*<)/i);
+                
+                if (typeMatch && contentMatch) {
+                    const type = typeMatch[1].replace(/[💫🔮📅🏠💑✨]/g, '').trim();
+                    const content = contentMatch[1].trim();
+                    
+                    if (type.includes('명리')) sections.myeongri = content;
+                    else if (type.includes('주역')) sections.juyeok = content;
+                    else if (type.includes('택일')) sections.taegil = content;
+                    else if (type.includes('풍수')) sections.pungsu = content;
+                    else if (type.includes('궁합')) sections.gunghap = content;
+                }
+            });
+            
+            // 핵심 조언 추출
+            const adviceMatch = block.match(/class="question-advice"[^>]*>([\s\S]*?)(?=<\/div>\s*$|<\/div>\s*<\/div>)/i);
+            if (adviceMatch) {
+                sections.advice = adviceMatch[1].replace(/<[^>]+>/g, '').replace(/💡\s*핵심\s*조언\s*[:：]?\s*/i, '').trim();
+            }
+            
+            if (title || Object.keys(sections).length > 0) {
+                return { num, title: title || `질문 ${num}`, ...sections };
+            }
+            return null;
+        }
+        
+        function parseMarkdownBlock(title, content, num) {
+            const sections = {};
+            
+            // ### 섹션 파싱
+            const sectionRegex = /###\s*([^\n]+)\n([\s\S]*?)(?=###|$)/gi;
+            let matches = [...content.matchAll(sectionRegex)];
+            
+            matches.forEach(match => {
+                const sectionTitle = match[1].trim();
+                const sectionContent = match[2].trim();
+                
+                if (sectionTitle.includes('명리')) sections.myeongri = sectionContent;
+                else if (sectionTitle.includes('주역')) sections.juyeok = sectionContent;
+                else if (sectionTitle.includes('택일')) sections.taegil = sectionContent;
+                else if (sectionTitle.includes('풍수')) sections.pungsu = sectionContent;
+                else if (sectionTitle.includes('궁합')) sections.gunghap = sectionContent;
+                else if (sectionTitle.includes('조언') || sectionTitle.includes('핵심')) sections.advice = sectionContent;
+            });
+            
+            return { num, title, ...sections };
+        }
+        
+        function parseSingleQuestion(input) {
+            const sections = {};
+            
+            // 제목 찾기
+            let title = '추가 질문';
+            const titleMatch = input.match(/질문\s*\d*\s*[:：]\s*([^\n<]+)/i);
+            if (titleMatch) title = titleMatch[1].trim();
+            
+            // HTML 형식 섹션
+            const htmlSections = input.match(/<div[^>]*class="route-section"[^>]*>[\s\S]*?<\/div>\s*<\/div>/gi);
+            if (htmlSections) {
+                htmlSections.forEach(section => {
+                    const typeMatch = section.match(/route-title[^>]*>([^<]+)/i);
+                    const contentMatch = section.match(/route-content[^>]*>([\s\S]*?)<\/div>/i);
+                    if (typeMatch && contentMatch) {
+                        const type = typeMatch[1];
+                        if (type.includes('명리')) sections.myeongri = contentMatch[1].trim();
+                        else if (type.includes('주역')) sections.juyeok = contentMatch[1].trim();
+                        else if (type.includes('택일')) sections.taegil = contentMatch[1].trim();
+                        else if (type.includes('풍수')) sections.pungsu = contentMatch[1].trim();
+                        else if (type.includes('궁합')) sections.gunghap = contentMatch[1].trim();
+                    }
+                });
+            }
+            
+            // 조언
+            const adviceMatch = input.match(/핵심\s*조언[^:：]*[:：]\s*([\s\S]*?)(?=<\/div>|$)/i);
+            if (adviceMatch) sections.advice = adviceMatch[1].replace(/<[^>]+>/g, '').trim();
+            
+            if (Object.keys(sections).length > 0) {
+                return { num: 1, title, ...sections };
+            }
+            return null;
+        }
+        
+        function renderResult() {
+            const container = document.getElementById('previewContent');
+            
+            let html = `<div class="result-container">`;
+            
+            // 헤더
+            const birthDisplay = metaInfo.birthFull ? 
+                `${metaInfo.year || ''}년 ${metaInfo.month || ''}월 ${metaInfo.day || ''}일 ${metaInfo.hour ? metaInfo.hour + '시' : ''} ${metaInfo.minute ? metaInfo.minute + '분' : ''} (${metaInfo.calendar || '양력'}, ${metaInfo.gender === '여' ? '여자' : '남자'})` : '';
+            
+            html += `
+                <div class="qa-header">
+                    <div class="top-line"></div>
+                    <div class="brand">운 명 을 듣 다</div>
+                    <div class="icon-circle">🔮</div>
+                    <h1>추가질문</h1>
+                    <div class="subtitle">ADDITIONAL Q&A</div>
+                    <div class="divider"></div>
+                    <div class="user-section">
+                        ${metaInfo.name ? `<div class="user-name">${metaInfo.name}님</div>` : ''}
+                        ${birthDisplay ? `<div class="user-birth">${birthDisplay}</div>` : ''}
+                        ${metaInfo.ilju ? `<div class="user-ilju">${metaInfo.ilju}일주</div>` : ''}
+                        <div class="count-badge">총 ${parsedQuestions.length}개의 질문</div>
+                    </div>
+                </div>
+            `;
+            
+            // 인트로 설명 박스
+            html += `
+                <div class="intro-box">
+                    <div class="intro-icon">🔮</div>
+                    <div class="intro-title">추가 질문 답변을 시작합니다</div>
+                    <div class="intro-desc">
+                        ${metaInfo.name || '고객'}님의 사주 원국을 바탕으로,<br>
+                        보내주신 질문 하나하나에 정성껏 답변드렸어요.<br>
+                        <strong>명리 해석, 주역의 지혜, 그리고 택일 조언</strong>까지 담았습니다.<br><br>
+                        천천히 읽어보시며, 마음에 와닿는 부분을 찾아보세요 ✨
+                    </div>
+                </div>
+            `;
+            
+            // 각 질문 카드
+            parsedQuestions.forEach((q, idx) => {
+                html += `
+                    <div class="question-card">
+                        <div class="question-card-header">
+                            <div class="question-number">${q.num || idx + 1}</div>
+                            <div class="question-title">${escapeHTML(q.title)}</div>
+                        </div>
+                        <div class="question-card-body">
+                `;
+                
+                // 명리 해석
+                if (q.myeongri) {
+                    html += `
+                        <div class="interpretation-section">
+                            <div class="interpretation-header">
+                                <div class="interpretation-icon myeongri">💫</div>
+                                <div class="interpretation-title">명리 해석</div>
+                            </div>
+                            <div class="interpretation-content">${formatContent(q.myeongri)}</div>
+                        </div>
+                    `;
+                }
+                
+                // 주역 해석
+                if (q.juyeok) {
+                    html += `
+                        <div class="interpretation-section">
+                            <div class="interpretation-header">
+                                <div class="interpretation-icon juyeok">🔮</div>
+                                <div class="interpretation-title">주역 해석</div>
+                            </div>
+                            <div class="interpretation-content">${formatContent(q.juyeok)}</div>
+                        </div>
+                    `;
+                }
+                
+                // 택일 조언
+                if (q.taegil) {
+                    html += `
+                        <div class="interpretation-section">
+                            <div class="interpretation-header">
+                                <div class="interpretation-icon taegil">📅</div>
+                                <div class="interpretation-title">택일 조언</div>
+                            </div>
+                            <div class="interpretation-content">${formatContent(q.taegil)}</div>
+                        </div>
+                    `;
+                }
+                
+                // 풍수 조언
+                if (q.pungsu) {
+                    html += `
+                        <div class="interpretation-section">
+                            <div class="interpretation-header">
+                                <div class="interpretation-icon pungsu">🏠</div>
+                                <div class="interpretation-title">풍수 조언</div>
+                            </div>
+                            <div class="interpretation-content">${formatContent(q.pungsu)}</div>
+                        </div>
+                    `;
+                }
+                
+                // 궁합 심화 안내
+                if (q.gunghap) {
+                    html += `
+                        <div class="interpretation-section">
+                            <div class="interpretation-header">
+                                <div class="interpretation-icon gunghap">💑</div>
+                                <div class="interpretation-title">궁합 심화 안내</div>
+                            </div>
+                            <div class="interpretation-content">${formatContent(q.gunghap)}</div>
+                        </div>
+                    `;
+                }
+                
+                html += `</div>`; // question-card-body
+                
+                // 핵심 조언
+                if (q.advice) {
+                    html += `
+                        <div class="advice-box">
+                            <div class="advice-box-header">
+                                <span class="icon">💡</span>
+                                <span class="title">핵심 조언</span>
+                            </div>
+                            <div class="advice-box-content">${formatContent(q.advice)}</div>
+                        </div>
+                    `;
+                }
+                
+                html += `</div>`; // question-card
+            });
+            
+            // 종합 요약 (있을 경우에만)
+            if (summaryContent) {
+                // HTML 구조 내부의 마크다운만 변환하는 함수
+                const convertMarkdownInHTML = (html) => {
+                    return html
+                        // **텍스트** → <strong>텍스트</strong>
+                        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                        // *텍스트* → <em>텍스트</em> (단, **는 제외)
+                        .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>');
+                };
+                
+                // 이미 HTML 구조가 있으면 마크다운만 변환해서 사용
+                if (summaryContent.includes('class="final-summary"') || 
+                    summaryContent.includes('class="summary') ||
+                    summaryContent.includes('class="total')) {
+                    html += convertMarkdownInHTML(summaryContent);
+                } else {
+                    html += `
+                        <div class="summary-section">
+                            <div class="section-title">
+                                <span class="icon">✨</span>
+                                <h3>전체 종합</h3>
+                            </div>
+                            <div class="summary-content">${formatContent(summaryContent)}</div>
+                        </div>
+                    `;
+                }
+            }
+            
+            // 행운 키워드 (luck-point)
+            if (luckPointContent) {
+                html += luckPointContent;
+            }
+            
+            // 행운 아이템 (luck-items)
+            if (luckItemsContent) {
+                html += luckItemsContent;
+            }
+            
+            // 푸터
+            html += `
+                <div class="qa-footer">
+                    <div class="divider"></div>
+                    <div class="brand">운명을 듣다</div>
+                    <div class="message">
+                        당신의 질문에 우주가 답합니다 ✨<br>
+                        오늘의 해석이 도움이 되셨길 바랍니다.
+                    </div>
+                    <div class="consultation-box">
+                        <div class="consult-title">✨ 혹시, 아직 풀리지 않은 마음이 있으신가요?</div>
+                        <div class="consult-desc">
+                            글로 다 담지 못한 이야기,<br>
+                            지금 이 순간 가장 무거운 고민,<br>
+                            직접 대화로 풀어보고 싶으시다면 —<br><br>
+                            전문 상담사와 1:1로 이야기 나눠보세요.<br>
+                            카카오톡 채팅으로 편하게 진행됩니다.
+                        </div>
+                        <div class="consult-cta">
+                            <div class="cta-title">💬 심화 상담 신청</div>
+                            <div class="cta-price">
+                                <span class="original">정가 100,000원</span> → 
+                                <span class="discount">결과지 고객 전용 70,000원</span>
+                            </div>
+                            <div class="cta-action">카카오채널에서 "심화상담 신청"이라고 남겨주세요</div>
+                        </div>
+                    </div>
+                    <a href="http://pf.kakao.com/_LcJxgn/friend" target="_blank" style="text-decoration:none;">
+                        <div class="channel-box">
+                            <div class="icon">💬</div>
+                            <div class="title">카카오톡 채널 추가하기</div>
+                            <div class="desc">
+                                채널을 추가하시면 <strong>할인 쿠폰</strong> 소식과<br>
+                                <strong>새로운 서비스 출시</strong> 시 바로 알려드립니다!
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            `;
+            
+            html += `</div>`; // result-container
+            
+            container.innerHTML = html;
+        }
+        
+        function formatContent(text) {
+            if (!text) return '';
+            
+            // 이미 HTML 구조가 풍부하면 최소한의 정리만
+            if (text.includes('<div') || text.includes('<p>') || text.includes('<ul>')) {
+                return text
+                    .replace(/\n{3,}/g, '\n\n')
+                    .trim();
+            }
+            
+            return text
+                // 볼드 (마크다운 → HTML, 기존 strong 유지)
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                // 이탤릭 (마크다운 → HTML, 기존 em 유지)
+                .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>')
+                // 리스트
+                .replace(/^[-•]\s+(.+)$/gm, '<li>$1</li>')
+                .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+                // 인용
+                .replace(/^>\s*"(.+)"$/gm, '<blockquote>"$1"</blockquote>')
+                .replace(/^>\s+(.+)$/gm, '<blockquote>$1</blockquote>')
+                // 줄바꿈 (기존 br 유지하면서 추가)
+                .replace(/\n\n+/g, '</p><p>')
+                .replace(/(?<!<br\s*\/?>)\n(?!<)/g, '<br>')
+                // 빈 태그 정리
+                .replace(/<p><\/p>/g, '')
+                .replace(/<ul><\/ul>/g, '');
+        }
+        
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, (m) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[m]);
+        }
+        
+        function showParseResult(type, message, extra = '') {
+            const result = document.getElementById('parseResult');
+            const msgEl = document.getElementById('parseMessage');
+            const listEl = document.getElementById('questionList');
+            
+            result.className = `parse-result show ${type}`;
+            msgEl.innerHTML = message;
+            listEl.innerHTML = extra;
+        }
+        
+        // Google Drive 업로드 함수
+        async function uploadToNetlify() {
+            const content = document.getElementById('previewContent').innerHTML;
+            if (content.includes('empty-state')) { alert('먼저 결과지를 생성해주세요.'); return; }
+            
+            if (!metaInfo.orderCode) {
+                alert('주문코드가 없습니다. 고객 정보를 먼저 불러와주세요.');
+                return;
+            }
+            
+            const statusEl = document.getElementById('upload-status');
+            statusEl.textContent = '⏳ Google Drive 업로드 중...';
+            
+            try {
+                // 결과물 HTML 생성
+                const styles = document.getElementById('resultStyles').textContent;
+                
+                // 플로팅 다운로드 버튼 (data URI 방식 - 모바일/Google Drive 호환)
+                const downloadBtn = `
+                    <button onclick="(function(){
+                        var html = document.documentElement.outerHTML;
+                        var dataUri = 'data:text/html;charset=utf-8,' + encodeURIComponent('<!DOCTYPE html>'+html);
+                        var a = document.createElement('a');
+                        a.href = dataUri;
+                        a.download = '추가질문결과.html';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    })()" style="position:fixed;bottom:20px;left:20px;z-index:9999;width:50px;height:50px;background:linear-gradient(135deg,#d4af82,#b8956a);border-radius:50%;display:flex;align-items:center;justify-content:center;border:none;font-size:22px;box-shadow:0 4px 15px rgba(0,0,0,0.3);cursor:pointer;" title="결과지 다운로드">📥</button>`;
+                
+                const fullHTML = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${metaInfo.name || '고객'}님의 추가질문 답변 | 운명을 듣다</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Nanum Myeongjo', serif; background: #f8f6f1; }
+        ${styles}
+    </style>
+</head>
+<body>
+    ${content}
+    ${downloadBtn}
+</body>
+</html>`;
+                
+                // Base64 인코딩
+                const base64Data = btoa(unescape(encodeURIComponent(fullHTML)));
+                const fileName = `${metaInfo.orderCode}_추가질문결과.html`;
+                
+                // Google Apps Script API 호출 (POST 방식)
+                const webAppUrl = 'https://script.google.com/macros/s/AKfycbzlnTB3d3tO_qvRNKgiLkGgy3EmH_92eYslv4mODGzV7QCiVHYTDLEl4duNlp3PO_kclA/exec';
+                
+                const response = await fetch(webAppUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        action: 'uploadResult',
+                        orderCode: metaInfo.orderCode,
+                        fileName: fileName,
+                        fileData: base64Data,
+                        resultType: 'additional'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || '업로드 실패');
+                }
+                
+                const fileUrl = result.fileUrl;
+                
+                // 클립보드 복사 시도 (실패해도 링크는 표시)
+                let copied = false;
+                try {
+                    await navigator.clipboard.writeText(fileUrl);
+                    copied = true;
+                } catch (clipErr) {
+                    console.log('클립보드 복사 실패 (모바일 제한):', clipErr);
+                }
+                
+                statusEl.innerHTML = '✅ <a href="' + fileUrl + '" target="_blank" style="color:#00ad9f;">' + fileUrl + '</a>' + (copied ? ' (복사됨!)' : '');
+                alert('🎉 링크가 생성되었습니다!\n\n' + fileUrl + (copied ? '\n\n클립보드에 복사되었어요.' : '\n\n위 링크를 길게 눌러 복사하세요.'));
+                
+            } catch (error) {
+                console.error(error);
+                statusEl.textContent = '❌ 업로드 실패';
+                alert('업로드 실패: ' + error.message);
+            }
+        }
+        
+        // ★ Google Sheets에 추가질문 결과 URL 저장 (uploadResult에서 자동 저장되므로 백업용)
+        function saveAdditionalResultUrl(orderCode, url) {
+            const webAppUrl = 'https://script.google.com/macros/s/AKfycbzlnTB3d3tO_qvRNKgiLkGgy3EmH_92eYslv4mODGzV7QCiVHYTDLEl4duNlp3PO_kclA/exec';
+            const apiUrl = `${webAppUrl}?action=saveResultUrl&orderCode=${encodeURIComponent(orderCode)}&resultType=additional&url=${encodeURIComponent(url)}`;
+            
+            // form POST 방식 (CORS 우회)
+            const iframeName = 'saveFrame_' + Date.now();
+            const iframe = document.createElement('iframe');
+            iframe.name = iframeName;
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = webAppUrl;
+            form.target = iframeName;
+            form.style.display = 'none';
+            
+            const params = {
+                action: 'saveResultUrl',
+                orderCode: orderCode,
+                resultType: 'additional',
+                url: url
+            };
+            
+            for (const key in params) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = params[key];
+                form.appendChild(input);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+            
+            console.log('✅ 추가질문 결과 URL 자동 저장:', orderCode);
+            
+            // 정리 (3초 후)
+            setTimeout(() => {
+                if (form.parentNode) form.parentNode.removeChild(form);
+                if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+            }, 3000);
+        }
+        
+        function downloadHTML() {
+            const content = document.getElementById('previewContent').innerHTML;
+            if (content.includes('empty-state')) {
+                alert('먼저 결과지를 생성해주세요.');
+                return;
+            }
+            
+            const styles = document.getElementById('resultStyles').textContent;
+            const fullHTML = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${metaInfo.name || '고객'}님의 추가질문 답변 | 운명을 듣다</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Nanum Myeongjo', serif; background: #f8f6f1; }
+        ${styles}
+    </style>
+</head>
+<body>
+    ${content}
+</body>
+</html>`;
+            
+            const dataUri = 'data:text/html;charset=utf-8,' + encodeURIComponent(fullHTML);
+            const a = document.createElement('a');
+            a.href = dataUri;
+            a.download = `${metaInfo.name || '고객'}_추가질문답변_${metaInfo.year || ''}${metaInfo.month || ''}${metaInfo.day || ''}.html`;
+            a.click();
+        }
+        
+        function clearInput() {
+            document.getElementById('claudeInput').value = '';
+            document.getElementById('parseResult').className = 'parse-result';
+            document.getElementById('previewContent').innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">🔮</div>
+                    <p>Claude 추가질문 답변을 붙여넣으면<br>결과지가 생성됩니다</p>
+                </div>
+            `;
+            parsedQuestions = [];
+            metaInfo = {};
+            summaryContent = '';
+            luckPointContent = '';
+            luckItemsContent = '';
+        }
+    </script>
+<!-- 플로팅 관리자 버튼 -->
+<a href="index.html" style="position:fixed; bottom:20px; right:20px; z-index:9999; width:50px; height:50px; background:linear-gradient(135deg,#d4af82,#b8956a); border-radius:50%; display:flex; align-items:center; justify-content:center; text-decoration:none; font-size:24px; box-shadow:0 4px 15px rgba(0,0,0,0.3);">🏠</a>
+</body>
+</html>

@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인연상 생성기 - Step 4</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Serif KR', serif;
+            background: linear-gradient(135deg, #f5f0e8 0%, #e8e0d0 100%);
+            min-height: 100vh;
+            color: #2d2418;
+            padding: 20px;
+        }
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: linear-gradient(180deg, #fdfbf7 0%, #f8f4eb 100%);
+            border: 2px solid #8b7355;
+            border-radius: 12px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.18);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c2416 0%, #4a3c2a 100%);
+            color: #f0e6d3;
+            text-align: center;
+            padding: 35px 20px;
+            position: relative;
+        }
+        .header::after {
+            content: '緣';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 120px;
+            opacity: 0.05;
+        }
+        .header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 6px;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+            color: #f0e6d3;
+            background: none;
+        }
+        .header .subtitle {
+            font-size: 13px;
+            opacity: 0.8;
+            letter-spacing: 2px;
+            color: #d4c5a9;
+        }
+        .content-area {
+            padding: 30px;
+        }
+        
+        /* 입력 패널 */
+        .input-panel {
+            display: none;
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 30px;
+            border: 1px solid #e0d5c5;
+        }
+        .input-panel.active {
+            display: block;
+        }
+        
+        /* JSON 복붙 모드 */
+        .json-input {
+            width: 100%;
+            height: 300px;
+            padding: 16px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9em;
+            border-radius: 8px;
+            border: 1px solid #d4c5a9;
+            background: #f9f6ef;
+            color: #4a7c59;
+            resize: vertical;
+        }
+        .json-input::placeholder {
+            color: #8b7a60;
+        }
+        
+        /* 붙여넣기 버튼 */
+        .paste-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 12px;
+            font-size: 1em;
+            background: linear-gradient(135deg, #e8e0d0 0%, #d8d0c0 100%);
+            border: 1px solid #c8c0b0;
+            border-radius: 8px;
+            color: #5a4a3a;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+        .paste-btn:hover {
+            background: linear-gradient(135deg, #d8d0c0 0%, #c8c0b0 100%);
+        }
+        
+        /* 생성 버튼 */
+        .generate-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 16px 48px;
+            font-size: 1.2em;
+            background: linear-gradient(135deg, #8b7355 0%, #6b5744 100%);
+            border: none;
+            border-radius: 30px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(107, 87, 68, 0.4);
+        }
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(107, 87, 68, 0.6);
+        }
+        
+        /* 결과 영역 */
+        #result-section {
+            display: none;
+            margin-top: 30px;
+        }
+        #result-section.show {
+            display: block;
+        }
+        
+        /* 결과 박스 */
+        .result-box {
+            max-width: 900px;
+            width: calc(100% - 40px);
+            margin: 0 auto 30px;
+            padding: 30px;
+            background: #fff;
+            border-radius: 24px;
+            border: 1px solid #e0d5c5;
+        }
+        
+        /* 본인 정보 */
+        .user-info {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0d5c5;
+        }
+        .user-info h2 {
+            color: #2d2418;
+            font-weight: 400;
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+        .user-info p {
+            color: #8b7a60;
+            font-size: 14px;
+        }
+        
+        /* 성별 그룹 (둘다용) */
+        .gender-group {
+            margin-bottom: 30px;
+        }
+        .gender-group:last-child {
+            margin-bottom: 0;
+        }
+        .gender-label {
+            text-align: center;
+            color: #5a4a3a;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .gender-label span {
+            font-size: 18px;
+            margin-right: 6px;
+        }
+        
+        /* 카드 컨테이너 */
+        .cards-row {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: nowrap;
+            padding: 0 20px;
+        }
+        .card-wrapper {
+            text-align: center;
+            flex: 0 0 auto;
+        }
+        .card-label {
+            color: #2d2418;
+            font-size: 16px;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+        }
+        .card-label span {
+            font-size: 20px;
+            margin-right: 8px;
+        }
+        
+        /* 모바일 대응 - 2개씩 유지 */
+        @media (max-width: 600px) {
+            .result-box {
+                width: calc(100% - 20px);
+                padding: 15px;
+            }
+            .cards-row {
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+                padding: 0;
+            }
+            .card-wrapper {
+                flex: 0 0 auto;
+            }
+            .card {
+                width: 145px;
+                height: 225px;
+            }
+            .card-label {
+                font-size: 10px;
+                letter-spacing: 1px;
+            }
+            .element-label {
+                font-size: 8px;
+            }
+            .character-area {
+                width: 85px;
+                height: 110px;
+            }
+            .character-area svg {
+                width: 100%;
+                height: 100%;
+            }
+            .element-badge {
+                padding: 3px 10px;
+                font-size: 11px;
+            }
+            .element-name {
+                font-size: 12px;
+            }
+            .element-desc {
+                font-size: 9px;
+            }
+            .napeum-info {
+                font-size: 8px;
+            }
+            .user-info h2 {
+                font-size: 14px;
+            }
+            .user-info p {
+                font-size: 10px;
+            }
+            .gender-label {
+                font-size: 11px;
+            }
+            .content {
+                padding: 12px;
+            }
+        }
+        
+        /* HTML 복사 버튼 */
+        .copy-btn {
+            display: block;
+            margin: 20px auto 0;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #8b7355 0%, #6b5744 100%);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(107,87,68,0.4);
+        }
+        .copy-btn.copied {
+            background: linear-gradient(135deg, #4a7c59, #5a9a6a);
+        }
+        .card {
+            width: 260px;
+            height: 400px;
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover { transform: translateY(-8px); }
+        
+        /* 중간 화면 대응 */
+        @media (max-width: 700px) {
+            .card {
+                width: 200px;
+                height: 310px;
+            }
+            .cards-row {
+                gap: 15px;
+            }
+            .user-info h2 {
+                font-size: 20px;
+            }
+            .user-info p {
+                font-size: 13px;
+            }
+            .card-label {
+                font-size: 14px;
+            }
+            .character-area {
+                margin-top: -10px;
+            }
+            .character-area svg {
+                transform: scale(0.85);
+            }
+            .element-badge {
+                padding: 5px 14px;
+                font-size: 13px;
+            }
+            .element-name {
+                font-size: 14px;
+            }
+            .element-desc {
+                font-size: 11px;
+            }
+        }
+
+        /* 배경 글로우 */
+        .bg-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.4;
+        }
+
+        /* 별 효과 */
+        .stars {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+        }
+        .star {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s ease-in-out infinite;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.2); }
+        }
+
+        /* 컨텐츠 */
+        .content {
+            position: relative;
+            z-index: 10;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px 20px;
+        }
+        .element-label {
+            font-size: 11px;
+            letter-spacing: 3px;
+            opacity: 0.6;
+            margin-bottom: 8px;
+            font-weight: 300;
+        }
+        .character-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .char-glow {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.5;
+        }
+        .character-area svg {
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+        .info {
+            text-align: center;
+            margin-top: auto;
+        }
+        .element-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 20px;
+            font-weight: 400;
+            backdrop-filter: blur(10px);
+        }
+        .element-name {
+            font-size: 15px;
+            font-weight: 500;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+        .element-desc {
+            font-size: 11px;
+            opacity: 0.5;
+            font-weight: 300;
+            line-height: 1.5;
+            max-width: 200px;
+        }
+        .napeum-info {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 10px;
+            opacity: 0.4;
+            letter-spacing: 0.5px;
+        }
+
+        /* ========== 금(金) ========== */
+        .card-금 {
+            background: linear-gradient(180deg, #2a2a3e 0%, #1e1e30 100%);
+            box-shadow: 0 10px 40px rgba(200, 200, 230, 0.15);
+        }
+        .card-금 .bg-glow { background: rgba(210, 210, 240, 0.5); }
+        .card-금 .char-glow { background: rgba(200, 200, 230, 0.4); }
+        .card-금 .element-label, .card-금 .element-name, .card-금 .element-desc { color: #e8e8f8; }
+        .card-금 .element-badge { 
+            background: rgba(200, 200, 230, 0.15); 
+            border: 1px solid rgba(200, 200, 230, 0.3); 
+            color: #e8e8f8;
+            box-shadow: 0 0 20px rgba(200, 200, 230, 0.2);
+        }
+        .card-금 .star { background: #e8e8ff; }
+        .card-금 .napeum-info { color: #e8e8f8; }
+
+        /* ========== 목(木) ========== */
+        .card-목 {
+            background: linear-gradient(180deg, #1a2a1a 0%, #152015 100%);
+            box-shadow: 0 10px 40px rgba(100, 180, 100, 0.15);
+        }
+        .card-목 .bg-glow { background: rgba(120, 200, 120, 0.5); }
+        .card-목 .char-glow { background: rgba(100, 180, 100, 0.4); }
+        .card-목 .element-label, .card-목 .element-name, .card-목 .element-desc { color: #d0f0d0; }
+        .card-목 .element-badge { 
+            background: rgba(100, 180, 100, 0.15); 
+            border: 1px solid rgba(100, 180, 100, 0.3); 
+            color: #d0f0d0;
+            box-shadow: 0 0 20px rgba(100, 180, 100, 0.2);
+        }
+        .card-목 .star { background: #c0ffc0; }
+        .card-목 .napeum-info { color: #d0f0d0; }
+
+        /* ========== 수(水) ========== */
+        .card-수 {
+            background: linear-gradient(180deg, #1a1a3e 0%, #151528 100%);
+            box-shadow: 0 10px 40px rgba(100, 150, 255, 0.15);
+        }
+        .card-수 .bg-glow { background: rgba(120, 170, 255, 0.5); }
+        .card-수 .char-glow { background: rgba(100, 150, 255, 0.4); }
+        .card-수 .element-label, .card-수 .element-name, .card-수 .element-desc { color: #d0e0ff; }
+        .card-수 .element-badge { 
+            background: rgba(100, 150, 255, 0.15); 
+            border: 1px solid rgba(100, 150, 255, 0.3); 
+            color: #d0e0ff;
+            box-shadow: 0 0 20px rgba(100, 150, 255, 0.2);
+        }
+        .card-수 .star { background: #c0d8ff; }
+        .card-수 .napeum-info { color: #d0e0ff; }
+
+        /* ========== 화(火) ========== */
+        .card-화 {
+            background: linear-gradient(180deg, #2e1a1a 0%, #281515 100%);
+            box-shadow: 0 10px 40px rgba(255, 120, 100, 0.15);
+        }
+        .card-화 .bg-glow { background: rgba(255, 140, 120, 0.5); }
+        .card-화 .char-glow { background: rgba(255, 120, 100, 0.4); }
+        .card-화 .element-label, .card-화 .element-name, .card-화 .element-desc { color: #ffe0d8; }
+        .card-화 .element-badge { 
+            background: rgba(255, 120, 100, 0.15); 
+            border: 1px solid rgba(255, 120, 100, 0.3); 
+            color: #ffe0d8;
+            box-shadow: 0 0 20px rgba(255, 120, 100, 0.2);
+        }
+        .card-화 .star { background: #ffc8c0; }
+        .card-화 .napeum-info { color: #ffe0d8; }
+
+        /* ========== 토(土) ========== */
+        .card-토 {
+            background: linear-gradient(180deg, #2a2518 0%, #1a1508 100%);
+            box-shadow: 0 10px 40px rgba(200, 160, 100, 0.15);
+        }
+        .card-토 .bg-glow { background: rgba(210, 170, 120, 0.5); }
+        .card-토 .char-glow { background: rgba(200, 160, 100, 0.4); }
+        .card-토 .element-label, .card-토 .element-name, .card-토 .element-desc { color: #f0e0c8; }
+        .card-토 .element-badge { 
+            background: rgba(200, 160, 100, 0.15); 
+            border: 1px solid rgba(200, 160, 100, 0.3); 
+            color: #f0e0c8;
+            box-shadow: 0 0 20px rgba(200, 160, 100, 0.2);
+        }
+        .card-토 .star { background: #ffd090; }
+        .card-토 .napeum-info { color: #f0e0c8; }
+        
+        /* 에러 메시지 */
+        .error-msg {
+            background: rgba(255,100,100,0.2);
+            border: 1px solid rgba(255,100,100,0.5);
+            padding: 12px;
+            border-radius: 8px;
+            color: #ff8888;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+        .error-msg.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="header">
+            <h1>🎨 인연상 생성기</h1>
+            <p class="subtitle">Step 4 | 인연상 · 배우자상 이미지 생성</p>
+        </div>
+        
+        <div class="content-area">
+        <!-- JSON 복붙 모드 패널 -->
+        <div id="panel-json" class="input-panel active">
+            <div style="margin-bottom:15px;">
+                <label style="color:#e8e0d8; font-size:14px; margin-bottom:8px; display:block;">👤 고객 이름 (localStorage 저장용)</label>
+                <input type="text" id="customer-name-input" placeholder="예: 김철수" style="width:100%; max-width:300px; padding:12px 15px; border:1px solid rgba(255,255,255,0.15); border-radius:8px; background:rgba(0,0,0,0.3); color:#fff; font-size:15px; box-sizing:border-box;">
+            </div>
+            <button class="paste-btn" onclick="pasteFromClipboard()">📋 클립보드에서 붙여넣기</button>
+            <textarea id="json-input" class="json-input" placeholder='인연상 계산기 결과 JSON을 여기에 붙여넣기...
+
+예시:
+{
+  "입력": { "일주": "甲子", "본인성별": "남", "상대성별": "여" },
+  "인연상": {
+    "오행": "수",
+    "도출납음": "대해수",
+    "외모": { "얼굴형": "...", "눈": "...", "피부톤": "...", "분위기": "..." }
+  },
+  "배우자상": { ... }
+}'></textarea>
+            <div id="json-error" style="color:#c75050; font-size:14px; margin-top:10px;"></div>
+            <button class="generate-btn" onclick="generateFromJSON()">✨ 생성하기</button>
+        </div>
+        
+        <!-- 결과 영역 -->
+        <div id="result-section">
+            <div id="result-content"></div>
+            <button class="copy-btn" onclick="copyResultHTML()">📋 HTML 복사하기</button>
+        </div>
+        </div>
+    </div>
+    
+    <a href="index.html" style="position:fixed; bottom:20px; right:20px; z-index:9999; width:50px; height:50px; background:linear-gradient(135deg,#d4af82,#b8956a); border-radius:50%; display:flex; align-items:center; justify-content:center; text-decoration:none; font-size:24px; box-shadow:0 4px 15px rgba(0,0,0,0.3);">🏠</a>
+
+<script>
+// ============================================
+// 클립보드에서 붙여넣기
+// ============================================
+async function pasteFromClipboard() {
+    try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('json-input').value = text;
+        // 에러 메시지 초기화
+        document.getElementById('json-error').textContent = '';
+    } catch (err) {
+        alert('클립보드 접근 실패. 직접 붙여넣기 해주세요.');
+    }
+}
+
+// ============================================
+// 60갑자 목록
+// ============================================
+const gapjaList = [
+    "甲子", "乙丑", "丙寅", "丁卯", "戊辰", "己巳", "庚午", "辛未", "壬申", "癸酉",
+    "甲戌", "乙亥", "丙子", "丁丑", "戊寅", "己卯", "庚辰", "辛巳", "壬午", "癸未",
+    "甲申", "乙酉", "丙戌", "丁亥", "戊子", "己丑", "庚寅", "辛卯", "壬辰", "癸巳",
+    "甲午", "乙未", "丙申", "丁酉", "戊戌", "己亥", "庚子", "辛丑", "壬寅", "癸卯",
+    "甲辰", "乙巳", "丙午", "丁未", "戊申", "己酉", "庚戌", "辛亥", "壬子", "癸丑",
+    "甲寅", "乙卯", "丙辰", "丁巳", "戊午", "己未", "庚申", "辛酉", "壬戌", "癸亥"
+];
+
+// 갑자 → 납음 매핑
+const gapjaNapeum = {
+    "甲子": "해중금", "乙丑": "해중금", "丙寅": "노중화", "丁卯": "노중화", "戊辰": "대림목", "己巳": "대림목",
+    "庚午": "노방토", "辛未": "노방토", "壬申": "검봉금", "癸酉": "검봉금", "甲戌": "산두화", "乙亥": "산두화",
+    "丙子": "간하수", "丁丑": "간하수", "戊寅": "성두토", "己卯": "성두토", "庚辰": "백납금", "辛巳": "백납금",
+    "壬午": "양류목", "癸未": "양류목", "甲申": "천중수", "乙酉": "천중수", "丙戌": "옥상토", "丁亥": "옥상토",
+    "戊子": "벽력화", "己丑": "벽력화", "庚寅": "송백목", "辛卯": "송백목", "壬辰": "장류수", "癸巳": "장류수",
+    "甲午": "사중금", "乙未": "사중금", "丙申": "산하화", "丁酉": "산하화", "戊戌": "평지목", "己亥": "평지목",
+    "庚子": "벽상토", "辛丑": "벽상토", "壬寅": "금박금", "癸卯": "금박금", "甲辰": "복등화", "乙巳": "복등화",
+    "丙午": "천하수", "丁未": "천하수", "戊申": "대역토", "己酉": "대역토", "庚戌": "차천금", "辛亥": "차천금",
+    "壬子": "상자목", "癸丑": "상자목", "甲寅": "대계수", "乙卯": "대계수", "丙辰": "사중토", "丁巳": "사중토",
+    "戊午": "천상화", "己未": "천상화", "庚申": "석류목", "辛酉": "석류목", "壬戌": "대해수", "癸亥": "대해수"
+};
+
+// 납음 → 오행 매핑
+const napeumToOhang = {
+    "해중금": "금", "사중금": "금", "백납금": "금", "금박금": "금", "검봉금": "금", "차천금": "금",
+    "대림목": "목", "양류목": "목", "송백목": "목", "평지목": "목", "상자목": "목", "석류목": "목",
+    "간하수": "수", "대계수": "수", "장류수": "수", "천하수": "수", "대해수": "수", "천중수": "수",
+    "노중화": "화", "산두화": "화", "벽력화": "화", "복등화": "화", "천상화": "화", "산하화": "화",
+    "노방토": "토", "성두토": "토", "옥상토": "토", "벽상토": "토", "대역토": "토", "사중토": "토"
+};
+
+// 한자 → 한글 변환
+const hanjaToHangul = {
+    "海中金": "해중금", "沙中金": "사중금", "白蠟金": "백납금", "金箔金": "금박금", "劍鋒金": "검봉금", "釵釧金": "차천금",
+    "大林木": "대림목", "楊柳木": "양류목", "松柏木": "송백목", "平地木": "평지목", "桑拓木": "상자목", "石榴木": "석류목",
+    "澗下水": "간하수", "大溪水": "대계수", "長流水": "장류수", "天河水": "천하수", "大海水": "대해수", "泉中水": "천중수",
+    "炉中火": "노중화", "山頭火": "산두화", "霹靂火": "벽력화", "覆燈火": "복등화", "天上火": "천상화", "山下火": "산하화",
+    "路傍土": "노방토", "城頭土": "성두토", "屋上土": "옥상토", "壁上土": "벽상토", "大驛土": "대역토", "沙中土": "사중토"
+};
+
+// 오행별 한자/영어
+const ohangInfo = {
+    "금": { hanja: "金", eng: "METAL" },
+    "목": { hanja: "木", eng: "WOOD" },
+    "수": { hanja: "水", eng: "WATER" },
+    "화": { hanja: "火", eng: "FIRE" },
+    "토": { hanja: "土", eng: "EARTH" }
+};
+
+// 인연상/배우자상 도출 규칙 (오행 상생)
+const inyunRule = {
+    "금": "수", "수": "목", "목": "화", "화": "토", "토": "금"
+};
+const baeujaRule = {
+    "금": "토", "토": "화", "화": "목", "목": "수", "수": "금"
+};
+
+// 오행별 대표 납음
+const ohangToNapeum = {
+    "금": ["해중금", "검봉금", "사중금", "백납금", "차천금", "금박금"],
+    "목": ["대림목", "양류목", "송백목", "평지목", "상자목", "석류목"],
+    "수": ["간하수", "대계수", "장류수", "천하수", "대해수", "천중수"],
+    "화": ["노중화", "산두화", "벽력화", "복등화", "천상화", "산하화"],
+    "토": ["노방토", "성두토", "옥상토", "벽상토", "대역토", "사중토"]
+};
+
+// ============================================
+// 납음 30종 색상표 (개선된 화사한 버전)
+// ============================================
+const napeumColors = {
+    // 금 계열 - 실버~골드 그라데이션
+    "해중금": { hair: ["#3d4a5a", "#2a3545"], dress: ["#a8c8e8", "#88b0d8"], accent: "#c8e0f8", pattern: "wave" },
+    "검봉금": { hair: ["#454550", "#35353f"], dress: ["#c0c0cc", "#a8a8b8"], accent: "#d8d8e8", pattern: "sharp" },
+    "사중금": { hair: ["#5a4838", "#483828"], dress: ["#f0e0c0", "#e0d0a8"], accent: "#f8e8d0", pattern: "dots" },
+    "백납금": { hair: ["#505058", "#404048"], dress: ["#f8f8ff", "#e8e8f0"], accent: "#ffffff", pattern: "shimmer" },
+    "차천금": { hair: ["#4a3a48", "#382838"], dress: ["#e8c8b8", "#d8b0a0"], accent: "#f0d8c8", pattern: "elegant" },
+    "금박금": { hair: ["#4a4028", "#3a3018"], dress: ["#ffd870", "#f0c850"], accent: "#ffe890", pattern: "flake" },
+    // 화 계열 - 따뜻하고 화사하게
+    "노중화": { hair: ["#5a3525", "#482818"], dress: ["#ff7860", "#f06048"], accent: "#ff9878", pattern: "flame" },
+    "산두화": { hair: ["#4a2820", "#3a1810"], dress: ["#ff8868", "#f07050"], accent: "#ffa080", pattern: "peak" },
+    "복등화": { hair: ["#5a4028", "#483018"], dress: ["#ffb868", "#f0a050"], accent: "#ffd088", pattern: "glow" },
+    "천상화": { hair: ["#604018", "#503008"], dress: ["#ffc040", "#f0a820"], accent: "#ffd868", pattern: "sun" },
+    "벽력화": { hair: ["#403050", "#302040"], dress: ["#c888e8", "#b070d8"], accent: "#e0a8ff", pattern: "lightning" },
+    "산하화": { hair: ["#5a3830", "#483020"], dress: ["#f08878", "#e07060"], accent: "#ffa898", pattern: "ember" },
+    // 토 계열 - 따뜻한 대지
+    "노방토": { hair: ["#5a4838", "#483828"], dress: ["#e8c898", "#d8b080"], accent: "#f0d8a8", pattern: "path" },
+    "성두토": { hair: ["#4a4035", "#3a3025"], dress: ["#c8a890", "#b89078"], accent: "#d8b8a0", pattern: "brick" },
+    "대역토": { hair: ["#584538", "#483528"], dress: ["#d8b090", "#c8a078"], accent: "#e8c8a8", pattern: "tile" },
+    "벽상토": { hair: ["#504540", "#403530"], dress: ["#e0d0c0", "#d0c0a8"], accent: "#f0e0d0", pattern: "wall" },
+    "사중토": { hair: ["#685038", "#584028"], dress: ["#f0dbb0", "#e0c898"], accent: "#f8e8c8", pattern: "sand" },
+    "옥상토": { hair: ["#4a4035", "#3a3025"], dress: ["#b8a088", "#a89070"], accent: "#c8b0a0", pattern: "roof" },
+    // 목 계열 - 자연스러운 초록
+    "대림목": { hair: ["#3a4530", "#283520"], dress: ["#78c878", "#58b858"], accent: "#98e098", pattern: "forest" },
+    "양류목": { hair: ["#485040", "#384030"], dress: ["#a8d888", "#90c870"], accent: "#c0f0a8", pattern: "willow" },
+    "송백목": { hair: ["#2a3828", "#1a2818"], dress: ["#58a878", "#408860"], accent: "#78c898", pattern: "pine" },
+    "평지목": { hair: ["#555045", "#454035"], dress: ["#c8e8a0", "#b0d880"], accent: "#e0f8b8", pattern: "field" },
+    "상자목": { hair: ["#4a4535", "#3a3525"], dress: ["#90c070", "#78a858"], accent: "#b0d890", pattern: "mulberry" },
+    "석류목": { hair: ["#4a3530", "#3a2520"], dress: ["#88c868", "#70b050"], accent: "#a8e088", pattern: "fruit" },
+    // 수 계열 - 깊고 맑은 파랑
+    "대해수": { hair: ["#354560", "#253550"], dress: ["#68a8e8", "#5090d8"], accent: "#88c8f8", pattern: "ocean" },
+    "천하수": { hair: ["#404060", "#303050"], dress: ["#88a8e8", "#7090d8"], accent: "#a8c8f8", pattern: "galaxy" },
+    "장류수": { hair: ["#3a4855", "#2a3845"], dress: ["#70b8d8", "#58a0c8"], accent: "#90d0f0", pattern: "river" },
+    "천중수": { hair: ["#405060", "#304050"], dress: ["#88d0e8", "#70c0d8"], accent: "#a8e8f8", pattern: "spring" },
+    "대계수": { hair: ["#354555", "#253545"], dress: ["#78c0e0", "#60a8d0"], accent: "#98d8f0", pattern: "valley" },
+    "간하수": { hair: ["#3a5058", "#2a4048"], dress: ["#80d0d8", "#68c0c8"], accent: "#a0e8f0", pattern: "stream" }
+};
+
+// ============================================
+// 패턴 SVG (옷 무늬)
+// ============================================
+const patternSVG = {
+    "wave": `<path d="M0,5 Q5,0 10,5 T20,5" stroke="rgba(255,255,255,0.5)" stroke-width="2" fill="none"/>`,
+    "sharp": `<path d="M0,15 L10,0 L20,15" stroke="rgba(255,255,255,0.4)" stroke-width="2" fill="none"/>`,
+    "dots": `<circle cx="10" cy="10" r="3" fill="rgba(255,255,255,0.4)"/>`,
+    "shimmer": `<rect x="5" y="5" width="10" height="10" fill="rgba(255,255,255,0.3)" transform="rotate(45,10,10)"/>`,
+    "elegant": `<path d="M0,10 C5,0 15,20 20,10" stroke="rgba(255,255,255,0.4)" stroke-width="2" fill="none"/>`,
+    "flake": `<polygon points="10,0 12,8 20,10 12,12 10,20 8,12 0,10 8,8" fill="rgba(255,215,0,0.4)"/>`,
+    "flame": `<path d="M10,18 Q6,10 10,0 Q14,10 10,18" fill="rgba(255,100,0,0.4)"/>`,
+    "peak": `<path d="M0,18 L10,2 L20,18" fill="rgba(255,150,0,0.3)"/>`,
+    "glow": `<circle cx="10" cy="10" r="8" fill="rgba(255,200,100,0.3)"/>`,
+    "sun": `<circle cx="10" cy="10" r="6" fill="rgba(255,220,0,0.4)"/>`,
+    "lightning": `<path d="M6,0 L10,8 L14,8 L8,20 L10,12 L6,12 Z" fill="rgba(200,150,255,0.4)"/>`,
+    "ember": `<circle cx="10" cy="12" r="5" fill="rgba(255,100,50,0.4)"/>`,
+    "path": `<rect x="0" y="8" width="20" height="4" fill="rgba(180,140,100,0.3)"/>`,
+    "brick": `<rect x="0" y="0" width="8" height="6" fill="rgba(150,120,100,0.3)"/><rect x="10" y="10" width="8" height="6" fill="rgba(150,120,100,0.3)"/>`,
+    "tile": `<rect x="0" y="0" width="18" height="18" stroke="rgba(150,120,100,0.4)" stroke-width="2" fill="none"/>`,
+    "wall": `<line x1="0" y1="10" x2="20" y2="10" stroke="rgba(180,160,140,0.4)" stroke-width="2"/>`,
+    "sand": `<circle cx="5" cy="6" r="2" fill="rgba(200,180,140,0.5)"/><circle cx="15" cy="14" r="2" fill="rgba(200,180,140,0.5)"/>`,
+    "roof": `<path d="M0,15 L10,2 L20,15" stroke="rgba(120,100,80,0.5)" stroke-width="2" fill="none"/>`,
+    "forest": `<path d="M10,18 L10,10 M6,12 L10,8 L14,12" stroke="rgba(100,150,80,0.5)" stroke-width="2" fill="none"/>`,
+    "pine": `<path d="M10,0 L5,10 L15,10 Z M10,8 L3,18 L17,18 Z" fill="rgba(60,100,70,0.35)"/>`,
+    "fruit": `<circle cx="10" cy="8" r="5" fill="rgba(200,100,100,0.45)"/>`,
+    "willow": `<path d="M10,0 Q5,10 10,20 M10,0 Q15,10 10,20" stroke="rgba(130,170,100,0.45)" stroke-width="2" fill="none"/>`,
+    "mulberry": `<circle cx="6" cy="10" r="4" fill="rgba(120,150,90,0.35)"/><circle cx="14" cy="10" r="4" fill="rgba(120,150,90,0.35)"/>`,
+    "field": `<line x1="0" y1="16" x2="20" y2="16" stroke="rgba(150,180,110,0.4)" stroke-width="2"/>`,
+    "ocean": `<path d="M0,6 Q5,2 10,6 T20,6 M0,14 Q5,10 10,14 T20,14" stroke="rgba(100,150,200,0.5)" stroke-width="2" fill="none"/>`,
+    "galaxy": `<circle cx="5" cy="6" r="2" fill="rgba(200,200,255,0.5)"/><circle cx="15" cy="14" r="2" fill="rgba(200,200,255,0.5)"/>`,
+    "river": `<path d="M0,10 C6,5 14,15 20,10" stroke="rgba(100,150,200,0.5)" stroke-width="2.5" fill="none"/>`,
+    "spring": `<circle cx="10" cy="10" r="7" stroke="rgba(150,220,230,0.5)" stroke-width="2" fill="none"/>`,
+    "valley": `<path d="M0,2 L10,16 L20,2" stroke="rgba(80,130,180,0.4)" stroke-width="2" fill="none"/>`,
+    "stream": `<path d="M0,6 Q10,2 20,6 M0,14 Q10,18 20,14" stroke="rgba(100,180,200,0.5)" stroke-width="2" fill="none"/>`
+};
+
+// ============================================
+// 피부톤 7종 (하얀건 1개만, 나머지 차이 확실하게)
+// ============================================
+const skinColors = {
+    "맑고 흰빛": { base: "#FFFAF8", shadow: "#FFE8E0", neck: "#F5D8D0", highlight: "#FFFFFF", blush: "#FF9999" },
+    "밝고 흰빛": { base: "#FFEFEA", shadow: "#FFD8D0", neck: "#F0C8C0", highlight: "#FFFFFF", blush: "#FFA5A5" },
+    "투명한 흰빛": { base: "#FFE8E8", shadow: "#FFD0D0", neck: "#F0C0C0", highlight: "#FFF8F8", blush: "#FF8888" },
+    "따뜻한 붉은기": { base: "#FFDDD0", shadow: "#FFC5B5", neck: "#E8B0A0", highlight: "#FFF5F0", blush: "#FF8080" },
+    "노란기 도는 건강 톤": { base: "#FFE0C5", shadow: "#F5C8A8", neck: "#E0B090", highlight: "#FFF5EA", blush: "#F5A090" },
+    "자연스러운 베이지 톤": { base: "#EED0C0", shadow: "#D8B8A8", neck: "#C8A090", highlight: "#FFF0E8", blush: "#E09088" },
+    "따뜻한 도는 건강 톤": { base: "#E0C0B0", shadow: "#C8A898", neck: "#B89080", highlight: "#FFEBE5", blush: "#D88880" }
+};
+
+// ============================================
+// 외모 매핑 (한글 → 코드)
+// ============================================
+const skinByName = {
+    "흰 피부": { base: "#FFFAF8", shadow: "#FFE8E0", neck: "#F5D8D0", highlight: "#FFFFFF", blush: "#FF9999" },
+    "웜톤": { base: "#FFEEE5", shadow: "#F5D8D0", neck: "#E8C8B8", highlight: "#FFF8F5", blush: "#F5A090" },
+    "쿨톤": { base: "#FFF0F5", shadow: "#FFD8E0", neck: "#F0C0C8", highlight: "#FFFFFF", blush: "#FF88AA" },
+    "자연톤": { base: "#EED0C0", shadow: "#D8B8A8", neck: "#C8A090", highlight: "#FFF0E8", blush: "#E09088" },
+    "건강톤": { base: "#F5D0C5", shadow: "#E8B8A8", neck: "#D8A090", highlight: "#FFF0E8", blush: "#E88080" }
+};
+
+const eyeByName = {
+    "밝은 눈": {
+        isClosed: false,
+        pupil: { rx: 5, ry: 5, color: "#1a1a20" },
+        highlight: { r: 2.2, opacity: 0.98, offsetX: 1.5, offsetY: -1.5 },
+        highlight2: { r: 1.3, opacity: 0.7, offsetX: -1.5, offsetY: 1.5 }
+    },
+    "깊은 눈": {
+        isClosed: false,
+        pupil: { rx: 5, ry: 5, color: "#1a1515" },
+        highlight: { r: 1.8, opacity: 0.9, offsetX: 2, offsetY: -2 }
+    },
+    "날카로운 눈": {
+        isClosed: false,
+        isAlmond: true,
+        pupil: { rx: 4.5, ry: 4.5, color: "#0a0a15" },
+        highlight: { r: 1.5, opacity: 0.9, offsetX: 1, offsetY: -1 }
+    },
+    "따뜻한 눈": {
+        isClosed: true,
+        closedPath: "M-8,0 Q0,-6, 8,0",
+        strokeWidth: 2,
+        strokeColor: "#3a2510"
+    },
+    "맑은 눈": {
+        isClosed: false,
+        pupil: { rx: 4.5, ry: 4.5, color: "#252530" },
+        highlight: { r: 1.8, opacity: 0.95, offsetX: 1.2, offsetY: -1.2 }
+    }
+};
+
+const faceByName = {
+    "둥근형": { rx: 30, ry: 32, usePath: false },
+    "계란형": { rx: 27, ry: 33, usePath: false },
+    "각진형": { usePath: true, path: "M-26,-25 Q-28,5 -22,28 Q0,35 22,28 Q28,5 26,-25 Q0,-32 -26,-25" },
+    "긴형": { rx: 25, ry: 36, usePath: false },
+    "하트형": { usePath: true, path: "M-28,-12 Q-30,5 -15,24 L0,32 L15,24 Q30,5 28,-12 Q14,-26 0,-28 Q-14,-26 -28,-12" }
+};
+
+// ============================================
+// 눈 스타일 - 남녀 분리 + 오행별 (v4)
+// ============================================
+const eyeShapes = {
+  
+  // ========== 남성 눈 스타일 ==========
+  남: {
+    // 금 - 날카로운 눈
+    금: {
+      type: "sharp",
+      isClosed: false,
+      pupil: { rx: 4, ry: 4, color: "#1a1a25" },
+      highlight: { r: 1.2, opacity: 0.8, offsetX: 1, offsetY: -1 },
+      eyebrow: { strokeWidth: 2, color: "#2d2d3a" }
+    },
+    // 목 - 부드럽게 감은 눈
+    목: {
+      type: "closed_soft",
+      isClosed: true,
+      closedPath: "M-6,0 Q0,-5, 6,0",
+      strokeWidth: 2,
+      strokeColor: "#2a1d14",
+      eyebrow: { strokeWidth: 1.5, color: "#3d2b1f" }
+    },
+    // 수 - 깊고 촉촉한 눈
+    수: {
+      type: "deep",
+      isClosed: false,
+      pupil: { rx: 5, ry: 5, color: "#1a1515" },
+      highlight: { r: 1.8, opacity: 0.9, offsetX: 2, offsetY: -2 },
+      eyebrow: { strokeWidth: 1.8, color: "#2a2525" }
+    },
+    // 화 - 강렬한 눈
+    화: {
+      type: "intense",
+      isClosed: false,
+      pupil: { rx: 5, ry: 5, color: "#2a1810" },
+      highlight: { r: 1.8, opacity: 0.95, offsetX: 2, offsetY: -2 },
+      eyebrow: { strokeWidth: 2.2, color: "#4a3028" }
+    },
+    // 토 - 편안하게 감은 눈
+    토: {
+      type: "closed_relaxed",
+      isClosed: true,
+      closedPath: "M-8,0 Q0,-6, 8,0",
+      strokeWidth: 2.2,
+      strokeColor: "#3a2510",
+      eyebrow: { strokeWidth: 1.8, color: "#5a4530" }
+    }
+  },
+  
+  // ========== 여성 눈 스타일 ==========
+  여: {
+    // 금 - 세련된 눈
+    금: {
+      type: "elegant",
+      isClosed: false,
+      pupil: { rx: 4, ry: 5, color: "#0a0a12" },
+      highlight: { r: 1.5, opacity: 0.9, offsetX: 1, offsetY: -2 },
+      eyebrow: null
+    },
+    // 목 - 맑고 부드러운 눈
+    목: {
+      type: "clear_soft",
+      isClosed: false,
+      pupil: { rx: 4.5, ry: 5.5, color: "#2a2015" },
+      highlight: { r: 1.8, opacity: 0.9, offsetX: 2, offsetY: -2 },
+      eyebrow: null
+    },
+    // 수 - 크고 촉촉한 눈 (하이라이트 2개)
+    수: {
+      type: "big_moist",
+      isClosed: false,
+      pupil: { rx: 5, ry: 6, color: "#1a0a05" },
+      highlight: { r: 2, opacity: 0.9, offsetX: 2, offsetY: -2 },
+      highlight2: { r: 1, opacity: 0.5, offsetX: -2, offsetY: 2 },
+      eyebrow: null
+    },
+    // 화 - 밝고 강렬한 눈
+    화: {
+      type: "bright_intense",
+      isClosed: false,
+      pupil: { rx: 5, ry: 6, color: "#1a0805" },
+      highlight: { r: 2, opacity: 0.95, offsetX: 2, offsetY: -2 },
+      eyebrow: null
+    },
+    // 토 - 따뜻하게 감은 눈
+    토: {
+      type: "closed_warm",
+      isClosed: true,
+      closedPath: "M-8,0 Q0,-6, 8,0",
+      strokeWidth: 2.5,
+      strokeColor: "#3a2010",
+      eyebrow: null
+    }
+  }
+};
+
+// ============================================
+// 얼굴형 - 남녀 분리 + 오행별 (v4)
+// ============================================
+const faceShapes = {
+  
+  // ========== 남성 얼굴형 ==========
+  남: {
+    금: { type: "angular", usePath: true, path: "M-28,-18 Q-28,-28, 0,-31 Q28,-28, 28,-18 L28,7 Q28,32, 0,37 Q-28,32, -28,7 Z" },
+    목: { type: "long_soft", usePath: false, rx: 28, ry: 38 },
+    수: { type: "round", usePath: false, rx: 30, ry: 36 },
+    화: { type: "normal", usePath: false, rx: 28, ry: 34 },
+    토: { type: "wide_stable", usePath: false, rx: 32, ry: 36 }
+  },
+  
+  // ========== 여성 얼굴형 ==========
+  여: {
+    금: { type: "angular_elegant", usePath: true, path: "M-25,-12 Q-25,-25, 0,-28 Q25,-25, 25,-12 L25,15 Q25,38, 0,42 Q-25,38, -25,15 Z" },
+    목: { type: "soft", usePath: false, rx: 28, ry: 32 },
+    수: { type: "round", usePath: false, rx: 30, ry: 36 },
+    화: { type: "slightly_long", usePath: false, rx: 28, ry: 35 },
+    토: { type: "soft_round", usePath: false, rx: 30, ry: 32 }
+  }
+};
+
+// ============================================
+// 머리 스타일 - 남녀 분리 + 오행별 (v4)
+// ============================================
+const hairStyles = {
+  
+  // ========== 남성 머리 스타일 ==========
+  남: {
+    금: {
+      type: "short_tight",
+      layers: [
+        { type: "ellipse", cx: 70, cy: 52, rx: 32, ry: 26 },
+        { type: "path", d: "M46 52 Q46 40, 70 38 Q94 40, 94 52 Q86 48, 70 46 Q54 48, 46 52" }
+      ]
+    },
+    목: {
+      type: "natural_long",
+      layers: [
+        { type: "ellipse", cx: 70, cy: 50, rx: 40, ry: 36 },
+        { type: "path", d: "M38 55 Q38 30, 70 26 Q102 30, 102 55 Q90 42, 70 40 Q50 42, 38 55" }
+      ]
+    },
+    수: {
+      type: "wavy",
+      layers: [
+        { type: "ellipse", cx: 70, cy: 50, rx: 38, ry: 32 },
+        { type: "path", d: "M38 54 Q40 32, 70 28 Q100 32, 102 54 Q88 42, 70 40 Q52 42, 38 54" },
+        { type: "wave", d: "M42 38 Q50 34, 58 38 Q66 42, 74 38 Q82 34, 90 38" },
+        { type: "wave", d: "M38 48 Q46 44, 54 48 Q62 52, 70 48 Q78 44, 86 48 Q94 52, 102 48" }
+      ]
+    },
+    화: {
+      type: "spiky",
+      layers: [
+        { type: "ellipse", cx: 70, cy: 48, rx: 36, ry: 28 },
+        { type: "path", d: "M50 35 L55 28 L60 38" },
+        { type: "path", d: "M65 32 L70 24 L75 32" },
+        { type: "path", d: "M80 35 L85 28 L90 38" },
+        { type: "path", d: "M44 50 Q44 36, 70 32 Q96 36, 96 50 Q86 44, 70 42 Q54 44, 44 50" }
+      ]
+    },
+    토: {
+      type: "neat_short",
+      layers: [
+        { type: "ellipse", cx: 70, cy: 50, rx: 38, ry: 32 },
+        { type: "path", d: "M40 52 Q40 34, 70 30 Q100 34, 100 52 Q88 44, 70 42 Q52 44, 40 52" }
+      ]
+    }
+  },
+  
+  // ========== 여성 머리 스타일 ==========
+  여: {
+    금: {
+      type: "long_straight",
+      layers: [
+        { type: "ellipse", cx: 70, cy: 85, rx: 38, ry: 55, order: 0 },
+        { type: "path", d: "M30 55 Q30 35, 70 30 Q110 35, 110 55 L100 55 Q100 45, 70 42 Q40 45, 40 55 Z", order: 2 },
+        { type: "path", d: "M30 55 L30 150 Q35 155, 40 150 L40 60 Z", order: 2 },
+        { type: "path", d: "M110 55 L110 150 Q105 155, 100 150 L100 60 Z", order: 2 },
+        { type: "path", d: "M45 55 Q45 38, 70 35 Q95 38, 95 55 Q85 48, 70 46 Q55 48, 45 55", order: 3 }
+      ]
+    },
+    목: {
+      type: "twin_tails",
+      layers: [
+        { type: "ellipse", cx: 70, cy: 55, rx: 40, ry: 38, order: 0 },
+        { type: "path", d: "M30 55 Q28 70, 35 90 L42 86 Q36 68, 38 55", order: 1 },
+        { type: "path", d: "M110 55 Q112 70, 105 90 L98 86 Q104 68, 102 55", order: 1 },
+        { type: "path", d: "M42 55 Q42 28, 70 22 Q98 28, 98 55 Q88 48, 70 45 Q52 48, 42 55", order: 3 },
+        { type: "ellipse", cx: 28, cy: 75, rx: 10, ry: 35, order: 4 },
+        { type: "ellipse", cx: 112, cy: 75, rx: 10, ry: 35, order: 4 }
+      ]
+    },
+    수: {
+      type: "big_wave",
+      layers: [
+        { type: "ellipse", cx: 70, cy: 70, rx: 50, ry: 58, order: 0 },
+        { type: "ellipse", cx: 70, cy: 38, rx: 36, ry: 20, order: 3 }
+      ]
+    },
+    화: {
+      type: "short_bob",
+      layers: [
+        { type: "ellipse", cx: 70, cy: 52, rx: 38, ry: 32, order: 1 },
+        { type: "path", d: "M32 52 L32 95 Q38 100, 42 95 L42 58", order: 2 },
+        { type: "path", d: "M108 52 L108 95 Q102 100, 98 95 L98 58", order: 2 },
+        { type: "path", d: "M42 55 Q42 38, 70 35 Q98 38, 98 55 Q88 48, 70 46 Q52 48, 42 55", order: 3 }
+      ]
+    },
+    토: {
+      type: "bun",
+      layers: [
+        { type: "ellipse", cx: 70, cy: 20, rx: 14, ry: 12, order: 0 },
+        { type: "ellipse", cx: 70, cy: 55, rx: 40, ry: 38, order: 1 },
+        { type: "path", d: "M30 55 Q28 70, 35 82 L42 78 Q36 68, 38 55", order: 2 },
+        { type: "path", d: "M110 55 Q112 70, 105 82 L98 78 Q104 68, 102 55", order: 2 },
+        { type: "path", d: "M40 55 Q40 38, 70 35 Q100 38, 100 55 Q88 48, 70 46 Q52 48, 40 55", order: 3 }
+      ]
+    }
+  }
+};
+
+// ============================================
+// 오행별 외모 기본값
+// ============================================
+const ohangAppearance = {
+    "금": { 얼굴형: "각진 얼굴, 윤곽이 뚜렷함", 눈: "냉철하고 집중된 눈빛", 피부톤: "맑고 흰빛", 분위기: "지적이고 세련된 인상" },
+    "목": { 얼굴형: "길쭉한 얼굴형, 이마가 넓음", 눈: "곧고 맑은 눈빛", 피부톤: "자연스러운 베이지 톤", 분위기: "온화하고 생명력 있는 인상" },
+    "수": { 얼굴형: "둥글고 부드러운 얼굴", 눈: "깊고 감성적인 눈빛", 피부톤: "투명한 흰빛", 분위기: "차분하고 신비로운 인상" },
+    "화": { 얼굴형: "갸름하고 생기 있는 얼굴", 눈: "밝고 강렬한 눈빛", 피부톤: "따뜻한 붉은기", 분위기: "열정적이고 생동감 있는 인상" },
+    "토": { 얼굴형: "둥근 얼굴, 안정감 있는 윤곽", 눈: "따뜻하고 포근한 눈빛", 피부톤: "노란기 도는 건강 톤", 분위기: "신뢰감 있고 차분한 인상" }
+};
+
+// ============================================
+// JSON 복붙 모드에서 생성
+// ============================================
+function generateFromJSON() {
+    const jsonText = document.getElementById('json-input').value.trim();
+    const errorDiv = document.getElementById('json-error');
+    
+    if (!jsonText) {
+        errorDiv.textContent = "JSON을 입력해주세요!";
+        errorDiv.classList.add('show');
+        return;
+    }
+    
+    try {
+        const result = JSON.parse(jsonText);
+        errorDiv.classList.remove('show');
+        
+        // 필수 필드 확인
+        if (!result.인연상 || !result.배우자상) {
+            throw new Error("인연상/배우자상 데이터가 없습니다");
+        }
+        
+        renderResult(result);
+    } catch (e) {
+        errorDiv.textContent = "JSON 파싱 오류: " + e.message;
+        errorDiv.classList.add('show');
+    }
+}
+
+// ============================================
+// 결과 렌더링 (둘다 처리 포함)
+// ============================================
+function renderResult(result) {
+    const targetGender = result.입력?.상대성별 || "여";
+    
+    // 본인 정보 (납음을 한자로 표시하기 위한 역변환)
+    let myNapeumDisplay = result.본인?.납음 || "";
+    const hangulToHanja = {};
+    Object.entries(hanjaToHangul).forEach(([h, k]) => { hangulToHanja[k] = h; });
+    if (hangulToHanja[myNapeumDisplay]) myNapeumDisplay = hangulToHanja[myNapeumDisplay];
+    
+    // 본인 분위기 (외모에서 가져오거나 오행 기본값)
+    const myOhang = result.본인?.오행 || "토";
+    let myMood = "";
+    if (result.인연상?.외모?.남?.분위기 || result.인연상?.외모?.여?.분위기) {
+        // 새 JSON 구조 - 본인 분위기는 별도로 없으므로 오행 기본값 사용
+        myMood = ohangAppearance[myOhang]?.분위기 || "";
+    } else if (result.인연상?.외모?.분위기) {
+        myMood = ohangAppearance[myOhang]?.분위기 || "";
+    } else {
+        myMood = ohangAppearance[myOhang]?.분위기 || "";
+    }
+    
+    // 본인 정보 HTML
+    const userInfoHTML = `
+        <div class="user-info">
+            <h2>${myNapeumDisplay} · ${result.입력?.일주 || ""} (본인)</h2>
+            <p>${myMood}</p>
+        </div>
+    `;
+    
+    let cardsHTML = "";
+    
+    // "둘다" 처리
+    if (targetGender === "둘다") {
+        // 남성 그룹
+        cardsHTML += `
+            <div class="gender-group">
+                <div class="gender-label"><span>♂</span> 남성 인연/배우자상</div>
+                <div class="cards-row">
+                    ${createCard('인연상', result.인연상, '남')}
+                    ${createCard('배우자상', result.배우자상, '남')}
+                </div>
+            </div>
+        `;
+        // 여성 그룹
+        cardsHTML += `
+            <div class="gender-group">
+                <div class="gender-label"><span>♀</span> 여성 인연/배우자상</div>
+                <div class="cards-row">
+                    ${createCard('인연상', result.인연상, '여')}
+                    ${createCard('배우자상', result.배우자상, '여')}
+                </div>
+            </div>
+        `;
+    } else {
+        // 단일 성별
+        cardsHTML = `
+            <div class="cards-row">
+                ${createCard('인연상', result.인연상, targetGender)}
+                ${createCard('배우자상', result.배우자상, targetGender)}
+            </div>
+        `;
+    }
+    
+    // 메타데이터 (숨김 - 원본 JSON 저장)
+    const metaJSON = JSON.stringify(result).replace(/"/g, '&quot;');
+    const metaHTML = `<div style="display:none;" data-inyun-json="${metaJSON}"></div>`;
+    
+    // 결과 박스 조합
+    document.getElementById('result-content').innerHTML = `
+        <div class="result-box">
+            ${userInfoHTML}
+            ${cardsHTML}
+            ${metaHTML}
+        </div>
+    `;
+    
+    // 원본 JSON 저장 (복사용)
+    window.currentResultJSON = result;
+    
+    document.getElementById('result-section').classList.add('show');
+    
+    // ★★★ localStorage 저장 (직접 사용 시) ★★★
+    setTimeout(() => {
+        const customerNameInput = document.getElementById('customer-name-input');
+        const customerName = customerNameInput ? customerNameInput.value.trim() : '';
+        if (customerName) {
+            // copyResultHTML과 동일한 방식으로 인라인 CSS 포함 HTML 생성
+            const resultBox = document.querySelector('.result-box');
+            if (resultBox) {
+                // 인라인 CSS (copyResultHTML에서 사용하는 것과 동일)
+                const inlineStyles = `<style>
+.result-box{max-width:900px;width:calc(100% - 40px);margin:0 auto 30px;padding:30px;background:rgba(255,255,255,0.03);border-radius:24px;border:1px solid rgba(255,255,255,0.05);font-family:'Noto Sans KR',sans-serif;}
+.user-info{text-align:center;margin-top:10px;margin-bottom:30px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,0.1);}
+.user-info h2{color:#fff;font-weight:400;font-size:22px;margin-bottom:10px;}
+.user-info p{color:#888;font-size:14px;}
+.gender-group{margin-bottom:30px;}
+.gender-label{text-align:center;color:#aaa;font-size:14px;margin-bottom:20px;}
+.cards-row{display:flex;gap:30px;justify-content:center;flex-wrap:nowrap;padding:0 20px;}
+.card-wrapper{text-align:center;flex:0 0 auto;}
+.card-label{color:#fff;font-size:16px;margin-bottom:15px;letter-spacing:2px;}
+.card{width:260px;height:400px;border-radius:24px;position:relative;overflow:hidden;}
+@media (max-width:700px){.card{width:200px;height:310px;}.cards-row{gap:15px;}.user-info h2{font-size:20px;}.user-info p{font-size:13px;}.card-label{font-size:14px;}}
+.bg-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border-radius:50%;filter:blur(60px);opacity:0.4;}
+.stars{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;}
+.star{position:absolute;width:4px;height:4px;background:#fff;border-radius:50%;opacity:0.6;}
+.content{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;align-items:center;padding:20px;}
+.element-label{color:rgba(255,255,255,0.6);font-size:11px;letter-spacing:3px;margin-bottom:10px;}
+.character-area{position:relative;width:140px;height:150px;margin:10px 0;display:flex;align-items:center;justify-content:center;}
+.char-glow{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:100px;height:60px;border-radius:50%;filter:blur(25px);opacity:0.5;}
+.info{text-align:center;margin-top:auto;}
+.element-badge{display:inline-block;padding:6px 16px;border-radius:20px;font-size:14px;margin-bottom:8px;backdrop-filter:blur(10px);background:rgba(255,255,255,0.15);color:#fff;}
+.element-name{font-size:16px;font-weight:500;color:#fff;margin-bottom:4px;}
+.element-desc{font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:8px;}
+.napeum-info{font-size:11px;color:rgba(255,255,255,0.5);}
+.card-금{background:linear-gradient(160deg,#2a2a3e 0%,#1a1a2e 50%,#2d2d4a 100%);box-shadow:0 10px 40px rgba(192,192,220,0.15);}
+.card-금 .bg-glow{background:radial-gradient(circle,rgba(192,192,220,0.6) 0%,transparent 70%);}
+.card-목{background:linear-gradient(160deg,#1a2e1a 0%,#0f1f0f 50%,#1a3a1a 100%);box-shadow:0 10px 40px rgba(100,180,100,0.15);}
+.card-목 .bg-glow{background:radial-gradient(circle,rgba(100,180,100,0.5) 0%,transparent 70%);}
+.card-수{background:linear-gradient(160deg,#1a2a3e 0%,#0f1a2e 50%,#1a3a5a 100%);box-shadow:0 10px 40px rgba(100,150,220,0.15);}
+.card-수 .bg-glow{background:radial-gradient(circle,rgba(100,150,220,0.5) 0%,transparent 70%);}
+.card-화{background:linear-gradient(160deg,#3e1a1a 0%,#2e0f0f 50%,#4a1a1a 100%);box-shadow:0 10px 40px rgba(220,100,80,0.15);}
+.card-화 .bg-glow{background:radial-gradient(circle,rgba(220,100,80,0.5) 0%,transparent 70%);}
+.card-토{background:linear-gradient(160deg,#2e2a1a 0%,#1e1a0f 50%,#3a351a 100%);box-shadow:0 10px 40px rgba(180,150,100,0.15);}
+.card-토 .bg-glow{background:radial-gradient(circle,rgba(180,150,100,0.5) 0%,transparent 70%);}
+@media (max-width:600px){.result-box{width:calc(100% - 20px);padding:15px;}.cards-row{display:flex;gap:10px;justify-content:center;padding:0;}.card-wrapper{flex:0 0 auto;}.card{width:145px;height:225px;}.card-label{font-size:10px;}.element-label{font-size:8px;}.character-area{width:85px;height:110px;}.element-badge{padding:3px 10px;font-size:11px;}.element-name{font-size:12px;}.element-desc{font-size:9px;}.napeum-info{font-size:8px;}.user-info h2{font-size:14px;}.user-info p{font-size:10px;}.gender-label{font-size:11px;}.content{padding:12px;}}
+</style>`;
+                const wrapperStart = '<div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);padding:40px 20px;min-height:100vh;">';
+                const wrapperEnd = '</div>';
+                const savedHTML = inlineStyles + wrapperStart + resultBox.outerHTML + wrapperEnd;
+                localStorage.setItem('inyeon_' + customerName, savedHTML);
+                console.log('✅ localStorage 저장:', 'inyeon_' + customerName, '(' + savedHTML.length + '자)');
+                
+                // UI 피드백
+                const btn = document.querySelector('.generate-btn');
+                if (btn) {
+                    const originalText = btn.textContent;
+                    btn.textContent = '✅ 저장됨: ' + customerName;
+                    btn.style.background = 'linear-gradient(135deg, #27ae60, #2ecc71)';
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.style.background = '';
+                    }, 2000);
+                }
+            }
+        } else {
+            console.log('⚠️ 이름 미입력으로 localStorage 저장 생략');
+        }
+    }, 100);  // DOM 업데이트 후 실행
+}
+
+// ============================================
+// 카드 HTML 생성
+// ============================================
+function createCard(type, data, gender) {
+    // 납음 변환 (일주도출납음 || 도출납음)
+    let napeum = data.일주도출납음 || data.도출납음;
+    if (hanjaToHangul[napeum]) napeum = hanjaToHangul[napeum];
+    
+    const ohang = data.오행 || napeumToOhang[napeum] || "토";
+    const info = ohangInfo[ohang];
+    
+    // 외모 처리 (외모.남/여 또는 외모 직접)
+    let appearance;
+    if (data.외모?.남 && data.외모?.여) {
+        // 새 구조: { 외모: { 남: {...}, 여: {...} } }
+        appearance = data.외모[gender] || ohangAppearance[ohang];
+    } else if (data.외모) {
+        // 기존 구조: { 외모: { 얼굴형, 눈, ... } }
+        appearance = data.외모;
+    } else {
+        appearance = ohangAppearance[ohang];
+    }
+    
+    // SVG 파라미터 변환
+    const svgParams = convertToSVGParams(napeum, ohang, appearance, gender);
+    
+    // SVG 생성
+    const svgContent = generateSVG(svgParams);
+    
+    // 카드 라벨
+    const cardLabel = type === '인연상' ? '<span>💞</span> 운명의 인연상' : '<span>💍</span> 현실의 배우자상';
+    
+    return `
+        <div class="card-wrapper">
+            <div class="card-label">${cardLabel}</div>
+            <div class="card card-${ohang}">
+                <div class="bg-glow"></div>
+                <div class="stars">
+                    <div class="star" style="top:8%;left:15%;animation-delay:0.2s;"></div>
+                    <div class="star" style="top:12%;left:75%;animation-delay:0.7s;"></div>
+                    <div class="star" style="top:20%;left:85%;animation-delay:1.2s;"></div>
+                    <div class="star" style="top:75%;left:10%;animation-delay:0.5s;"></div>
+                    <div class="star" style="top:85%;left:80%;animation-delay:1.5s;"></div>
+                </div>
+                <div class="content">
+                    <div class="element-label">${info.eng}</div>
+                    <div class="character-area">
+                        <div class="char-glow"></div>
+                        ${svgContent}
+                    </div>
+                    <div class="info">
+                        <div class="element-badge">${info.hanja}</div>
+                        <div class="element-name">${ohang}의 기운</div>
+                        <div class="element-desc">${appearance.분위기 || ''}</div>
+                        <div class="napeum-info">${napeum}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ============================================
+// 변환 함수: 외모 데이터 → SVG 파라미터
+// ============================================
+function convertToSVGParams(napeum, ohang, appearance, gender) {
+    // 납음 색상
+    const nColors = napeumColors[napeum] || napeumColors["노방토"];
+    
+    // 피부톤 (새 매핑 우선)
+    const skin = skinByName[appearance.피부톤] || skinColors[appearance.피부톤] || skinByName["자연톤"];
+    
+    // 눈 스타일 (새 매핑 우선)
+    const eye = eyeByName[appearance.눈] || eyeByName["맑은 눈"];
+    
+    // 얼굴형 (새 매핑 우선)
+    const face = faceByName[appearance.얼굴형] || faceByName["둥근형"];
+    
+    // 패턴
+    const pattern = patternSVG[nColors.pattern] || "";
+    
+    return {
+        napeum, ohang, gender,
+        hairColor: nColors.hair,
+        dressColor: nColors.dress,
+        accent: nColors.accent,
+        patternType: nColors.pattern,
+        pattern,
+        skin,
+        eye,
+        face
+    };
+}
+
+
+// ============================================
+// SVG 생성 함수 (v4 통합 스타일)
+// ============================================
+function generateSVG(params) {
+    const { ohang, gender, hairColor, dressColor, skin, pattern, face, eye } = params;
+    const id = `${ohang}-${gender}-${Math.random().toString(36).substr(2,5)}`;
+    
+    // 머리 스타일만 오행별로 (얼굴, 눈은 params에서)
+    const hair = hairStyles[gender]?.[ohang] || hairStyles.남.토;
+    
+    // defs - 그라데이션
+    let defs = `<defs>
+        <linearGradient id="skin-${id}" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:${skin.base}"/>
+            <stop offset="100%" style="stop-color:${skin.shadow}"/>
+        </linearGradient>
+        <linearGradient id="hair-${id}" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:${hairColor[0]}"/>
+            <stop offset="100%" style="stop-color:${hairColor[1]}"/>
+        </linearGradient>
+        <linearGradient id="dress-${id}" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:${dressColor[0]}"/>
+            <stop offset="100%" style="stop-color:${dressColor[1]}"/>
+        </linearGradient>`;
+    
+    // 패턴 정의
+    if (pattern) {
+        defs += `<pattern id="pat-${id}" patternUnits="userSpaceOnUse" width="20" height="20">${pattern}</pattern>`;
+    }
+    defs += `</defs>`;
+    
+    let svg = `<svg width="150" height="155" viewBox="15 18 110 100">${defs}`;
+    
+    // ========== 남성 렌더링 ==========
+    if (gender === "남") {
+        // 의상
+        svg += `<ellipse cx="70" cy="150" rx="48" ry="35" fill="url(#dress-${id})"/>`;
+        if (pattern) svg += `<ellipse cx="70" cy="150" rx="46" ry="33" fill="url(#pat-${id})" opacity="0.5"/>`;
+        svg += `<ellipse cx="70" cy="118" rx="26" ry="12" fill="url(#dress-${id})"/>`;
+        
+        // 목
+        svg += `<path d="M58 95 L82 95 L82 110 Q70 118, 58 110 Z" fill="${skin.neck}"/>`;
+        
+        // 머리 (뒤)
+        hair.layers.forEach(layer => {
+            if (layer.type === "ellipse") {
+                svg += `<ellipse cx="${layer.cx}" cy="${layer.cy}" rx="${layer.rx}" ry="${layer.ry}" fill="url(#hair-${id})"/>`;
+            } else if (layer.type === "path") {
+                svg += `<path d="${layer.d}" fill="url(#hair-${id})"/>`;
+            } else if (layer.type === "circle") {
+                let color = "url(#hair-${id})";
+                if (layer.shade === "dark") color = "rgba(0,0,0,0.12)";
+                else if (layer.shade === "light") color = "rgba(80,70,60,0.25)";
+                svg += `<circle cx="${layer.cx}" cy="${layer.cy}" r="${layer.r}" fill="${color}"/>`;
+            } else if (layer.type === "wave") {
+                svg += `<path d="${layer.d}" stroke="rgba(0,0,0,0.15)" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+            }
+        });
+        
+        // 얼굴
+        if (face.usePath) {
+            svg += `<path d="${face.path}" fill="url(#skin-${id})" transform="translate(70, 73)"/>`;
+        } else {
+            svg += `<ellipse cx="70" cy="72" rx="${face.rx}" ry="${face.ry}" fill="url(#skin-${id})"/>`;
+        }
+        
+        // 눈
+        const leftEyeX = 56, rightEyeX = 84, eyeY = 70;
+        
+        if (eye.isClosed) {
+            const closedPath = eye.closedPath || "M-6,0 Q0,-5, 6,0";
+            const sw = eye.strokeWidth || 2;
+            const sc = eye.strokeColor || "#3a2510";
+            svg += `<path d="M${leftEyeX - 6} ${eyeY} Q${leftEyeX} ${eyeY - 5}, ${leftEyeX + 6} ${eyeY}" 
+                    stroke="${sc}" stroke-width="${sw}" fill="none" stroke-linecap="round"/>`;
+            svg += `<path d="M${rightEyeX - 6} ${eyeY} Q${rightEyeX} ${eyeY - 5}, ${rightEyeX + 6} ${eyeY}" 
+                    stroke="${sc}" stroke-width="${sw}" fill="none" stroke-linecap="round"/>`;
+        } else if (eye.isAlmond) {
+            // 날카로운 눈 - 둥근 눈동자 + 위쪽 눈꺼풀 라인만
+            svg += `<ellipse cx="${leftEyeX}" cy="${eyeY}" rx="${eye.pupil.rx}" ry="${eye.pupil.ry}" fill="${eye.pupil.color}"/>`;
+            svg += `<ellipse cx="${rightEyeX}" cy="${eyeY}" rx="${eye.pupil.rx}" ry="${eye.pupil.ry}" fill="${eye.pupil.color}"/>`;
+            // 위쪽 눈꺼풀 라인 (째진 각도 + 눈썹 안 겹치게)
+            svg += `<path d="M${leftEyeX - 7} ${eyeY - 4} Q${leftEyeX} ${eyeY - 6}, ${leftEyeX + 7} ${eyeY - 1}" stroke="#2a2a35" stroke-width="1.2" fill="none" stroke-linecap="round"/>`;
+            svg += `<path d="M${rightEyeX - 7} ${eyeY - 1} Q${rightEyeX} ${eyeY - 6}, ${rightEyeX + 7} ${eyeY - 4}" stroke="#2a2a35" stroke-width="1.2" fill="none" stroke-linecap="round"/>`;
+            svg += `<circle cx="${leftEyeX + eye.highlight.offsetX}" cy="${eyeY + eye.highlight.offsetY}" r="${eye.highlight.r}" fill="white" opacity="${eye.highlight.opacity}"/>`;
+            svg += `<circle cx="${rightEyeX + eye.highlight.offsetX}" cy="${eyeY + eye.highlight.offsetY}" r="${eye.highlight.r}" fill="white" opacity="${eye.highlight.opacity}"/>`;
+        } else {
+            svg += `<ellipse cx="${leftEyeX}" cy="${eyeY}" rx="${eye.pupil.rx}" ry="${eye.pupil.ry}" fill="${eye.pupil.color}"/>`;
+            svg += `<ellipse cx="${rightEyeX}" cy="${eyeY}" rx="${eye.pupil.rx}" ry="${eye.pupil.ry}" fill="${eye.pupil.color}"/>`;
+            svg += `<circle cx="${leftEyeX + eye.highlight.offsetX}" cy="${eyeY + eye.highlight.offsetY}" r="${eye.highlight.r}" fill="white" opacity="${eye.highlight.opacity}"/>`;
+            svg += `<circle cx="${rightEyeX + eye.highlight.offsetX}" cy="${eyeY + eye.highlight.offsetY}" r="${eye.highlight.r}" fill="white" opacity="${eye.highlight.opacity}"/>`;
+            // highlight2 (밝은 눈, 맑은 눈)
+            if (eye.highlight2) {
+                svg += `<circle cx="${leftEyeX + eye.highlight2.offsetX}" cy="${eyeY + eye.highlight2.offsetY}" r="${eye.highlight2.r}" fill="white" opacity="${eye.highlight2.opacity}"/>`;
+                svg += `<circle cx="${rightEyeX + eye.highlight2.offsetX}" cy="${eyeY + eye.highlight2.offsetY}" r="${eye.highlight2.r}" fill="white" opacity="${eye.highlight2.opacity}"/>`;
+            }
+        }
+        
+        // 눈썹 (남성)
+        const browColor = eye.eyebrow?.color || "#3d2b1f";
+        const browWidth = eye.eyebrow?.strokeWidth || 1.8;
+        const browY = eyeY - 8;
+        svg += `<path d="M${leftEyeX - 6} ${browY} Q${leftEyeX} ${browY - 3}, ${leftEyeX + 6} ${browY}" 
+                stroke="${browColor}" stroke-width="${browWidth}" fill="none"/>`;
+        svg += `<path d="M${rightEyeX - 6} ${browY} Q${rightEyeX} ${browY - 3}, ${rightEyeX + 6} ${browY}" 
+                stroke="${browColor}" stroke-width="${browWidth}" fill="none"/>`;
+        
+        // 입
+        if (ohang === "목" || ohang === "토") {
+            svg += `<ellipse cx="70" cy="92" rx="4" ry="2" fill="#c8a090"/>`;
+        } else {
+            svg += `<path d="M64 92 Q70 95, 76 92" stroke="#c8a090" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
+        }
+    }
+    
+    // ========== 여성 렌더링 ==========
+    else if (gender === "여") {
+        
+        // 뒷머리 (order 0)
+        hair.layers.forEach(layer => {
+            if (layer.order === 0 || (layer.order === undefined && layer.type === "ellipse" && layer.cy > 60)) {
+                if (layer.type === "ellipse") {
+                    svg += `<ellipse cx="${layer.cx}" cy="${layer.cy}" rx="${layer.rx}" ry="${layer.ry}" fill="url(#hair-${id})"/>`;
+                } else if (layer.type === "path") {
+                    svg += `<path d="${layer.d}" fill="url(#hair-${id})"/>`;
+                }
+            }
+        });
+        
+        // 포니테일/트윈테일 꼬리 (order 4) - 얼굴 뒤에 그려야 함!
+        hair.layers.forEach(layer => {
+            if (layer.order === 4) {
+                if (layer.type === "ellipse") {
+                    svg += `<ellipse cx="${layer.cx}" cy="${layer.cy}" rx="${layer.rx}" ry="${layer.ry}" fill="url(#hair-${id})"/>`;
+                } else if (layer.type === "path") {
+                    svg += `<path d="${layer.d}" fill="url(#hair-${id})"/>`;
+                }
+            }
+        });
+        
+        // 헤어 베이스 (order 1)
+        hair.layers.forEach(layer => {
+            if (layer.order === 1) {
+                if (layer.type === "ellipse") {
+                    svg += `<ellipse cx="${layer.cx}" cy="${layer.cy}" rx="${layer.rx}" ry="${layer.ry}" fill="url(#hair-${id})"/>`;
+                } else if (layer.type === "path") {
+                    svg += `<path d="${layer.d}" fill="url(#hair-${id})"/>`;
+                }
+            }
+        });
+        
+        // 의상
+        svg += `<ellipse cx="70" cy="155" rx="38" ry="35" fill="url(#dress-${id})"/>`;
+        if (pattern) svg += `<ellipse cx="70" cy="155" rx="36" ry="33" fill="url(#pat-${id})" opacity="0.5"/>`;
+        svg += `<ellipse cx="70" cy="120" rx="22" ry="12" fill="url(#dress-${id})"/>`;
+        
+        // 목
+        svg += `<path d="M62 98 L78 98 L78 114 Q70 120, 62 114 Z" fill="${skin.neck}"/>`;
+        
+        // 옆머리 (order 2)
+        hair.layers.forEach(layer => {
+            if (layer.order === 2) {
+                if (layer.type === "ellipse") {
+                    svg += `<ellipse cx="${layer.cx}" cy="${layer.cy}" rx="${layer.rx}" ry="${layer.ry}" fill="url(#hair-${id})"/>`;
+                } else if (layer.type === "path") {
+                    svg += `<path d="${layer.d}" fill="url(#hair-${id})"/>`;
+                }
+            }
+        });
+        
+        // 얼굴
+        if (face.usePath) {
+            svg += `<path d="${face.path}" fill="url(#skin-${id})" transform="translate(70, 70)"/>`;
+        } else {
+            svg += `<ellipse cx="70" cy="70" rx="${face.rx}" ry="${face.ry}" fill="url(#skin-${id})"/>`;
+        }
+        
+        // 앞머리 (order 3)
+        hair.layers.forEach(layer => {
+            if (layer.order === 3) {
+                if (layer.type === "ellipse") {
+                    svg += `<ellipse cx="${layer.cx}" cy="${layer.cy}" rx="${layer.rx}" ry="${layer.ry}" fill="url(#hair-${id})"/>`;
+                } else if (layer.type === "path") {
+                    svg += `<path d="${layer.d}" fill="url(#hair-${id})"/>`;
+                }
+            }
+        });
+        
+        // 눈
+        const leftEyeX = 56, rightEyeX = 84, eyeY = 70;
+        
+        if (eye.isClosed) {
+            const sw = eye.strokeWidth || 2;
+            const sc = eye.strokeColor || "#3a2510";
+            svg += `<path d="M${leftEyeX - 8} ${eyeY} Q${leftEyeX} ${eyeY - 6}, ${leftEyeX + 8} ${eyeY}" 
+                    stroke="${sc}" stroke-width="${sw}" fill="none" stroke-linecap="round"/>`;
+            svg += `<path d="M${rightEyeX - 8} ${eyeY} Q${rightEyeX} ${eyeY - 6}, ${rightEyeX + 8} ${eyeY}" 
+                    stroke="${sc}" stroke-width="${sw}" fill="none" stroke-linecap="round"/>`;
+        } else if (eye.isAlmond) {
+            // 날카로운 눈 - 둥근 눈동자 + 위쪽 눈꺼풀 라인만
+            svg += `<ellipse cx="${leftEyeX}" cy="${eyeY}" rx="${eye.pupil.rx}" ry="${eye.pupil.ry}" fill="${eye.pupil.color}"/>`;
+            svg += `<ellipse cx="${rightEyeX}" cy="${eyeY}" rx="${eye.pupil.rx}" ry="${eye.pupil.ry}" fill="${eye.pupil.color}"/>`;
+            // 위쪽 눈꺼풀 라인 (째진 각도 + 살짝 라운드)
+            svg += `<path d="M${leftEyeX - 8} ${eyeY - 6} Q${leftEyeX} ${eyeY - 9}, ${leftEyeX + 8} ${eyeY - 2}" stroke="#2a2a35" stroke-width="1.2" fill="none" stroke-linecap="round"/>`;
+            svg += `<path d="M${rightEyeX - 8} ${eyeY - 2} Q${rightEyeX} ${eyeY - 9}, ${rightEyeX + 8} ${eyeY - 6}" stroke="#2a2a35" stroke-width="1.2" fill="none" stroke-linecap="round"/>`;
+            svg += `<circle cx="${leftEyeX + eye.highlight.offsetX}" cy="${eyeY + eye.highlight.offsetY}" r="${eye.highlight.r}" fill="white" opacity="${eye.highlight.opacity}"/>`;
+            svg += `<circle cx="${rightEyeX + eye.highlight.offsetX}" cy="${eyeY + eye.highlight.offsetY}" r="${eye.highlight.r}" fill="white" opacity="${eye.highlight.opacity}"/>`;
+        } else {
+            svg += `<ellipse cx="${leftEyeX}" cy="${eyeY}" rx="${eye.pupil.rx}" ry="${eye.pupil.ry}" fill="${eye.pupil.color}"/>`;
+            svg += `<ellipse cx="${rightEyeX}" cy="${eyeY}" rx="${eye.pupil.rx}" ry="${eye.pupil.ry}" fill="${eye.pupil.color}"/>`;
+            svg += `<circle cx="${leftEyeX + eye.highlight.offsetX}" cy="${eyeY + eye.highlight.offsetY}" r="${eye.highlight.r}" fill="white" opacity="${eye.highlight.opacity}"/>`;
+            svg += `<circle cx="${rightEyeX + eye.highlight.offsetX}" cy="${eyeY + eye.highlight.offsetY}" r="${eye.highlight.r}" fill="white" opacity="${eye.highlight.opacity}"/>`;
+            
+            // 추가 하이라이트 (밝은 눈, 맑은 눈)
+            if (eye.highlight2) {
+                svg += `<circle cx="${leftEyeX + eye.highlight2.offsetX}" cy="${eyeY + eye.highlight2.offsetY}" r="${eye.highlight2.r}" fill="white" opacity="${eye.highlight2.opacity}"/>`;
+                svg += `<circle cx="${rightEyeX + eye.highlight2.offsetX}" cy="${eyeY + eye.highlight2.offsetY}" r="${eye.highlight2.r}" fill="white" opacity="${eye.highlight2.opacity}"/>`;
+            }
+        }
+        
+        // 볼터치 (여성)
+        svg += `<ellipse cx="46" cy="80" rx="5" ry="3" fill="${skin.blush}" opacity="0.35"/>`;
+        svg += `<ellipse cx="94" cy="80" rx="5" ry="3" fill="${skin.blush}" opacity="0.35"/>`;
+        
+        // 입
+        if (ohang === "화" || ohang === "토") {
+            svg += `<ellipse cx="70" cy="92" rx="4" ry="2.5" fill="#c8a088"/>`;
+        } else {
+            svg += `<path d="M65 92 Q70 95, 75 92" stroke="#c8a0a0" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
+        }
+        
+        
+    }
+    
+    svg += `</svg>`;
+    return svg;
+}
+
+// ============================================
+// HTML 복사 기능 (인라인 CSS 포함)
+// ============================================
+function copyResultHTML() {
+    const resultBox = document.querySelector('.result-box');
+    if (!resultBox) return;
+    
+    // 인라인 CSS 스타일
+    const inlineStyles = `
+<style>
+.result-box{max-width:900px;width:calc(100% - 40px);margin:0 auto 30px;padding:30px;background:rgba(255,255,255,0.03);border-radius:24px;border:1px solid rgba(255,255,255,0.05);font-family:'Noto Sans KR',sans-serif;}
+.user-info{text-align:center;margin-top:10px;margin-bottom:30px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,0.1);}
+.user-info h2{color:#fff;font-weight:400;font-size:22px;margin-bottom:10px;}
+.user-info p{color:#888;font-size:14px;}
+.gender-group{margin-bottom:30px;}
+.gender-label{text-align:center;color:#aaa;font-size:14px;margin-bottom:20px;}
+.cards-row{display:flex;gap:30px;justify-content:center;flex-wrap:nowrap;padding:0 20px;}
+.card-wrapper{text-align:center;flex:0 0 auto;}
+.card-label{color:#fff;font-size:16px;margin-bottom:15px;letter-spacing:2px;}
+.card{width:260px;height:400px;border-radius:24px;position:relative;overflow:hidden;}
+@media (max-width:700px){.card{width:200px;height:310px;}.cards-row{gap:15px;}.user-info h2{font-size:20px;}.user-info p{font-size:13px;}.card-label{font-size:14px;}.character-area{margin-top:-10px;}.character-area svg{transform:scale(0.85);}.element-badge{padding:5px 14px;font-size:13px;}.element-name{font-size:14px;}.element-desc{font-size:11px;}}
+.bg-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border-radius:50%;filter:blur(60px);opacity:0.4;}
+.stars{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;}
+.star{position:absolute;width:4px;height:4px;background:#fff;border-radius:50%;opacity:0.6;}
+.content{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;align-items:center;padding:20px;}
+.element-label{color:rgba(255,255,255,0.6);font-size:11px;letter-spacing:3px;margin-bottom:10px;}
+.character-area{position:relative;width:140px;height:150px;margin:10px 0;display:flex;align-items:center;justify-content:center;}
+.char-glow{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:100px;height:60px;border-radius:50%;filter:blur(25px);opacity:0.5;}
+.info{text-align:center;margin-top:auto;}
+.element-badge{display:inline-block;padding:6px 16px;border-radius:20px;font-size:14px;margin-bottom:8px;backdrop-filter:blur(10px);background:rgba(255,255,255,0.15);color:#fff;}
+.element-name{font-size:16px;font-weight:500;color:#fff;margin-bottom:4px;}
+.element-desc{font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:8px;}
+.napeum-info{font-size:11px;color:rgba(255,255,255,0.5);}
+.card-금{background:linear-gradient(160deg,#2a2a3e 0%,#1a1a2e 50%,#2d2d4a 100%);box-shadow:0 10px 40px rgba(192,192,220,0.15);}
+.card-금 .bg-glow{background:radial-gradient(circle,rgba(192,192,220,0.6) 0%,transparent 70%);}
+.card-금 .char-glow{background:radial-gradient(circle,rgba(192,192,220,0.4) 0%,transparent 70%);}
+.card-목{background:linear-gradient(160deg,#1a2e1a 0%,#0f1f0f 50%,#1a3a1a 100%);box-shadow:0 10px 40px rgba(100,180,100,0.15);}
+.card-목 .bg-glow{background:radial-gradient(circle,rgba(100,180,100,0.5) 0%,transparent 70%);}
+.card-목 .char-glow{background:radial-gradient(circle,rgba(100,180,100,0.4) 0%,transparent 70%);}
+.card-수{background:linear-gradient(160deg,#1a2a3e 0%,#0f1a2e 50%,#1a3a5a 100%);box-shadow:0 10px 40px rgba(100,150,220,0.15);}
+.card-수 .bg-glow{background:radial-gradient(circle,rgba(100,150,220,0.5) 0%,transparent 70%);}
+.card-수 .char-glow{background:radial-gradient(circle,rgba(100,150,220,0.4) 0%,transparent 70%);}
+.card-화{background:linear-gradient(160deg,#3e1a1a 0%,#2e0f0f 50%,#4a1a1a 100%);box-shadow:0 10px 40px rgba(220,100,80,0.15);}
+.card-화 .bg-glow{background:radial-gradient(circle,rgba(220,100,80,0.5) 0%,transparent 70%);}
+.card-화 .char-glow{background:radial-gradient(circle,rgba(220,100,80,0.4) 0%,transparent 70%);}
+.card-토{background:linear-gradient(160deg,#2e2a1a 0%,#1e1a0f 50%,#3a351a 100%);box-shadow:0 10px 40px rgba(180,150,100,0.15);}
+.card-토 .bg-glow{background:radial-gradient(circle,rgba(180,150,100,0.5) 0%,transparent 70%);}
+.card-토 .char-glow{background:radial-gradient(circle,rgba(180,150,100,0.4) 0%,transparent 70%);}
+@media (max-width:600px){.result-box{width:calc(100% - 20px);padding:15px;}.cards-row{display:flex;gap:10px;justify-content:center;padding:0;}.card-wrapper{flex:0 0 auto;}.card{width:145px;height:225px;}.card-label{font-size:10px;letter-spacing:1px;}.element-label{font-size:8px;}.character-area{width:85px;height:110px;}.character-area svg{width:100%;height:100%;}.element-badge{padding:3px 10px;font-size:11px;}.element-name{font-size:12px;}.element-desc{font-size:9px;}.napeum-info{font-size:8px;}.user-info h2{font-size:14px;}.user-info p{font-size:10px;}.gender-label{font-size:11px;}.content{padding:12px;}}
+</style>
+`;
+    
+    // 배경 래퍼 추가
+    const wrapperStart = `<div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);padding:40px 20px;min-height:100vh;">`;
+    const wrapperEnd = `</div>`;
+    
+    // 최종 HTML
+    const finalHTML = inlineStyles + wrapperStart + resultBox.outerHTML + wrapperEnd;
+    
+    // 클립보드에 복사
+    navigator.clipboard.writeText(finalHTML).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        btn.textContent = '✅ 복사 완료!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+            btn.textContent = '📋 HTML 복사하기';
+            btn.classList.remove('copied');
+        }, 2000);
+    }).catch(err => {
+        alert('복사 실패: ' + err);
+    });
+}
+
+// ========== iframe 자동화용 postMessage 핸들러 ==========
+window.addEventListener('message', function(event) {
+    if (event.data && event.data.action === 'generateInyeonImage') {
+        try {
+            const jsonText = event.data.jsonText;
+            const customerName = event.data.customerName || '';
+            
+            if (!jsonText || !jsonText.trim()) {
+                window.parent.postMessage({
+                    action: 'inyeonImageResult',
+                    success: false,
+                    error: 'JSON 데이터가 비어있습니다.'
+                }, '*');
+                return;
+            }
+            
+            // JSON 파싱
+            let result;
+            try {
+                result = JSON.parse(jsonText);
+            } catch (e) {
+                window.parent.postMessage({
+                    action: 'inyeonImageResult',
+                    success: false,
+                    error: 'JSON 파싱 오류: ' + e.message
+                }, '*');
+                return;
+            }
+            
+            // generateFromJSON 내부 로직 직접 실행
+            const input = result.입력 || result.input || {};
+            const inyeon = result.인연상 || result.inyeon || {};
+            const baewuja = result.배우자상 || result.baewuja || {};
+            
+            const targetGender = input.상대성별 || input.targetGender || '여';
+
+            // HTML 생성 - "둘다" 처리
+            let cardsHTML = '';
+
+            if (targetGender === '둘다') {
+                // ★ 둘다: 남/여 각각 인연상+배우자상 = 4개 카드
+                console.log('[인연상생성기] 둘다 모드 - 남/여 각각 카드 생성');
+
+                try {
+                    // 남성 그룹
+                    const maleInyeonCard = createCard('인연상', inyeon, '남');
+                    const maleBaewujaCard = createCard('배우자상', baewuja, '남');
+
+                    // 여성 그룹
+                    const femaleInyeonCard = createCard('인연상', inyeon, '여');
+                    const femaleBaewujaCard = createCard('배우자상', baewuja, '여');
+
+                    cardsHTML = `
+                        <div class="gender-group" style="margin-bottom:30px;">
+                            <div class="gender-label" style="text-align:center;margin-bottom:15px;color:#e8e0d8;font-size:16px;letter-spacing:2px;"><span style="margin-right:5px;">♂</span> 남성 인연/배우자상</div>
+                            <div class="cards-row" style="display:flex;gap:20px;justify-content:center;flex-wrap:wrap;">
+                                ${maleInyeonCard}
+                                ${maleBaewujaCard}
+                            </div>
+                        </div>
+                        <div class="gender-group">
+                            <div class="gender-label" style="text-align:center;margin-bottom:15px;color:#e8e0d8;font-size:16px;letter-spacing:2px;"><span style="margin-right:5px;">♀</span> 여성 인연/배우자상</div>
+                            <div class="cards-row" style="display:flex;gap:20px;justify-content:center;flex-wrap:wrap;">
+                                ${femaleInyeonCard}
+                                ${femaleBaewujaCard}
+                            </div>
+                        </div>
+                    `;
+                    console.log('[인연상생성기] 둘다 모드 카드 생성 완료 (4개)');
+                } catch (e) {
+                    console.error('[인연상생성기] 둘다 모드 카드 생성 에러:', e);
+                    cardsHTML = '<div style="color:red;">카드 생성 실패: ' + e.message + '</div>';
+                }
+            } else {
+                // 단일 성별
+                console.log('[인연상생성기] 단일 성별 모드:', targetGender);
+
+                try {
+                    const inyeonCard = createCard('인연상', inyeon, targetGender);
+                    const baewujaCard = createCard('배우자상', baewuja, targetGender);
+                    cardsHTML = inyeonCard + baewujaCard;
+                    console.log('[인연상생성기] 단일 성별 카드 생성 완료 (2개)');
+                } catch (e) {
+                    console.error('[인연상생성기] 카드 생성 에러:', e);
+                    cardsHTML = '<div style="color:red;">카드 생성 실패: ' + e.message + '</div>';
+                }
+            }
+            
+            // 본인 정보
+            const myInfo = result.본인 || {};
+            const inputInfo = result.입력 || input;
+            let myNapeumDisplay = myInfo.납음 || '';
+            const hangulToHanja = {};
+            Object.entries(hanjaToHangul).forEach(([h, k]) => { hangulToHanja[k] = h; });
+            if (hangulToHanja[myNapeumDisplay]) myNapeumDisplay = hangulToHanja[myNapeumDisplay];
+            
+            const myOhang = myInfo.오행 || '토';
+            const myMood = ohangAppearance[myOhang]?.분위기 || '';
+            
+            // 본인 정보 HTML (어두운 테마용)
+            const userInfoHTML = `
+                <div class="user-info" style="text-align:center; margin-bottom:25px; padding-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                    <h2 style="font-size:22px; margin:0 0 10px 0; color:#e8e0d8; font-weight:400;">${myNapeumDisplay} · ${inputInfo.일주 || ''} (본인)</h2>
+                    <p style="font-size:14px; margin:0; color:rgba(255,255,255,0.6);">${myMood}</p>
+                </div>
+            `;
+            
+            // 메타데이터 (숨김 - 원본 JSON 저장)
+            const metaJSON = JSON.stringify(result).replace(/"/g, '&quot;');
+            const metaHTML = `<div style="display:none;" data-inyun-json="${metaJSON}"></div>`;
+            
+            // 바깥 컨테이너 박스 포함 전체 HTML
+            // "둘다"일 때는 gender-group 구조, 단일 성별일 때는 inyun-cards-container 구조
+            let fullHTML;
+            if (targetGender === '둘다') {
+                fullHTML = `<div class="result-box" style="max-width:900px; margin:0 auto; padding:30px; background:linear-gradient(180deg, #252547 0%, #1a1a2e 100%); border-radius:24px; border:1px solid rgba(255,255,255,0.08); box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+${userInfoHTML}
+${cardsHTML}
+${metaHTML}
+</div>`;
+            } else {
+                fullHTML = `<div class="result-box" style="max-width:700px; margin:0 auto; padding:30px; background:linear-gradient(180deg, #252547 0%, #1a1a2e 100%); border-radius:24px; border:1px solid rgba(255,255,255,0.08); box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+${userInfoHTML}
+<div class="inyun-cards-container" style="display:flex; gap:20px; justify-content:center; flex-wrap:wrap; padding:20px 0;">
+${cardsHTML}
+</div>
+${metaHTML}
+</div>`;
+            }
+
+            console.log('[인연상생성기] fullHTML 길이:', fullHTML.length);
+            console.log('[인연상생성기] targetGender:', targetGender);
+            
+            // CSS 포함 전체 HTML (createCard가 사용하는 실제 CSS)
+            const cssStyle = `<style>
+/* 카드 컨테이너 */
+.inyun-cards-container { display:flex; gap:20px; justify-content:center; flex-wrap:wrap; padding:20px; }
+.card-wrapper { text-align:center; flex:0 0 auto; }
+.card-label { color:#e8e0d8; font-size:16px; margin-bottom:15px; letter-spacing:2px; }
+.card-label span { font-size:20px; margin-right:8px; }
+
+/* 카드 기본 */
+.card { width:260px; height:400px; border-radius:24px; position:relative; overflow:hidden; }
+
+/* 배경 글로우 */
+.bg-glow { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:200px; height:200px; border-radius:50%; filter:blur(60px); opacity:0.4; }
+
+/* 별 효과 */
+.stars { position:absolute; top:0; left:0; right:0; bottom:0; pointer-events:none; }
+.star { position:absolute; width:3px; height:3px; background:white; border-radius:50%; animation:twinkle 2s ease-in-out infinite; }
+@keyframes twinkle { 0%,100%{opacity:0.2;transform:scale(1);} 50%{opacity:0.8;transform:scale(1.2);} }
+
+/* 컨텐츠 */
+.content { position:relative; z-index:10; height:100%; display:flex; flex-direction:column; align-items:center; padding:24px 20px; box-sizing:border-box; }
+.element-label { font-size:11px; letter-spacing:3px; opacity:0.6; margin-bottom:8px; font-weight:300; }
+.character-area { flex:1; display:flex; align-items:center; justify-content:center; position:relative; }
+.char-glow { position:absolute; width:140px; height:140px; border-radius:50%; filter:blur(40px); opacity:0.5; }
+.character-area svg { position:relative; z-index:1; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3)); }
+.info { text-align:center; margin-top:auto; }
+.element-badge { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:20px; font-weight:400; backdrop-filter:blur(10px); }
+.element-name { font-size:15px; font-weight:500; margin-bottom:4px; letter-spacing:1px; }
+.element-desc { font-size:11px; opacity:0.5; font-weight:300; line-height:1.5; max-width:200px; }
+.napeum-info { margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1); font-size:10px; opacity:0.4; letter-spacing:0.5px; }
+
+/* 금(金) */
+.card-금 { background:linear-gradient(180deg,#2a2a3e 0%,#1e1e30 100%); box-shadow:0 10px 40px rgba(200,200,230,0.15); }
+.card-금 .bg-glow { background:rgba(210,210,240,0.5); }
+.card-금 .char-glow { background:rgba(200,200,230,0.4); }
+.card-금 .element-label,.card-금 .element-name,.card-금 .element-desc { color:#e8e8f8; }
+.card-금 .element-badge { background:rgba(200,200,230,0.15); border:1px solid rgba(200,200,230,0.3); color:#e8e8f8; }
+.card-금 .star { background:#e8e8ff; }
+.card-금 .napeum-info { color:#e8e8f8; }
+
+/* 목(木) */
+.card-목 { background:linear-gradient(180deg,#1a2a1a 0%,#152015 100%); box-shadow:0 10px 40px rgba(100,180,100,0.15); }
+.card-목 .bg-glow { background:rgba(120,200,120,0.5); }
+.card-목 .char-glow { background:rgba(100,180,100,0.4); }
+.card-목 .element-label,.card-목 .element-name,.card-목 .element-desc { color:#d0f0d0; }
+.card-목 .element-badge { background:rgba(100,180,100,0.15); border:1px solid rgba(100,180,100,0.3); color:#d0f0d0; }
+.card-목 .star { background:#c0ffc0; }
+.card-목 .napeum-info { color:#d0f0d0; }
+
+/* 수(水) */
+.card-수 { background:linear-gradient(180deg,#1a1a3e 0%,#151528 100%); box-shadow:0 10px 40px rgba(100,150,255,0.15); }
+.card-수 .bg-glow { background:rgba(120,170,255,0.5); }
+.card-수 .char-glow { background:rgba(100,150,255,0.4); }
+.card-수 .element-label,.card-수 .element-name,.card-수 .element-desc { color:#d0e0ff; }
+.card-수 .element-badge { background:rgba(100,150,255,0.15); border:1px solid rgba(100,150,255,0.3); color:#d0e0ff; }
+.card-수 .star { background:#c0d8ff; }
+.card-수 .napeum-info { color:#d0e0ff; }
+
+/* 화(火) */
+.card-화 { background:linear-gradient(180deg,#2e1a1a 0%,#281515 100%); box-shadow:0 10px 40px rgba(255,120,100,0.15); }
+.card-화 .bg-glow { background:rgba(255,140,120,0.5); }
+.card-화 .char-glow { background:rgba(255,120,100,0.4); }
+.card-화 .element-label,.card-화 .element-name,.card-화 .element-desc { color:#ffe0d8; }
+.card-화 .element-badge { background:rgba(255,120,100,0.15); border:1px solid rgba(255,120,100,0.3); color:#ffe0d8; }
+.card-화 .star { background:#ffc8c0; }
+.card-화 .napeum-info { color:#ffe0d8; }
+
+/* 토(土) */
+.card-토 { background:linear-gradient(180deg,#2a2518 0%,#1a1508 100%); box-shadow:0 10px 40px rgba(200,160,100,0.15); }
+.card-토 .bg-glow { background:rgba(210,170,120,0.5); }
+.card-토 .char-glow { background:rgba(200,160,100,0.4); }
+.card-토 .element-label,.card-토 .element-name,.card-토 .element-desc { color:#f0e0c8; }
+.card-토 .element-badge { background:rgba(200,160,100,0.15); border:1px solid rgba(200,160,100,0.3); color:#f0e0c8; }
+.card-토 .star { background:#ffe8c0; }
+.card-토 .napeum-info { color:#f0e0c8; }
+
+/* 모바일 반응형 (비율 유지) */
+@media (max-width:600px) {
+  .inyun-cards-container { gap:10px; padding:10px; }
+  .card { width:calc((100vw - 60px) / 2); height:auto; aspect-ratio:260/400; }
+  .card-label { font-size:12px; margin-bottom:10px; }
+  .content { padding:15px 12px; }
+  .element-label { font-size:9px; }
+  .character-area svg { transform:scale(0.7); }
+  .element-badge { width:32px; height:32px; font-size:14px; margin-bottom:8px; }
+  .element-name { font-size:12px; }
+  .element-desc { font-size:9px; max-width:120px; }
+  .napeum-info { font-size:8px; margin-top:5px; padding-top:5px; }
+}
+</style>`;
+            
+            const resultHTML = cssStyle + fullHTML;
+            
+            // ★ 이름별 localStorage 저장
+            if (customerName) {
+                localStorage.setItem('inyeon_' + customerName, resultHTML);
+                console.log('✅ localStorage 저장:', 'inyeon_' + customerName);
+            }
+            
+            // 결과 반환
+            window.parent.postMessage({
+                action: 'inyeonImageResult',
+                success: true,
+                result: resultHTML
+            }, '*');
+            
+        } catch (error) {
+            window.parent.postMessage({
+                action: 'inyeonImageResult',
+                success: false,
+                error: error.message
+            }, '*');
+        }
+    }
+});
+</script>
+</body>
+</html>
