@@ -3331,19 +3331,41 @@
         }
 
         // Supabase에 고객 추가
-        async function supabaseInsertCustomer(customer) {
+        async function supabaseInsertCustomer(customer, upsert = false) {
             try {
                 const data = convertToSupabaseFormat(customer);
-                const response = await fetch(
-                    `${SAJU_CONFIG.supabase.url}/rest/v1/customers`,
-                    {
-                        method: 'POST',
-                        headers: supabaseHeaders,
-                        body: JSON.stringify(data)
-                    }
-                );
-                if (!response.ok) throw new Error('Supabase 추가 실패');
-                return await response.json();
+
+                // order_code가 없으면 스킵
+                if (!data.order_code) {
+                    console.warn('order_code 없음, 스킵:', customer.name);
+                    return null;
+                }
+
+                const headers = { ...supabaseHeaders };
+
+                // upsert 모드: 중복 시 업데이트
+                if (upsert) {
+                    headers['Prefer'] = 'resolution=merge-duplicates';
+                }
+
+                const url = upsert
+                    ? `${SAJU_CONFIG.supabase.url}/rest/v1/customers?on_conflict=order_code`
+                    : `${SAJU_CONFIG.supabase.url}/rest/v1/customers`;
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(`Supabase 추가 실패: ${response.status} - ${errText}`);
+                }
+
+                // 201 Created 또는 200 OK (upsert 성공)
+                const text = await response.text();
+                return text ? JSON.parse(text) : { success: true };
             } catch (error) {
                 console.error('Supabase 추가 에러:', error);
                 return null;
@@ -3372,6 +3394,18 @@
 
         // Google Sheets 형식 → Supabase 형식 변환
         function convertToSupabaseFormat(customer) {
+            // Supabase 테이블에 있는 필드만 매핑
+            const allowedFields = [
+                'order_code', 'name', 'birth_year', 'birth_month', 'birth_day',
+                'birth_hour', 'birth_minute', 'gender', 'calendar_type', 'package',
+                'status', 'phone', 'email', 'main_concern', 'repeat_pattern',
+                'custom_question', 'fortune_type', 'love_status', 'job_status',
+                'partner_gender', 'matching_interest', 'saju_result', 'prompt_result',
+                'main_result_text', 'result_url', 'inyeon_calc_result', 'inyeon_html',
+                'answer_status', 'additional_result_text', 'additional_result_url',
+                'memo', 'payment_status', 'payment_date'
+            ];
+
             const mapping = {
                 orderCode: 'order_code',
                 birthYear: 'birth_year',
@@ -3403,9 +3437,12 @@
 
             const result = {};
             for (const [key, value] of Object.entries(customer)) {
-                if (key.startsWith('_') && key !== '_answerStatus') continue; // 내부 변수 제외
+                if (key.startsWith('_') && key !== '_answerStatus') continue;
                 const newKey = mapping[key] || key;
-                result[newKey] = value;
+                // 허용된 필드만 포함
+                if (allowedFields.includes(newKey) && value !== undefined && value !== null) {
+                    result[newKey] = value;
+                }
             }
             return result;
         }
@@ -3452,29 +3489,31 @@
 
         // Google Sheets 데이터 → Supabase로 마이그레이션
         async function migrateToSupabase() {
-            if (!confirm('Google Sheets의 모든 데이터를 Supabase로 복사합니다.\n계속하시겠습니까?')) {
+            if (!confirm('Google Sheets의 모든 데이터를 Supabase로 복사합니다.\n(이미 있는 데이터는 업데이트됩니다)\n계속하시겠습니까?')) {
                 return;
             }
 
-            console.log('🚀 마이그레이션 시작...');
-            let success = 0, failed = 0;
+            console.log('🚀 마이그레이션 시작... (upsert 모드)');
+            let success = 0, failed = 0, skipped = 0;
 
             for (const customer of customers) {
                 try {
-                    const result = await supabaseInsertCustomer(customer);
+                    // upsert=true: 중복 시 업데이트
+                    const result = await supabaseInsertCustomer(customer, true);
                     if (result) {
                         success++;
-                        console.log(`✅ ${customer.name} 마이그레이션 완료`);
+                        console.log(`✅ ${customer.name} (${customer.orderCode}) 완료`);
                     } else {
-                        failed++;
+                        skipped++;
+                        console.warn(`⚠️ ${customer.name} 스킵됨`);
                     }
                 } catch (e) {
                     failed++;
-                    console.error(`❌ ${customer.name} 마이그레이션 실패:`, e);
+                    console.error(`❌ ${customer.name} 실패:`, e);
                 }
             }
 
-            alert(`마이그레이션 완료!\n✅ 성공: ${success}건\n❌ 실패: ${failed}건`);
+            alert(`마이그레이션 완료!\n✅ 성공: ${success}건\n⚠️ 스킵: ${skipped}건\n❌ 실패: ${failed}건`);
         }
 
         // ========== 사주 계산 데이터 ==========
