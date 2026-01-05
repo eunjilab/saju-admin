@@ -1903,7 +1903,6 @@
             <button class="header-btn" id="headerBackBtn" onclick="backToList()" style="display:none; background:#4a7c59; color:#fff;"><span class="btn-icon">←</span><span class="btn-text">목록</span></button>
             <button class="header-btn" id="adminManageBtn" onclick="showAdminModal()" style="display:none;"><span class="btn-icon">👤</span><span class="btn-text">관리자</span></button>
             <button class="header-btn primary" onclick="showWorkflowModal()"><span class="btn-icon">🔧</span><span class="btn-text">워크플로우</span></button>
-            <button class="header-btn" onclick="migrateToSupabase()" style="background:#3b82f6; color:#fff; border-color:#3b82f6;" title="Google Sheets → Supabase 마이그레이션"><span class="btn-icon">📤</span><span class="btn-text">DB이전</span></button>
             <button class="header-btn" onclick="forceRefresh()"><span class="btn-icon">🔄</span><span class="btn-text">새로고침</span></button>
             <button class="header-btn logout" onclick="doLogout()"><span class="btn-icon">🚪</span><span class="btn-text">로그아웃</span></button>
         </div>
@@ -2969,13 +2968,13 @@
             const id = document.getElementById('loginId').value;
             const pw = document.getElementById('loginPw').value;
             const loginBtn = document.querySelector('.login-btn');
-            
+
             if (!id || !pw) {
                 showLoginError('아이디와 비밀번호를 입력하세요');
                 return;
             }
-            
-            // 로컬에서 빠르게 체크 (총관리자)
+
+            // 로컬에서 빠르게 체크 (총관리자 - 하드코딩)
             if (id === 'oiah4579' && pw === '4579') {
                 currentAdmin = {
                     id: 'oiah4579',
@@ -2993,7 +2992,7 @@
                 showMainPage();
                 return;
             }
-            
+
             // 캐시에서 확인 (이전에 로그인 성공한 관리자)
             const adminCache = JSON.parse(localStorage.getItem('admin_cache') || '{}');
             if (adminCache[id] && adminCache[id].password === pw) {
@@ -3004,24 +3003,44 @@
                 verifyLogin(id, pw);
                 return;
             }
-            
+
             // 로딩 표시
             loginBtn.textContent = '로그인 중...';
             loginBtn.disabled = true;
-            
-            // API 호출
+
+            // ★ Supabase 우선 로그인 (빠름!)
+            try {
+                const supabaseAdmin = await supabaseAdminLogin(id, pw);
+                if (supabaseAdmin) {
+                    currentAdmin = supabaseAdmin;
+                    currentAdmin.password = pw;
+                    localStorage.setItem('admin_session', JSON.stringify(currentAdmin));
+                    adminCache[id] = currentAdmin;
+                    localStorage.setItem('admin_cache', JSON.stringify(adminCache));
+                    console.log('⚡ Supabase 로그인 성공');
+                    showMainPage();
+                    loginBtn.textContent = '로그인';
+                    loginBtn.disabled = false;
+                    return;
+                }
+            } catch (e) {
+                console.log('Supabase 로그인 실패, Google Sheets로 시도...');
+            }
+
+            // Google Sheets 백업 로그인
             try {
                 const url = `${SAJU_CONFIG.googleSheets.webAppUrl}?action=adminLogin&id=${encodeURIComponent(id)}&password=${encodeURIComponent(pw)}`;
                 const response = await fetch(url);
                 const result = await response.json();
-                
+
                 if (result.success) {
                     currentAdmin = result.admin;
-                    currentAdmin.password = pw; // 세션 저장용
+                    currentAdmin.password = pw;
                     localStorage.setItem('admin_session', JSON.stringify(currentAdmin));
-                    // 캐시에 저장
                     adminCache[id] = currentAdmin;
                     localStorage.setItem('admin_cache', JSON.stringify(adminCache));
+                    // ★ Supabase에도 동기화
+                    supabaseUpsertAdmin({ ...currentAdmin, status: 'approved' });
                     showMainPage();
                 } else {
                     showLoginError(result.error || '로그인 실패');
@@ -3029,7 +3048,7 @@
             } catch (error) {
                 showLoginError('서버 연결 실패');
             }
-            
+
             // 버튼 복구
             loginBtn.textContent = '로그인';
             loginBtn.disabled = false;
@@ -3329,6 +3348,105 @@
                 return null;
             }
         }
+
+        // ========== Supabase 관리자 함수 ==========
+
+        // Supabase에서 관리자 로그인
+        async function supabaseAdminLogin(id, password) {
+            try {
+                const response = await fetch(
+                    `${SAJU_CONFIG.supabase.url}/rest/v1/admins?id=eq.${encodeURIComponent(id)}&password=eq.${encodeURIComponent(password)}&status=eq.approved&select=*`,
+                    { headers: supabaseHeaders }
+                );
+                if (!response.ok) return null;
+                const data = await response.json();
+                return data.length > 0 ? data[0] : null;
+            } catch (error) {
+                console.error('Supabase 로그인 에러:', error);
+                return null;
+            }
+        }
+
+        // Supabase에서 관리자 목록 조회
+        async function supabaseGetAdmins() {
+            try {
+                const response = await fetch(
+                    `${SAJU_CONFIG.supabase.url}/rest/v1/admins?status=eq.approved&select=*`,
+                    { headers: supabaseHeaders }
+                );
+                if (!response.ok) return null;
+                return await response.json();
+            } catch (error) {
+                console.error('Supabase 관리자 목록 에러:', error);
+                return null;
+            }
+        }
+
+        // Supabase에 관리자 추가/업데이트
+        async function supabaseUpsertAdmin(admin) {
+            try {
+                const response = await fetch(
+                    `${SAJU_CONFIG.supabase.url}/rest/v1/admins?on_conflict=id`,
+                    {
+                        method: 'POST',
+                        headers: { ...supabaseHeaders, 'Prefer': 'resolution=merge-duplicates' },
+                        body: JSON.stringify(admin)
+                    }
+                );
+                return response.ok;
+            } catch (error) {
+                console.error('Supabase 관리자 저장 에러:', error);
+                return false;
+            }
+        }
+
+        // Supabase에서 관리자 삭제
+        async function supabaseDeleteAdmin(id) {
+            try {
+                const response = await fetch(
+                    `${SAJU_CONFIG.supabase.url}/rest/v1/admins?id=eq.${encodeURIComponent(id)}`,
+                    { method: 'DELETE', headers: supabaseHeaders }
+                );
+                return response.ok;
+            } catch (error) {
+                console.error('Supabase 관리자 삭제 에러:', error);
+                return false;
+            }
+        }
+
+        // Supabase 설정 조회
+        async function supabaseGetSetting(key) {
+            try {
+                const response = await fetch(
+                    `${SAJU_CONFIG.supabase.url}/rest/v1/settings?key=eq.${encodeURIComponent(key)}&select=value`,
+                    { headers: supabaseHeaders }
+                );
+                if (!response.ok) return null;
+                const data = await response.json();
+                return data.length > 0 ? data[0].value : null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        // Supabase 설정 저장
+        async function supabaseSetSetting(key, value) {
+            try {
+                const response = await fetch(
+                    `${SAJU_CONFIG.supabase.url}/rest/v1/settings?on_conflict=key`,
+                    {
+                        method: 'POST',
+                        headers: { ...supabaseHeaders, 'Prefer': 'resolution=merge-duplicates' },
+                        body: JSON.stringify({ key, value, updated_at: new Date().toISOString() })
+                    }
+                );
+                return response.ok;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        // ========== Supabase 고객 함수 ==========
 
         // Supabase에 고객 추가
         async function supabaseInsertCustomer(customer, upsert = false) {
@@ -6444,6 +6562,20 @@ ${questionList}
 
         // 알림 시간 설정 불러오기
         async function loadNotificationTime() {
+            // ★ Supabase 우선
+            try {
+                const settings = await supabaseGetSetting('notification_settings');
+                if (settings) {
+                    const parsed = JSON.parse(settings);
+                    document.getElementById('notifyStartHour').value = parsed.startHour || 10;
+                    document.getElementById('notifyEndHour').value = parsed.endHour || 22;
+                    document.getElementById('notifyInterval').value = parsed.interval || 1;
+                    console.log('⚡ Supabase 알림 설정 로드');
+                    return;
+                }
+            } catch (e) {}
+
+            // Google Sheets 백업
             try {
                 const url = `${SAJU_CONFIG.googleSheets.webAppUrl}?action=getNotificationSettings`;
                 const response = await fetch(url);
@@ -6452,6 +6584,8 @@ ${questionList}
                     document.getElementById('notifyStartHour').value = result.settings.startHour || 10;
                     document.getElementById('notifyEndHour').value = result.settings.endHour || 22;
                     document.getElementById('notifyInterval').value = result.settings.interval || 1;
+                    // Supabase에 동기화
+                    supabaseSetSetting('notification_settings', JSON.stringify(result.settings));
                 }
             } catch (e) {
                 console.error('알림 설정 로드 실패:', e);
@@ -6463,18 +6597,30 @@ ${questionList}
             const startHour = document.getElementById('notifyStartHour').value;
             const endHour = document.getElementById('notifyEndHour').value;
             const interval = document.getElementById('notifyInterval').value;
-            
+            const settings = { startHour, endHour, interval };
+
+            // ★ Supabase에 저장 (빠름!)
+            const supabaseOk = await supabaseSetSetting('notification_settings', JSON.stringify(settings));
+            if (supabaseOk) {
+                console.log('⚡ Supabase 알림 설정 저장');
+            }
+
+            // Google Sheets에도 저장 (백업)
             try {
                 const url = `${SAJU_CONFIG.googleSheets.webAppUrl}?action=saveNotificationSettings&startHour=${startHour}&endHour=${endHour}&interval=${interval}`;
                 const response = await fetch(url);
                 const result = await response.json();
-                if (result.success) {
+                if (result.success || supabaseOk) {
                     alert('알림 시간 설정이 저장되었습니다.');
                 } else {
                     alert('저장 실패: ' + result.error);
                 }
             } catch (e) {
-                alert('서버 연결 실패');
+                if (supabaseOk) {
+                    alert('알림 시간 설정이 저장되었습니다.');
+                } else {
+                    alert('서버 연결 실패');
+                }
             }
         }
 
@@ -6486,7 +6632,7 @@ ${questionList}
         // 관리자 목록 로드
         async function loadAdminList() {
             const listEl = document.getElementById('adminList');
-            
+
             // 캐시 먼저 표시
             const cached = localStorage.getItem('adminList_cache');
             if (cached) {
@@ -6495,17 +6641,35 @@ ${questionList}
             } else {
                 listEl.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">불러오는 중...</div>';
             }
-            
-            // 백그라운드에서 새로고침
+
+            // ★ Supabase 우선 로드 (빠름!)
+            try {
+                const supabaseAdmins = await supabaseGetAdmins();
+                if (supabaseAdmins && supabaseAdmins.length > 0) {
+                    adminList = supabaseAdmins;
+                    localStorage.setItem('adminList_cache', JSON.stringify(adminList));
+                    renderAdminList();
+                    console.log('⚡ Supabase 관리자 목록 로드:', adminList.length, '명');
+                    return;
+                }
+            } catch (e) {
+                console.log('Supabase 관리자 목록 실패, Google Sheets로...');
+            }
+
+            // Google Sheets 백업
             try {
                 const url = `${SAJU_CONFIG.googleSheets.webAppUrl}?action=getAdminList`;
                 const response = await fetch(url);
                 const result = await response.json();
-                
+
                 if (result.success) {
                     adminList = result.admins;
                     localStorage.setItem('adminList_cache', JSON.stringify(adminList));
                     renderAdminList();
+                    // ★ Supabase에 동기화
+                    for (const admin of adminList) {
+                        supabaseUpsertAdmin({ ...admin, status: admin.status || 'approved' });
+                    }
                 } else if (!cached) {
                     listEl.innerHTML = '<div style="text-align:center; padding:20px; color:#c00;">로드 실패</div>';
                 }
