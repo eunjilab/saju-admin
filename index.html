@@ -3090,18 +3090,115 @@
         function showMainPage() {
             document.getElementById('loginScreen').classList.add('hidden');
             applyPermissions();
-            
+
             // 로그인한 사용자 이름 표시
             const userEl = document.getElementById('loggedInUser');
             if (userEl && currentAdmin) {
                 userEl.querySelector('strong').textContent = currentAdmin.name;
                 userEl.style.display = 'inline';
             }
-            
+
             // 총관리자면 승인 대기 알림 체크
             if (currentAdmin && currentAdmin.perm_admin) {
                 checkPendingAdmins();
             }
+
+            // ★ 새 고객 알림 폴링 시작 (30초마다)
+            startNewCustomerPolling();
+        }
+
+        // ========== 새 고객 알림 시스템 ==========
+        let lastCustomerCount = 0;
+        let pollingInterval = null;
+
+        function startNewCustomerPolling() {
+            // 현재 고객 수 저장
+            lastCustomerCount = customers.length;
+
+            // 기존 폴링 중지
+            if (pollingInterval) clearInterval(pollingInterval);
+
+            // 30초마다 새 고객 체크
+            pollingInterval = setInterval(checkNewCustomers, 30000);
+            console.log('🔔 새 고객 알림 폴링 시작 (30초 간격)');
+        }
+
+        async function checkNewCustomers() {
+            try {
+                // Supabase에서 최신 고객 수 확인
+                const response = await fetch(
+                    `${SAJU_CONFIG.supabase.url}/rest/v1/customers?select=id&order=created_at.desc&limit=1`,
+                    { headers: supabaseHeaders }
+                );
+                if (!response.ok) return;
+
+                // 전체 고객 수 확인
+                const countResponse = await fetch(
+                    `${SAJU_CONFIG.supabase.url}/rest/v1/customers?select=count`,
+                    { headers: { ...supabaseHeaders, 'Prefer': 'count=exact' } }
+                );
+
+                const contentRange = countResponse.headers.get('content-range');
+                const totalCount = contentRange ? parseInt(contentRange.split('/')[1]) : 0;
+
+                if (totalCount > lastCustomerCount && lastCustomerCount > 0) {
+                    const newCount = totalCount - lastCustomerCount;
+                    showNewCustomerAlert(newCount);
+                    lastCustomerCount = totalCount;
+
+                    // 자동 새로고침
+                    await loadCustomers(true);
+                }
+            } catch (e) {
+                console.log('새 고객 체크 실패:', e);
+            }
+        }
+
+        function showNewCustomerAlert(count) {
+            // 브라우저 알림 권한 요청
+            if (Notification.permission === 'granted') {
+                new Notification('🎉 새 고객 신청!', {
+                    body: `${count}명의 새 고객이 신청했습니다.`,
+                    icon: '📋'
+                });
+            } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission();
+            }
+
+            // 화면 알림
+            const alert = document.createElement('div');
+            alert.className = 'new-customer-alert';
+            alert.innerHTML = `
+                <div class="alert-content">
+                    <span class="alert-icon">🎉</span>
+                    <span class="alert-text">새 고객 ${count}명이 신청했습니다!</span>
+                    <button onclick="this.parentElement.parentElement.remove()">✕</button>
+                </div>
+            `;
+            alert.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: linear-gradient(135deg, #4a7c59, #6b9b7a);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                z-index: 10000;
+                animation: slideDown 0.3s ease;
+            `;
+            document.body.appendChild(alert);
+
+            // 5초 후 자동 제거
+            setTimeout(() => alert.remove(), 5000);
+
+            // 소리 알림 (선택적)
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2Onr6ysKGUi4uXpbK/w7u0qqKbm6GnsbvDxL22raObmZuepq+5wcTAuLCtqKajp6y0u8HEw7+5s66qp6eprrS6v8LAu7aysKyqqq2yt7u+vry5tbKvrKytsba6vb68ubW0sbCvsLK1ubu9vLq3tbOxsLGztba5u7y7uba0s7GxsbO1t7m7u7q4trSzsrKztLa4uru7urm3tbSzs7O0tre5uru6uLe1tLO0tLW2uLm6urm4t7W0tLW1tri5uru6ubi2tbS0tbW2t7i5ubm4t7a1tLS1tba3uLm5ubi3trW0tbW2t7i4ubm4t7a1tbW1tre4ubm5uLe2tbW1tba3uLi5ubi3t7a1tbW2tre4uLi4t7e2trW1tba3t7i4uLe3trW1tba2t7e4uLi3t7a2tbW2tre3uLi4t7e2trW1tba3t7i4t7e3trW1tba2t7e3t7e3trW1tba2t7e3t7e2trW1tbW2t7e3t7e2trW1tba2tre3t7e2trW1tba2tre3t7e2trW1tba2tre3t7e2trW1');
+                audio.volume = 0.3;
+                audio.play();
+            } catch (e) {}
         }
         
         // 승인 대기 관리자 수 체크
@@ -3298,7 +3395,7 @@
             try {
                 // ★ 진행 중인 고객은 전체 데이터, 완료된 고객은 기본 정보만 (성능 최적화)
                 // 기본 필드: 목록 표시에 필요한 최소 정보
-                const basicFields = 'id,order_code,name,birth_year,birth_month,birth_day,gender,package,status,answer_status,matching_interest,memo,created_at';
+                const basicFields = 'id,order_code,name,birth_year,birth_month,birth_day,birth_hour,birth_minute,gender,calendar_type,package,status,answer_status,matching_interest,memo,created_at';
 
                 // 완료 상태가 아닌 고객 (전체 데이터)
                 const activeResponse = await fetch(
