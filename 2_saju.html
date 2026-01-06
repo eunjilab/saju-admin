@@ -518,11 +518,72 @@
         }
         
         @media (max-width: 600px) {
-            .pillars-display { gap: 5px; }
-            .pillar-hanja { font-size: 22px; }
-            .ohaeng-display { flex-wrap: wrap; }
-            .ohaeng-item { min-width: calc(33% - 10px); }
-            .sipsung-display { grid-template-columns: repeat(3, 1fr); }
+            .container { padding: 15px 10px; }
+            .header h1 { font-size: 22px; }
+            .section { padding: 15px; margin-bottom: 15px; }
+            .section h2 { font-size: 14px; }
+
+            /* 사주 명식 - 2x2 그리드 */
+            .pillars-display {
+                gap: 8px;
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .pillar-box { padding: 10px; }
+            .pillar-hanja { font-size: 20px; }
+            .pillar-kr { font-size: 10px; }
+
+            /* 오행 분포 */
+            .ohaeng-display { flex-wrap: wrap; gap: 8px; }
+            .ohaeng-item {
+                min-width: calc(33% - 8px);
+                padding: 8px;
+            }
+            .ohaeng-char { font-size: 16px; }
+            .ohaeng-count { font-size: 12px; }
+
+            /* 십성 분포 */
+            .sipsung-display {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+            .sipsung-item { padding: 10px; }
+
+            /* 격국/용신 */
+            .gyeokguk-display { gap: 10px; }
+            .gyeokguk-item { padding: 12px; }
+            .gyeokguk-value { font-size: 14px; }
+            .gyeokguk-desc { font-size: 11px; }
+            .yongsin-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            /* 대운 */
+            .daeun-display { gap: 6px; }
+            .daeun-item { padding: 8px 10px; min-width: 60px; }
+            .daeun-age { font-size: 10px; }
+            .daeun-pillar { font-size: 14px; }
+
+            /* 지장간 */
+            .jijanggan-item { flex-direction: column; gap: 5px; }
+
+            /* 신살 */
+            .sinsal-list { gap: 6px; }
+            .sinsal-tag { font-size: 11px; padding: 4px 8px; }
+
+            /* 버튼 */
+            .btn { padding: 14px; font-size: 14px; min-height: 48px; }
+
+            /* 일간 박스 */
+            .ilgan-box { padding: 15px; }
+            .ilgan-char { font-size: 40px; }
+            .ilgan-name { font-size: 14px; }
+        }
+
+        /* 태블릿 */
+        @media (max-width: 768px) and (min-width: 601px) {
+            .pillars-display { gap: 10px; }
+            .yongsin-row { gap: 15px; }
         }
     </style>
 </head>
@@ -609,7 +670,16 @@
                 </p>
                 <div class="gyeokguk-display" id="gyeokgukDisplay"></div>
             </div>
-            
+
+            <!-- 삼재 -->
+            <div class="section" id="samjaeSection" style="display: none;">
+                <h2>⚠️ 삼재 (三災)</h2>
+                <p style="font-size: 13px; color: #888; margin-bottom: 15px;">
+                    12년 주기로 3년간 오는 액운의 시기
+                </p>
+                <div class="gyeokguk-display" id="samjaeDisplay"></div>
+            </div>
+
             <!-- 대운 -->
             <div class="section">
                 <h2>🌊 대운 흐름</h2>
@@ -627,6 +697,28 @@
                     사주 내 글자들의 상호작용 · 합은 결합, 충은 대립, 형은 갈등, 파는 깨짐, 해는 해침
                 </p>
                 <div id="hapchungDisplay"></div>
+            </div>
+
+            <!-- Birth Chart (서양 점성술) -->
+            <div class="section" id="birthChartSection" style="display: none;">
+                <h2>🌟 Birth Chart (서양 점성술)</h2>
+                <p style="font-size: 13px; color: #888; margin-bottom: 15px;">
+                    출생 시점의 행성 위치 · Whole Sign 하우스 시스템
+                </p>
+                <div id="birthChartDisplay">
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="font-size: 14px; color: #d4af82; margin-bottom: 10px;">☀️ 행성 위치 (Planet Positions)</h3>
+                        <div id="planetPositions" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;"></div>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="font-size: 14px; color: #d4af82; margin-bottom: 10px;">🏠 하우스 (Houses)</h3>
+                        <div id="housePositions" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px;"></div>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 14px; color: #d4af82; margin-bottom: 10px;">✨ 주요 애스펙트 (Aspects)</h3>
+                        <div id="aspectsDisplay" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- 복사용 결과 -->
@@ -650,7 +742,10 @@
     </div>
     
     <div class="toast" id="toast">✅ 클립보드에 복사되었습니다!</div>
-    
+
+    <!-- Astronomy Engine 라이브러리 -->
+    <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
+
     <script>
         // ============================================
         // 기본 데이터
@@ -2627,6 +2722,208 @@
             };
         }
 
+        // ========== Birth Chart (서양 점성술) 계산 ==========
+        function calculateBirthChart(birthDate, birthHour, birthMinute, latitude, longitude) {
+            // Astronomy Engine이 로드되었는지 확인
+            if (typeof Astronomy === 'undefined') {
+                console.log('Astronomy Engine이 로드되지 않았습니다.');
+                return null;
+            }
+
+            try {
+                // 날짜/시간 객체 생성
+                const date = new Date(birthDate);
+                date.setHours(birthHour || 12, birthMinute || 0, 0, 0);
+
+                // 황도대 기호
+                const ZODIAC_SIGNS = [
+                    { name: '양자리', symbol: '♈', emoji: '🐏' },
+                    { name: '황소자리', symbol: '♉', emoji: '🐂' },
+                    { name: '쌍둥이자리', symbol: '♊', emoji: '👯' },
+                    { name: '게자리', symbol: '♋', emoji: '🦀' },
+                    { name: '사자자리', symbol: '♌', emoji: '🦁' },
+                    { name: '처녀자리', symbol: '♍', emoji: '👩' },
+                    { name: '천칭자리', symbol: '♎', emoji: '⚖️' },
+                    { name: '전갈자리', symbol: '♏', emoji: '🦂' },
+                    { name: '사수자리', symbol: '♐', emoji: '🏹' },
+                    { name: '염소자리', symbol: '♑', emoji: '🐐' },
+                    { name: '물병자리', symbol: '♒', emoji: '🏺' },
+                    { name: '물고기자리', symbol: '♓', emoji: '🐟' }
+                ];
+
+                // 행성 목록
+                const PLANETS = [
+                    { name: 'Sun', kr: '태양', emoji: '☀️', body: Astronomy.Body.Sun },
+                    { name: 'Moon', kr: '달', emoji: '🌙', body: Astronomy.Body.Moon },
+                    { name: 'Mercury', kr: '수성', emoji: '☿️', body: Astronomy.Body.Mercury },
+                    { name: 'Venus', kr: '금성', emoji: '♀️', body: Astronomy.Body.Venus },
+                    { name: 'Mars', kr: '화성', emoji: '♂️', body: Astronomy.Body.Mars },
+                    { name: 'Jupiter', kr: '목성', emoji: '♃', body: Astronomy.Body.Jupiter },
+                    { name: 'Saturn', kr: '토성', emoji: '♄', body: Astronomy.Body.Saturn },
+                    { name: 'Uranus', kr: '천왕성', emoji: '⛢', body: Astronomy.Body.Uranus },
+                    { name: 'Neptune', kr: '해왕성', emoji: '♆', body: Astronomy.Body.Neptune },
+                    { name: 'Pluto', kr: '명왕성', emoji: '♇', body: Astronomy.Body.Pluto }
+                ];
+
+                // 황경을 별자리와 도수로 변환
+                function eclipticToZodiac(longitude) {
+                    const signIndex = Math.floor(longitude / 30) % 12;
+                    const degree = longitude % 30;
+                    return {
+                        sign: ZODIAC_SIGNS[signIndex],
+                        degree: degree.toFixed(2),
+                        longitude: longitude.toFixed(2)
+                    };
+                }
+
+                // 행성 위치 계산
+                const planetPositions = [];
+                for (const planet of PLANETS) {
+                    try {
+                        const equ = Astronomy.Equator(planet.body, date, null, false, true);
+                        const ecl = Astronomy.Ecliptic(equ.vec);
+                        const zodiac = eclipticToZodiac(ecl.elon);
+
+                        planetPositions.push({
+                            name: planet.name,
+                            kr: planet.kr,
+                            emoji: planet.emoji,
+                            longitude: ecl.elon,
+                            sign: zodiac.sign,
+                            degree: zodiac.degree
+                        });
+                    } catch (e) {
+                        console.log(`행성 계산 오류 (${planet.kr}):`, e);
+                    }
+                }
+
+                // ASC (Ascendant/상승점) 계산 - Whole Sign 시스템
+                let ascendant = null;
+                try {
+                    // 항성시 계산
+                    const jd = Astronomy.JulianDay(date);
+                    const gst = Astronomy.SiderealTime(date);
+                    const lst = (gst + longitude / 15) % 24; // 지방항성시
+                    const lstDegrees = lst * 15; // 도 단위로 변환
+
+                    // 간단한 ASC 계산 (황도 경사각 23.44°)
+                    const obliquity = 23.44;
+                    const latRad = latitude * Math.PI / 180;
+                    const oblRad = obliquity * Math.PI / 180;
+
+                    // RAMC (Right Ascension of Medium Coeli)
+                    const ramc = lstDegrees;
+
+                    // ASC 공식 (간소화)
+                    const ascLon = (ramc + 90) % 360;
+                    ascendant = eclipticToZodiac(ascLon);
+                } catch (e) {
+                    console.log('ASC 계산 오류:', e);
+                }
+
+                // 하우스 계산 (Whole Sign 시스템 - ASC 별자리가 1하우스)
+                const houses = [];
+                if (ascendant) {
+                    const firstHouseSign = ZODIAC_SIGNS.findIndex(s => s.name === ascendant.sign.name);
+                    for (let i = 0; i < 12; i++) {
+                        const houseSign = ZODIAC_SIGNS[(firstHouseSign + i) % 12];
+                        houses.push({
+                            house: i + 1,
+                            sign: houseSign,
+                            cusp: ((firstHouseSign + i) * 30) % 360
+                        });
+                    }
+                }
+
+                // 애스펙트 계산 (주요 애스펙트만)
+                const ASPECTS = [
+                    { name: '합', symbol: '☌', angle: 0, orb: 8 },
+                    { name: '육합', symbol: '⚹', angle: 60, orb: 6 },
+                    { name: '사각', symbol: '□', angle: 90, orb: 6 },
+                    { name: '삼합', symbol: '△', angle: 120, orb: 8 },
+                    { name: '충', symbol: '☍', angle: 180, orb: 8 }
+                ];
+
+                const aspects = [];
+                for (let i = 0; i < planetPositions.length; i++) {
+                    for (let j = i + 1; j < planetPositions.length; j++) {
+                        const p1 = planetPositions[i];
+                        const p2 = planetPositions[j];
+                        let diff = Math.abs(p1.longitude - p2.longitude);
+                        if (diff > 180) diff = 360 - diff;
+
+                        for (const aspect of ASPECTS) {
+                            if (Math.abs(diff - aspect.angle) <= aspect.orb) {
+                                aspects.push({
+                                    planet1: p1,
+                                    planet2: p2,
+                                    aspect: aspect,
+                                    exactAngle: diff.toFixed(1)
+                                });
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                return {
+                    planets: planetPositions,
+                    ascendant: ascendant,
+                    houses: houses,
+                    aspects: aspects.slice(0, 15) // 상위 15개만
+                };
+            } catch (e) {
+                console.error('Birth Chart 계산 오류:', e);
+                return null;
+            }
+        }
+
+        // Birth Chart UI 표시
+        function displayBirthChart(chart) {
+            if (!chart) return;
+
+            const section = document.getElementById('birthChartSection');
+            section.style.display = 'block';
+
+            // 행성 위치 표시
+            const planetDiv = document.getElementById('planetPositions');
+            planetDiv.innerHTML = chart.planets.map(p => `
+                <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 20px;">${p.emoji}</div>
+                    <div style="font-size: 12px; color: #888;">${p.kr}</div>
+                    <div style="color: #d4af82; font-size: 14px;">${p.sign.symbol} ${p.degree}°</div>
+                    <div style="font-size: 10px; color: #666;">${p.sign.name}</div>
+                </div>
+            `).join('');
+
+            // 하우스 표시
+            const houseDiv = document.getElementById('housePositions');
+            if (chart.houses.length > 0) {
+                houseDiv.innerHTML = chart.houses.map(h => `
+                    <div style="background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; text-align: center;">
+                        <div style="font-size: 10px; color: #888;">${h.house}하우스</div>
+                        <div style="font-size: 16px;">${h.sign.symbol}</div>
+                        <div style="font-size: 10px; color: #666;">${h.sign.name}</div>
+                    </div>
+                `).join('');
+            } else {
+                houseDiv.innerHTML = '<div style="color: #888;">하우스 계산 불가</div>';
+            }
+
+            // 애스펙트 표시
+            const aspectDiv = document.getElementById('aspectsDisplay');
+            if (chart.aspects.length > 0) {
+                aspectDiv.innerHTML = chart.aspects.map(a => `
+                    <div style="background: rgba(0,0,0,0.2); padding: 6px 10px; border-radius: 20px; font-size: 12px;">
+                        ${a.planet1.emoji}${a.aspect.symbol}${a.planet2.emoji}
+                        <span style="color: #888; margin-left: 4px;">${a.aspect.name}</span>
+                    </div>
+                `).join('');
+            } else {
+                aspectDiv.innerHTML = '<div style="color: #888;">애스펙트 없음</div>';
+            }
+        }
+
         // ========== 합충형파해(合沖刑破害) 분석 함수 ==========
 
         function analyzeHapChungHyungPaHae(yearP, monthP, dayP, hourP) {
@@ -3371,7 +3668,42 @@
                     </div>
                 </div>
             `;
-            
+
+            // 삼재 계산 및 표시
+            const samjae = calculateSamjae(r.yearP.ji);
+            const samjaeSection = document.getElementById('samjaeSection');
+            const samjaeDisplay = document.getElementById('samjaeDisplay');
+
+            if (samjae.isSamjae) {
+                samjaeSection.style.display = 'block';
+                samjaeDisplay.innerHTML = `
+                    <div class="gyeokguk-item caution" style="border-left: 4px solid #e74c3c;">
+                        <div class="gyeokguk-label">현재 상태</div>
+                        <div class="gyeokguk-value" style="color: #e74c3c; font-size: 1.3em;">${samjae.type}</div>
+                        <div class="gyeokguk-desc">${samjae.description}</div>
+                    </div>
+                    <div class="gyeokguk-item">
+                        <div class="gyeokguk-label">삼재 기간</div>
+                        <div class="gyeokguk-value">${samjae.samjaeYears.join(' → ')}</div>
+                        <div class="gyeokguk-desc">현재 ${samjae.currentYear}년 (${samjae.currentYearJi}년)</div>
+                    </div>
+                `;
+            } else {
+                samjaeSection.style.display = 'block';
+                samjaeDisplay.innerHTML = `
+                    <div class="gyeokguk-item highlight" style="border-left: 4px solid #27ae60;">
+                        <div class="gyeokguk-label">현재 상태</div>
+                        <div class="gyeokguk-value" style="color: #27ae60;">삼재 아님 ✓</div>
+                        <div class="gyeokguk-desc">현재 ${samjae.currentYear}년은 삼재 기간이 아닙니다. 적극적으로 활동하기 좋은 시기입니다.</div>
+                    </div>
+                    <div class="gyeokguk-item">
+                        <div class="gyeokguk-label">다음 삼재 기간</div>
+                        <div class="gyeokguk-value">${samjae.samjaeYears.join(' → ')}</div>
+                        <div class="gyeokguk-desc">위 지지에 해당하는 연도에 삼재가 옵니다</div>
+                    </div>
+                `;
+            }
+
             // 대운
             document.getElementById('daeunStartAge').textContent = r.daeun.startAge;
             document.getElementById('daeunDirection').textContent = r.daeun.isForward ? '순행' : '역행';
@@ -3514,6 +3846,24 @@
                 hapchungHTML = '<div class="hapchung-none">합충형파해 정보가 없습니다.</div>';
             }
             document.getElementById('hapchungDisplay').innerHTML = hapchungHTML;
+
+            // Birth Chart (서양 점성술) 계산 및 표시
+            try {
+                const lat = r.locationInfo?.lat || 37.57; // 기본값: 서울
+                const lng = r.locationInfo?.lng || 127.00;
+                const birthChart = calculateBirthChart(
+                    new Date(r.finalYear, r.finalMonth - 1, r.finalDay),
+                    r.correctedHour || r.hour || 12,
+                    r.correctedMinute || r.minute || 0,
+                    lat,
+                    lng
+                );
+                if (birthChart) {
+                    displayBirthChart(birthChart);
+                }
+            } catch (e) {
+                console.log('Birth Chart 계산 생략:', e);
+            }
 
             // 결과 텍스트 (해석용 상세 정보 포함)
             const solarTimeText = r.solarTimeResult && r.solarTimeResult.applied
