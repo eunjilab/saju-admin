@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>사주 서비스 관리자</title>
     <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
     <style>
+        /* 추가 스타일 (분리되지 않은 부분) */
         /* ========== CONFIG 기반 CSS 변수 ========== */
         :root {
             --point-gold: #d4af82;
@@ -3107,20 +3109,98 @@
             startNewCustomerPolling();
         }
 
-        // ========== 새 고객 알림 시스템 ==========
+        // ========== 새 고객 실시간 알림 시스템 (Supabase Realtime) ==========
         let lastCustomerCount = 0;
-        let pollingInterval = null;
+        let realtimeChannel = null;
 
         function startNewCustomerPolling() {
             // 현재 고객 수 저장
             lastCustomerCount = customers.length;
 
-            // 기존 폴링 중지
-            if (pollingInterval) clearInterval(pollingInterval);
+            // Supabase Realtime 구독 시작
+            setupRealtimeSubscription();
+        }
 
-            // 30초마다 새 고객 체크
+        // Supabase Realtime 구독 설정
+        function setupRealtimeSubscription() {
+            // 이미 연결되어 있으면 스킵
+            if (realtimeChannel) return;
+
+            try {
+                // Supabase Realtime WebSocket 연결
+                const wsUrl = SAJU_CONFIG.supabase.url.replace('https://', 'wss://') + '/realtime/v1/websocket?apikey=' + SAJU_CONFIG.supabase.anonKey + '&vsn=1.0.0';
+                const ws = new WebSocket(wsUrl);
+
+                ws.onopen = () => {
+                    console.log('🔔 Supabase Realtime 연결됨!');
+
+                    // 채널 구독 메시지
+                    const joinMsg = {
+                        topic: 'realtime:public:customers',
+                        event: 'phx_join',
+                        payload: {
+                            config: {
+                                broadcast: { self: false },
+                                presence: { key: '' },
+                                postgres_changes: [{
+                                    event: 'INSERT',
+                                    schema: 'public',
+                                    table: 'customers'
+                                }]
+                            }
+                        },
+                        ref: '1'
+                    };
+                    ws.send(JSON.stringify(joinMsg));
+
+                    // 하트비트 (30초마다)
+                    setInterval(() => {
+                        if (ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: Date.now().toString() }));
+                        }
+                    }, 30000);
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+
+                        // INSERT 이벤트 감지
+                        if (msg.event === 'postgres_changes' && msg.payload?.data?.type === 'INSERT') {
+                            const newCustomer = msg.payload.data.record;
+                            console.log('🎉 새 고객 실시간 감지:', newCustomer.name);
+                            showNewCustomerAlert(1, newCustomer.name);
+                            loadCustomers(true); // 목록 새로고침
+                        }
+                    } catch (e) {
+                        // JSON 파싱 실패는 무시
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    console.log('Realtime 에러, 폴백 모드로 전환:', error);
+                    startFallbackPolling();
+                };
+
+                ws.onclose = () => {
+                    console.log('Realtime 연결 종료, 5초 후 재연결...');
+                    realtimeChannel = null;
+                    setTimeout(setupRealtimeSubscription, 5000);
+                };
+
+                realtimeChannel = ws;
+            } catch (e) {
+                console.log('Realtime 설정 실패, 폴백 모드:', e);
+                startFallbackPolling();
+            }
+        }
+
+        // 폴백: Realtime 실패 시 폴링 모드
+        let pollingInterval = null;
+        function startFallbackPolling() {
+            if (pollingInterval) return;
             pollingInterval = setInterval(checkNewCustomers, 30000);
-            console.log('🔔 새 고객 알림 폴링 시작 (30초 간격)');
+            console.log('🔔 폴백 모드: 30초 폴링 시작');
         }
 
         async function checkNewCustomers() {
@@ -3154,11 +3234,15 @@
             }
         }
 
-        function showNewCustomerAlert(count) {
+        function showNewCustomerAlert(count, customerName = null) {
             // 브라우저 알림 권한 요청
+            const message = customerName
+                ? `${customerName}님이 신청했습니다!`
+                : `${count}명의 새 고객이 신청했습니다.`;
+
             if (Notification.permission === 'granted') {
                 new Notification('🎉 새 고객 신청!', {
-                    body: `${count}명의 새 고객이 신청했습니다.`,
+                    body: message,
                     icon: '📋'
                 });
             } else if (Notification.permission !== 'denied') {
@@ -3168,10 +3252,13 @@
             // 화면 알림
             const alert = document.createElement('div');
             alert.className = 'new-customer-alert';
+            const alertText = customerName
+                ? `🎉 ${customerName}님이 신청했습니다!`
+                : `🎉 새 고객 ${count}명이 신청했습니다!`;
             alert.innerHTML = `
                 <div class="alert-content">
                     <span class="alert-icon">🎉</span>
-                    <span class="alert-text">새 고객 ${count}명이 신청했습니다!</span>
+                    <span class="alert-text">${alertText}</span>
                     <button onclick="this.parentElement.parentElement.remove()">✕</button>
                 </div>
             `;
@@ -3390,44 +3477,94 @@
             'Prefer': 'return=representation'
         };
 
-        // Supabase에서 고객 목록 조회 (지연 로딩 지원)
-        async function supabaseGetCustomers() {
+        // ========== 페이지네이션 설정 ==========
+        const PAGE_SIZE = 50; // 한 번에 로드할 고객 수
+        let currentPage = 1;
+        let hasMoreData = true;
+        let isLoadingMore = false;
+
+        // Supabase에서 고객 목록 조회 (페이지네이션 + 지연 로딩)
+        async function supabaseGetCustomers(page = 1, append = false) {
             try {
+                const offset = (page - 1) * PAGE_SIZE;
+
                 // ★ 진행 중인 고객은 전체 데이터, 완료된 고객은 기본 정보만 (성능 최적화)
                 // 기본 필드: 목록 표시에 필요한 최소 정보
                 const basicFields = 'id,order_code,name,birth_year,birth_month,birth_day,birth_hour,birth_minute,gender,calendar_type,package,status,answer_status,matching_interest,memo,created_at';
 
-                // 완료 상태가 아닌 고객 (전체 데이터)
+                // 완료 상태가 아닌 고객 (전체 데이터) - 페이지네이션 적용
                 const activeResponse = await fetch(
-                    `${SAJU_CONFIG.supabase.url}/rest/v1/customers?status=neq.완료&order=created_at.desc`,
-                    { headers: supabaseHeaders }
+                    `${SAJU_CONFIG.supabase.url}/rest/v1/customers?status=neq.완료&order=created_at.desc&limit=${PAGE_SIZE}&offset=${offset}`,
+                    { headers: { ...supabaseHeaders, 'Prefer': 'count=exact' } }
                 );
 
-                // 완료 상태 고객 (기본 정보만 - 지연 로딩)
-                const completedResponse = await fetch(
-                    `${SAJU_CONFIG.supabase.url}/rest/v1/customers?status=eq.완료&select=${basicFields}&order=created_at.desc`,
-                    { headers: supabaseHeaders }
-                );
-
-                if (!activeResponse.ok || !completedResponse.ok) {
+                if (!activeResponse.ok) {
                     throw new Error('Supabase 조회 실패');
                 }
 
                 const activeCustomers = await activeResponse.json();
-                const completedCustomers = await completedResponse.json();
 
-                // 완료된 고객에 _needsDetailLoad 플래그 추가
-                completedCustomers.forEach(c => {
-                    c._needsDetailLoad = true;
-                });
+                // 더 불러올 데이터가 있는지 확인
+                const contentRange = activeResponse.headers.get('content-range');
+                if (contentRange) {
+                    const [range, total] = contentRange.split('/');
+                    hasMoreData = activeCustomers.length === PAGE_SIZE && (offset + PAGE_SIZE) < parseInt(total);
+                } else {
+                    hasMoreData = activeCustomers.length === PAGE_SIZE;
+                }
 
-                console.log(`⚡ Supabase 로드: 진행중 ${activeCustomers.length}건 (전체), 완료 ${completedCustomers.length}건 (기본)`);
+                // 첫 페이지면 완료된 고객도 함께 로드 (별도 페이징)
+                let completedCustomers = [];
+                if (page === 1) {
+                    const completedResponse = await fetch(
+                        `${SAJU_CONFIG.supabase.url}/rest/v1/customers?status=eq.완료&select=${basicFields}&order=created_at.desc&limit=${PAGE_SIZE}`,
+                        { headers: supabaseHeaders }
+                    );
+                    if (completedResponse.ok) {
+                        completedCustomers = await completedResponse.json();
+                        completedCustomers.forEach(c => {
+                            c._needsDetailLoad = true;
+                        });
+                    }
+                }
+
+                console.log(`⚡ Supabase 로드 (페이지 ${page}): 진행중 ${activeCustomers.length}건, 완료 ${completedCustomers.length}건`);
 
                 return [...activeCustomers, ...completedCustomers];
             } catch (error) {
                 console.error('Supabase 조회 에러:', error);
                 return null;
             }
+        }
+
+        // 더 불러오기 (무한 스크롤)
+        async function loadMoreCustomers() {
+            if (isLoadingMore || !hasMoreData) return;
+
+            isLoadingMore = true;
+            currentPage++;
+
+            const moreCustomers = await supabaseGetCustomers(currentPage, true);
+            if (moreCustomers && moreCustomers.length > 0) {
+                // Supabase 형식 → 앱 형식 변환 후 추가
+                const converted = moreCustomers.map(convertFromSupabaseFormat);
+                customers = [...customers, ...converted];
+                renderCustomerList();
+            }
+
+            isLoadingMore = false;
+        }
+
+        // 스크롤 이벤트 (무한 스크롤)
+        function setupInfiniteScroll() {
+            const list = document.getElementById('customerList');
+            if (!list) return;
+
+            list.addEventListener('scroll', () => {
+                if (list.scrollTop + list.clientHeight >= list.scrollHeight - 100) {
+                    loadMoreCustomers();
+                }
+            });
         }
 
         // 완료된 고객의 상세 데이터 로드 (클릭 시)
@@ -3771,6 +3908,7 @@
         // ========== 초기화 ==========
         document.addEventListener('DOMContentLoaded', function() {
             loadCustomers();
+            setupInfiniteScroll(); // 무한 스크롤 설정
         });
 
         // ========== 강제 새로고침 (캐시 완전 무효화) ==========

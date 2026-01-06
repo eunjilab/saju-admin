@@ -2145,7 +2145,11 @@
                     love_status: data.loveStatus,
                     job_status: data.jobStatus,
                     partner_gender: data.partnerGender,
-                    matching_interest: data.matchingInterest
+                    matching_interest: data.matchingInterest,
+                    birth_country: data.birthCountry || 'KR',
+                    birth_city: data.birthCity || '서울',
+                    custom_longitude: data.customLongitude ? parseFloat(data.customLongitude) : null,
+                    custom_utc_offset: data.customUtcOffset ? parseFloat(data.customUtcOffset) : null
                 };
 
                 fetch(`${SUPABASE_URL}/rest/v1/customers`, {
