@@ -732,6 +732,13 @@
                 </div>
             </div>
             <div class="form-group" style="margin-top: 15px;">
+                <label>📅 전체 대운 목록</label>
+                <textarea id="daeunListText" class="question-textarea" style="min-height:100px;" placeholder="예:
+- 0-9세: 甲戌 (비겁/식상)
+- 10-19세: 乙亥 (겁재/재성)
+- 20-29세: 丙子 (편관/상관) ← 현재"></textarea>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
                 <label>⚔️ 합충형파해 (사주 내 관계)</label>
                 <textarea id="hapchungText" class="question-textarea" style="min-height:60px;" placeholder="예:
 🤝 천간합: 갑기합
@@ -860,7 +867,7 @@ Q3: 이직해도 될까요?"></textarea>
                 'wood', 'fire', 'earth', 'metal', 'water',
                 'dayganStrength', 'yongsin', 'yongsinDesc', 'huisin', 'huisinDesc', 'gisin', 'gisinDesc',
                 'gyeokgukText', 'jijangganText',
-                'daeunStartAge', 'daeunDirection', 'currentDaeun', 'daeunSipsung', 'seun2026',
+                'daeunStartAge', 'daeunDirection', 'currentDaeun', 'daeunSipsung', 'seun2026', 'daeunListText',
                 'hapchungText', 'fortuneTypes', 'mainConcern', 'repeatPattern', 'customQuestion', 'checkedQuestions'
             ];
             fieldsToReset.forEach(id => {
@@ -955,6 +962,17 @@ Q3: 이직해도 될까요?"></textarea>
                 }
             }
             
+            // 전체 대운 목록 파싱 (### 대운 섹션에서 모든 대운 추출)
+            const daeunSectionMatch = text.match(/### 대운[^\n]*\n([\s\S]*?)(?=###|$)/);
+            if (daeunSectionMatch) {
+                // 대운 목록만 추출 (- 0-9세: ... 형태의 라인들)
+                const daeunLines = daeunSectionMatch[1].match(/-\s*\d+-\d+세:[^\n]+/g);
+                if (daeunLines) {
+                    document.getElementById('daeunListText').value = daeunLines.join('\n');
+                    parsed++;
+                }
+            }
+
             // 현재 대운 파싱 (← 현재 마커로 찾기, "20-29세: 丙子" 형태)
             // 사주계산기 출력: "- 20-29세: 丙子 (편관/자) ← 현재"
             const currentDaeunMatch = text.match(/(\d+)-(\d+)세:\s*(\S{2})\s*\([^)]+\)\s*←\s*현재/);
@@ -1414,6 +1432,7 @@ Q3: 이직해도 될까요?"></textarea>
             const daeunStartAge = document.getElementById('daeunStartAge').value;
             const daeun = currentDaeun + (daeunSipsung ? `(${daeunSipsung})` : '');
             const seun = document.getElementById('seun2026').value;
+            const daeunListText = document.getElementById('daeunListText').value;
             
             // ⭐ 인연상 자동 매핑 (프리미엄용)
             const yukHapMap = {
@@ -1795,6 +1814,9 @@ ${hapchungText ? hapchungText : '(합충형파해 정보 없음 - 사주계산�
 ---
 
 ## 🌊 운(運) 정보
+
+### 전체 대운 목록
+${daeunListText ? daeunListText : '(대운 목록 정보 없음)'}
 
 ### 현재 대운
 - **${currentDaeun}** (${daeunStartAge}세~)
