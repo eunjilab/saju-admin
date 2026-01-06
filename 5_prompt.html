@@ -611,27 +611,27 @@
                     </select>
                 </div>
             </div>
-            <p style="color: #888; font-size: 0.85em; margin: 15px 0;">십성 개수 (0~8)</p>
+            <p style="color: #888; font-size: 0.85em; margin: 15px 0;">십성 개수 (0~8, 소수점 가능)</p>
             <div class="sipsung-count-grid">
                 <div class="form-group">
                     <label>비겁</label>
-                    <input type="number" id="bigyeop" min="0" max="8" value="0">
+                    <input type="number" id="bigyeop" min="0" max="8" step="0.1" value="0">
                 </div>
                 <div class="form-group">
                     <label>식상</label>
-                    <input type="number" id="siksang" min="0" max="8" value="0">
+                    <input type="number" id="siksang" min="0" max="8" step="0.1" value="0">
                 </div>
                 <div class="form-group">
                     <label>재성</label>
-                    <input type="number" id="jaeseong" min="0" max="8" value="0">
+                    <input type="number" id="jaeseong" min="0" max="8" step="0.1" value="0">
                 </div>
                 <div class="form-group">
                     <label>관성</label>
-                    <input type="number" id="gwanseong" min="0" max="8" value="0">
+                    <input type="number" id="gwanseong" min="0" max="8" step="0.1" value="0">
                 </div>
                 <div class="form-group">
                     <label>인성</label>
-                    <input type="number" id="inseong" min="0" max="8" value="0">
+                    <input type="number" id="inseong" min="0" max="8" step="0.1" value="0">
                 </div>
             </div>
         </div>
@@ -765,6 +765,9 @@ Q3: 이직해도 될까요?"></textarea>
             <textarea id="jijangganText" style="display:none;"></textarea>
             <!-- 격국/용신 (자동 파싱, 숨김) -->
             <textarea id="gyeokgukText" style="display:none;"></textarea>
+            <!-- 신살 (자동 파싱, 숨김) -->
+            <textarea id="gilsinText" style="display:none;"></textarea>
+            <textarea id="yangmyeonText" style="display:none;"></textarea>
             <div class="form-group" style="margin-top: 15px;">
                 <label>✨ 맞춤 질문 (프리미엄)</label>
                 <input type="text" id="customQuestion" placeholder="프리미엄 패키지 선택 시 작성한 질문">
@@ -1004,13 +1007,13 @@ Q3: 이직해도 될까요?"></textarea>
                 }
             }
             
-            // 십성 분포 파싱
+            // 십성 분포 파싱 (소수점 포함)
             const sipsungCountPatterns = {
-                bigyeop: /비겁:\s*(\d+)/,
-                siksang: /식상:\s*(\d+)/,
-                jaeseong: /재성:\s*(\d+)/,
-                gwanseong: /관성:\s*(\d+)/,
-                inseong: /인성:\s*(\d+)/
+                bigyeop: /비겁:\s*([\d.]+)/,
+                siksang: /식상:\s*([\d.]+)/,
+                jaeseong: /재성:\s*([\d.]+)/,
+                gwanseong: /관성:\s*([\d.]+)/,
+                inseong: /인성:\s*([\d.]+)/
             };
             
             for (const [field, pattern] of Object.entries(sipsungCountPatterns)) {
@@ -1081,7 +1084,19 @@ Q3: 이직해도 될까요?"></textarea>
             if (gusinDescMatch) {
                 document.getElementById('gusinDesc').value = gusinDescMatch[1].trim();
             }
-            
+
+            // 신살 파싱
+            const gilsinMatch = text.match(/🌟\s*길신[^:]*:\s*([^\n]+)/);
+            if (gilsinMatch) {
+                document.getElementById('gilsinText').value = gilsinMatch[1].trim();
+                parsed++;
+            }
+            const yangmyeonMatch = text.match(/⚡\s*양면신[^:]*:\s*([^\n]+)/);
+            if (yangmyeonMatch) {
+                document.getElementById('yangmyeonText').value = yangmyeonMatch[1].trim();
+                parsed++;
+            }
+
             // 질문 분야 파싱
             const fortuneMatch = text.match(/선택한 운세(?:\s*분야)?:\s*(.+)/);
             if (fortuneMatch) {
@@ -1354,7 +1369,9 @@ Q3: 이직해도 될까요?"></textarea>
             
             const jijangganText = document.getElementById('jijangganText').value;
             const gyeokgukText = document.getElementById('gyeokgukText').value;
-            
+            const gilsinText = document.getElementById('gilsinText').value;
+            const yangmyeonText = document.getElementById('yangmyeonText').value;
+
             // 용신/기신 변수
             const dayganStrength = document.getElementById('dayganStrength').value;
             const yongsin = document.getElementById('yongsin').value;
@@ -1726,6 +1743,13 @@ ${gyeokgukText || '(격국/용신 정보 없음)'}
 - 👍 **희신 (도움되는 기운)**: ${huisin || '미입력'}${huisinDesc ? ` - ${huisinDesc}` : ''}
 - ⚠️ **기신 (피해야 할 기운)**: ${gisin || '미입력'}${gisinDesc ? ` - ${gisinDesc}` : ''}
 - 🚫 **구신 (더 피해야 할 기운)**: ${gusin || '미입력'}${gusinDesc ? ` - ${gusinDesc}` : ''}
+
+### 🌟 신살 분석 (사주계산기 결과)
+${gilsinText || yangmyeonText ? `- 🌟 **길신**: ${gilsinText || '없음'}
+- ⚡ **양면신**: ${yangmyeonText || '없음'}
+
+⚠️ **중요: 위 신살 목록에 없는 신살은 해석하지 마세요!**
+사주계산기에서 계산된 신살만 해석해야 합니다.` : '(신살 정보 없음 - 사주계산기 결과를 붙여넣으세요)'}
 
 ### 오행 분포
 | 목(木) | 화(火) | 토(土) | 금(金) | 수(水) |
@@ -2466,7 +2490,7 @@ ${inyeonDetail ? inyeonDetail.만남장소 : '(해당 인연 정보 없음)'}
 사주: ${sajuString}
 일간: ${ilgan}
 오행: ${ohengString}
-십성: 비겁${bigyeop} 식상${siksang} 재성${jaeseong} 관성${gwanseong} 인성${inseong}
+십성: 비겁:${bigyeop} 식상:${siksang} 재성:${jaeseong} 관성:${gwanseong} 인성:${inseong}
 연주: ${convertPillar(yearPillar)} (${yearSipsung})
 월주: ${convertPillar(monthPillar)} (${monthSipsung})
 일주: ${convertPillar(dayPillar)} (${daySipsung})
@@ -2477,6 +2501,8 @@ ${inyeonDetail ? inyeonDetail.만남장소 : '(해당 인연 정보 없음)'}
 희신: ${huisin}
 기신: ${gisin}
 구신: ${gusin}
+길신: ${gilsinText || '없음'}
+양면신: ${yangmyeonText || '없음'}
 대운: ${daeun}
 세운: ${seun}
 테마색상: [용신 오행에 맞는 색상코드]
