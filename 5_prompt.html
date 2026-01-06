@@ -731,8 +731,15 @@
                     <input type="text" id="seun2026" value="丙午 (병오)" readonly>
                 </div>
             </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>⚔️ 합충형파해 (사주 내 관계)</label>
+                <textarea id="hapchungText" class="question-textarea" style="min-height:60px;" placeholder="예:
+🤝 천간합: 갑기합
+💑 육합: 자축합
+⚔️ 충: 자오충"></textarea>
+            </div>
         </div>
-        
+
         <!-- 질문지 -->
         <div class="section">
             <h3>💬 질문지 응답</h3>
@@ -854,7 +861,7 @@ Q3: 이직해도 될까요?"></textarea>
                 'dayganStrength', 'yongsin', 'yongsinDesc', 'huisin', 'huisinDesc', 'gisin', 'gisinDesc',
                 'gyeokgukText', 'jijangganText',
                 'daeunStartAge', 'daeunDirection', 'currentDaeun', 'daeunSipsung', 'seun2026',
-                'fortuneTypes', 'mainConcern', 'repeatPattern', 'customQuestion', 'checkedQuestions'
+                'hapchungText', 'fortuneTypes', 'mainConcern', 'repeatPattern', 'customQuestion', 'checkedQuestions'
             ];
             fieldsToReset.forEach(id => {
                 const el = document.getElementById(id);
@@ -948,17 +955,19 @@ Q3: 이직해도 될까요?"></textarea>
                 }
             }
             
-            // 현재 대운 파싱 (← 현재 마커로 찾기, 20-29세 형태 지원)
-            const currentDaeunMatch = text.match(/\d+-?\d*세:\s*(\S{2})\s*\([^)]+\)\s*←\s*현재/);
+            // 현재 대운 파싱 (← 현재 마커로 찾기, "20-29세: 丙子" 형태)
+            // 사주계산기 출력: "- 20-29세: 丙子 (편관/자) ← 현재"
+            const currentDaeunMatch = text.match(/(\d+)-(\d+)세:\s*(\S{2})\s*\([^)]+\)\s*←\s*현재/);
             if (currentDaeunMatch) {
-                document.getElementById('currentDaeun').value = currentDaeunMatch[1];
+                document.getElementById('currentDaeun').value = currentDaeunMatch[3]; // 한자 대운
+                document.getElementById('daeunStartAge').value = currentDaeunMatch[1]; // 시작 나이
                 parsed++;
             }
-            
-            // 현재 대운 십성 파싱 (편관/상관 형태, ← 현재 마커로 찾기)
-            const daeunSipsungMatch = text.match(/-\s*\d+-\d+세:\s*\S+\s*\(([^/]+)\/[^)]+\)\s*←\s*현재/);
+
+            // 현재 대운 십성 파싱 (편관/자 형태에서 천간 십성만 추출)
+            const daeunSipsungMatch = text.match(/(\d+)-(\d+)세:\s*\S+\s*\(([^/]+)\/[^)]+\)\s*←\s*현재/);
             if (daeunSipsungMatch) {
-                const rawSipsung = daeunSipsungMatch[1].trim();
+                const rawSipsung = daeunSipsungMatch[3].trim(); // 인덱스 3번이 십성
                 // 개별 십성 → 그룹으로 매핑
                 const sipsungMap = {
                     '비견': '비겁', '겁재': '비겁',
@@ -1095,6 +1104,17 @@ Q3: 이직해도 될까요?"></textarea>
             if (yangmyeonMatch) {
                 document.getElementById('yangmyeonText').value = yangmyeonMatch[1].trim();
                 parsed++;
+            }
+
+            // 합충형파해 파싱
+            const hapchungMatch = text.match(/### 합충형파해[^\n]*\n([\s\S]*?)(?=###|$)/);
+            if (hapchungMatch) {
+                const hapchungContent = hapchungMatch[1].trim();
+                // "사주 내 합충형파해 없음" 또는 "정보 없음"이 아닌 경우만 저장
+                if (hapchungContent && !hapchungContent.includes('없음')) {
+                    document.getElementById('hapchungText').value = hapchungContent;
+                    parsed++;
+                }
             }
 
             // 질문 분야 파싱
@@ -1371,6 +1391,7 @@ Q3: 이직해도 될까요?"></textarea>
             const gyeokgukText = document.getElementById('gyeokgukText').value;
             const gilsinText = document.getElementById('gilsinText').value;
             const yangmyeonText = document.getElementById('yangmyeonText').value;
+            const hapchungText = document.getElementById('hapchungText').value;
 
             // 용신/기신 변수
             const dayganStrength = document.getElementById('dayganStrength').value;
@@ -1750,6 +1771,9 @@ ${gilsinText || yangmyeonText ? `- 🌟 **길신**: ${gilsinText || '없음'}
 
 ⚠️ **중요: 위 신살 목록에 없는 신살은 해석하지 마세요!**
 사주계산기에서 계산된 신살만 해석해야 합니다.` : '(신살 정보 없음 - 사주계산기 결과를 붙여넣으세요)'}
+
+### ⚔️ 합충형파해 (사주 내 천간/지지 관계)
+${hapchungText ? hapchungText : '(합충형파해 정보 없음 - 사주계산기 결과를 확인하세요)'}
 
 ### 오행 분포
 | 목(木) | 화(火) | 토(土) | 금(金) | 수(水) |
