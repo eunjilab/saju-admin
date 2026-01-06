@@ -1068,7 +1068,7 @@
             "午": [9, 21],        // 己 30%, 丁 70%
             "未": [9, 3, 18],     // 丁 30%, 乙 10%, 己 60%
             "申": [7, 7, 16],     // 戊 23%, 壬 23%, 庚 54%
-            "é…‰": [30],           // è¾› 100%
+            "酉": [30],           // 辛 100%
             "戌": [9, 3, 18],     // 辛 30%, 丁 10%, 戊 60%
             "亥": [7, 23]         // 甲 23%, 壬 77%
         };
@@ -2248,23 +2248,32 @@
         
         function calculateSipsung(dayGan, pillars) {
             const count = { 비겁: 0, 식상: 0, 재성: 0, 관성: 0, 인성: 0 };
-            
-            for (const p of pillars) {
+
+            for (let idx = 0; idx < pillars.length; idx++) {
+                const p = pillars[idx];
                 if (!p) continue;
-                if (p.gan !== dayGan) {
+
+                // 천간 십성 (일주 천간=일간 본인만 제외, 연간/월간/시간은 모두 카운트)
+                // pillars 순서: [연, 월, 일, 시] → index 2가 일주
+                if (idx !== 2) {
                     const sipsung = SIPSUNG_MATRIX[dayGan][p.gan];
-                    count[SIPSUNG_GROUP[sipsung]] += 1;
+                    if (sipsung && SIPSUNG_GROUP[sipsung]) {
+                        count[SIPSUNG_GROUP[sipsung]] += 1;
+                    }
                 }
+
                 // 지장간: 비율 반영
                 const jjgList = JIJANGGAN[p.ji] || [];
                 const ratioList = JIJANGGAN_RATIO[p.ji] || [];
                 for (let i = 0; i < jjgList.length; i++) {
                     const sipsung = SIPSUNG_MATRIX[dayGan][jjgList[i]];
                     const ratio = ratioList[i] || 10;
-                    count[SIPSUNG_GROUP[sipsung]] += ratio / 30; // 30일=1점
+                    if (sipsung && SIPSUNG_GROUP[sipsung]) {
+                        count[SIPSUNG_GROUP[sipsung]] += ratio / 30; // 30일=1점
+                    }
                 }
             }
-            
+
             for (const k in count) count[k] = parseFloat(count[k].toFixed(2));
             return count;
         }
@@ -2726,14 +2735,17 @@
         function calculateBirthChart(birthDate, birthHour, birthMinute, latitude, longitude) {
             // Astronomy Engine이 로드되었는지 확인
             if (typeof Astronomy === 'undefined') {
-                console.log('Astronomy Engine이 로드되지 않았습니다.');
+                console.error('Astronomy Engine이 로드되지 않았습니다.');
                 return null;
             }
+
+            console.log('Birth Chart 계산 시작:', { birthDate, birthHour, birthMinute, latitude, longitude });
 
             try {
                 // 날짜/시간 객체 생성
                 const date = new Date(birthDate);
                 date.setHours(birthHour || 12, birthMinute || 0, 0, 0);
+                console.log('계산 날짜:', date);
 
                 // 황도대 기호
                 const ZODIAC_SIGNS = [
@@ -2780,15 +2792,30 @@
                 const planetPositions = [];
                 for (const planet of PLANETS) {
                     try {
-                        const equ = Astronomy.Equator(planet.body, date, null, false, true);
-                        const ecl = Astronomy.Ecliptic(equ.vec);
-                        const zodiac = eclipticToZodiac(ecl.elon);
+                        let eclLon;
+
+                        if (planet.name === 'Sun') {
+                            // 태양은 SunPosition 사용 (더 정확)
+                            const sunPos = Astronomy.SunPosition(date);
+                            eclLon = sunPos.elon;
+                        } else if (planet.name === 'Moon') {
+                            // 달은 EclipticGeoMoon 사용
+                            const moonPos = Astronomy.EclipticGeoMoon(date);
+                            eclLon = moonPos.lon;
+                        } else {
+                            // 다른 행성은 GeoVector + Ecliptic 사용
+                            const geo = Astronomy.GeoVector(planet.body, date, true);
+                            const ecl = Astronomy.Ecliptic(geo);
+                            eclLon = ecl.elon;
+                        }
+
+                        const zodiac = eclipticToZodiac(eclLon);
 
                         planetPositions.push({
                             name: planet.name,
                             kr: planet.kr,
                             emoji: planet.emoji,
-                            longitude: ecl.elon,
+                            longitude: eclLon,
                             sign: zodiac.sign,
                             degree: zodiac.degree
                         });
@@ -2799,40 +2826,49 @@
 
                 // ASC (Ascendant/상승점) 계산 - Whole Sign 시스템
                 let ascendant = null;
+                let ascSignIndex = 0;
                 try {
                     // 항성시 계산
-                    const jd = Astronomy.JulianDay(date);
                     const gst = Astronomy.SiderealTime(date);
-                    const lst = (gst + longitude / 15) % 24; // 지방항성시
+                    const lst = (gst + longitude / 15 + 24) % 24; // 지방항성시
                     const lstDegrees = lst * 15; // 도 단위로 변환
 
-                    // 간단한 ASC 계산 (황도 경사각 23.44°)
+                    // 황도 경사각
                     const obliquity = 23.44;
                     const latRad = latitude * Math.PI / 180;
                     const oblRad = obliquity * Math.PI / 180;
 
                     // RAMC (Right Ascension of Medium Coeli)
-                    const ramc = lstDegrees;
+                    const ramcRad = lstDegrees * Math.PI / 180;
 
-                    // ASC 공식 (간소화)
-                    const ascLon = (ramc + 90) % 360;
+                    // ASC 공식 (정밀 계산)
+                    const y = -Math.cos(ramcRad);
+                    const x = Math.sin(ramcRad) * Math.cos(oblRad) + Math.tan(latRad) * Math.sin(oblRad);
+                    let ascLon = Math.atan2(y, x) * 180 / Math.PI;
+                    ascLon = (ascLon + 360) % 360;
+
                     ascendant = eclipticToZodiac(ascLon);
+                    ascSignIndex = Math.floor(ascLon / 30);
+                    console.log('ASC 계산 완료:', ascLon.toFixed(2) + '°', ascendant.sign.name);
                 } catch (e) {
                     console.log('ASC 계산 오류:', e);
+                    // 기본값: 태양 별자리 사용
+                    const sunPlanet = planetPositions.find(p => p.name === 'Sun');
+                    if (sunPlanet) {
+                        ascSignIndex = Math.floor(sunPlanet.longitude / 30);
+                        ascendant = eclipticToZodiac(sunPlanet.longitude);
+                    }
                 }
 
                 // 하우스 계산 (Whole Sign 시스템 - ASC 별자리가 1하우스)
                 const houses = [];
-                if (ascendant) {
-                    const firstHouseSign = ZODIAC_SIGNS.findIndex(s => s.name === ascendant.sign.name);
-                    for (let i = 0; i < 12; i++) {
-                        const houseSign = ZODIAC_SIGNS[(firstHouseSign + i) % 12];
-                        houses.push({
-                            house: i + 1,
-                            sign: houseSign,
-                            cusp: ((firstHouseSign + i) * 30) % 360
-                        });
-                    }
+                for (let i = 0; i < 12; i++) {
+                    const houseSignIndex = (ascSignIndex + i) % 12;
+                    houses.push({
+                        house: i + 1,
+                        sign: ZODIAC_SIGNS[houseSignIndex],
+                        cusp: (houseSignIndex * 30) % 360
+                    });
                 }
 
                 // 애스펙트 계산 (주요 애스펙트만)
@@ -3447,7 +3483,7 @@
             const pillars = [yearP, monthP, dayP, hourP];
             const ohaeng = calculateOhaeng(pillars.filter(p => p));
             const ohaengNorm = normalizeOhaengTo5(ohaeng); // 5점 정규화
-            const sipsung = calculateSipsung(dayP.gan, pillars.filter(p => p));
+            const sipsung = calculateSipsung(dayP.gan, pillars); // filter 제거 - 내부에서 null 처리
             const daeun = calculateDaeun(yearP.gan, monthP.gan, monthP.ji, gender, date);
             
             // 각 주별 십성 상세
@@ -3601,7 +3637,7 @@
                     <div class="ohaeng-status">${getStatus('금', r.ohaengNorm.금)}</div>
                 </div>
                 <div class="ohaeng-item water">
-                    <div class="ohaeng-char">æ°´</div>
+                    <div class="ohaeng-char">水</div>
                     <div class="ohaeng-count">${r.ohaeng.수} <small style="color:#888">(${r.ohaengNorm.수})</small></div>
                     <div class="ohaeng-status">${getStatus('수', r.ohaengNorm.수)}</div>
                 </div>
@@ -3848,18 +3884,19 @@
             document.getElementById('hapchungDisplay').innerHTML = hapchungHTML;
 
             // Birth Chart (서양 점성술) 계산 및 표시
+            let birthChartData = null;
             try {
                 const lat = r.locationInfo?.lat || 37.57; // 기본값: 서울
                 const lng = r.locationInfo?.lng || 127.00;
-                const birthChart = calculateBirthChart(
+                birthChartData = calculateBirthChart(
                     new Date(r.finalYear, r.finalMonth - 1, r.finalDay),
                     r.correctedHour || r.hour || 12,
                     r.correctedMinute || r.minute || 0,
                     lat,
                     lng
                 );
-                if (birthChart) {
-                    displayBirthChart(birthChart);
+                if (birthChartData) {
+                    displayBirthChart(birthChartData);
                 }
             } catch (e) {
                 console.log('Birth Chart 계산 생략:', e);
@@ -3973,6 +4010,31 @@ ${r.mainConcern ? '- 💭 가장 큰 고민: ' + r.mainConcern : ''}
 ${r.repeatPattern ? '- 🔄 반복되는 패턴: ' + r.repeatPattern : ''}
 ${r.questions.length > 0 ? r.questions.map((q, i) => '- Q' + (i+1) + ': ' + q).join('\n') : ''}
 ${r.customQuestion ? '- ✨ 맞춤 질문 (프리미엄): ' + r.customQuestion : ''}
+
+### Birth Chart (서양 점성술)
+${birthChartData ? (() => {
+    const lines = [];
+    // 행성 위치
+    lines.push('🌟 행성 위치:');
+    birthChartData.planets.forEach(p => {
+        lines.push(`- ${p.emoji} ${p.kr}: ${p.sign.symbol} ${p.sign.name} ${p.degree}°`);
+    });
+    // 하우스
+    if (birthChartData.houses.length > 0) {
+        lines.push('\n🏠 하우스 (Whole Sign):');
+        birthChartData.houses.forEach(h => {
+            lines.push(`- ${h.house}하우스: ${h.sign.symbol} ${h.sign.name}`);
+        });
+    }
+    // 애스펙트
+    if (birthChartData.aspects.length > 0) {
+        lines.push('\n✨ 주요 애스펙트:');
+        birthChartData.aspects.slice(0, 10).forEach(a => {
+            lines.push(`- ${a.planet1.kr} ${a.aspect.symbol} ${a.planet2.kr} (${a.aspect.name})`);
+        });
+    }
+    return lines.join('\n');
+})() : '(계산 불가)'}
 `;
             
             document.getElementById('resultText').textContent = resultText;
