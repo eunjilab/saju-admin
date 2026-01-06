@@ -1,0 +1,2455 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>운명을 듣다 - 사주 상담 신청</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Serif KR', serif;
+            background: linear-gradient(135deg, #f5f0e8 0%, #e8e0d0 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: linear-gradient(180deg, #fdfbf7 0%, #f8f4eb 100%);
+            border: 2px solid #8b7355;
+            border-radius: 12px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.18);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c2416 0%, #4a3c2a 100%);
+            color: #f0e6d3;
+            text-align: center;
+            padding: 35px 20px;
+            position: relative;
+        }
+
+        .header::after {
+            content: '命';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 120px;
+            opacity: 0.05;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 6px;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header .subtitle {
+            font-size: 13px;
+            opacity: 0.8;
+            letter-spacing: 2px;
+        }
+
+        .form-section {
+            padding: 30px 25px;
+            border-bottom: 1px solid #e0d5c5;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            color: #3d3225;
+        }
+
+        .section-title .icon {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #8b7355 0%, #6b5744 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .section-title h2 {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #5a4a3a;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group label .required {
+            color: #c41e3a;
+            margin-left: 2px;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="date"],
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #d4c5a9;
+            border-radius: 8px;
+            font-family: 'Noto Serif KR', serif;
+            font-size: 14px;
+            background: #fff;
+            color: #3d3225;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #8b7355;
+            box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+            line-height: 1.8;
+        }
+
+        /* 라디오 버튼 그룹 */
+        .radio-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .radio-option {
+            flex: 1;
+            position: relative;
+        }
+
+        .radio-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .radio-option label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 20px;
+            border: 1px solid #d4c5a9;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fff;
+            font-weight: 400;
+            margin: 0;
+        }
+
+        .radio-option input[type="radio"]:checked + label {
+            background: linear-gradient(135deg, #8b7355 0%, #6b5744 100%);
+            color: #fff;
+            border-color: #8b7355;
+        }
+
+        /* 현재 상태 선택 */
+        .status-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .status-option {
+            position: relative;
+        }
+
+        .status-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .status-option label {
+            display: inline-block;
+            padding: 10px 16px;
+            border: 1px solid #d4c5a9;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fff;
+            font-size: 13px;
+            font-weight: 400;
+            margin: 0;
+        }
+
+        .status-option input[type="radio"]:checked + label {
+            background: linear-gradient(135deg, #8b7355 0%, #6b5744 100%);
+            color: #fff;
+            border-color: #8b7355;
+        }
+
+        /* 시간 입력 */
+        .time-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .time-inputs select {
+            flex: 1;
+        }
+
+        /* 전화번호 입력 */
+        .phone-inputs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .phone-inputs select {
+            width: 85px;
+            padding: 14px 12px;
+        }
+
+        .phone-inputs input {
+            flex: 1;
+            text-align: center;
+        }
+
+        .phone-dash {
+            color: #5a4a3a;
+            font-weight: 500;
+            font-size: 16px;
+        }
+
+        /* 생년월일 입력 */
+        .birth-inputs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .birth-inputs select {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .time-unknown {
+            margin-top: 10px;
+        }
+
+        .time-unknown label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #8b7355;
+        }
+
+        .time-unknown input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #8b7355;
+        }
+
+        /* 자시 옵션 */
+        .jasi-option {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f9f5ef 0%, #f0e8da 100%);
+            border: 1px solid #d4c5a9;
+            border-radius: 10px;
+        }
+
+        .jasi-option.show {
+            display: none; /* 야자시 기본 적용으로 옵션 숨김 */
+        }
+
+        .jasi-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #3d3225;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .jasi-radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .jasi-radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .jasi-radio-option input[type="radio"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #8b7355;
+        }
+
+        .jasi-radio-option label {
+            font-size: 13px;
+            color: #5a4a3a;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .jasi-hint {
+            font-size: 11px;
+            color: #7a6a5a;
+            line-height: 1.6;
+            padding: 10px;
+            background: rgba(139, 115, 85, 0.08);
+            border-radius: 6px;
+        }
+
+        /* 패키지 선택 */
+        .package-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .package-card {
+            position: relative;
+            border: 2px solid #d4c5a9;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fff;
+        }
+
+        .package-card:hover {
+            border-color: #8b7355;
+        }
+
+        .package-card.selected {
+            border-color: #8b7355;
+            background: linear-gradient(135deg, #f9f5ef 0%, #f0e8da 100%);
+        }
+
+        .package-card input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .package-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .package-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #3d3225;
+        }
+
+        .package-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: #8b7355;
+        }
+
+        .package-desc {
+            font-size: 13px;
+            color: #7a6a5a;
+            line-height: 1.6;
+        }
+
+        .package-badge {
+            position: absolute;
+            top: -10px;
+            right: 15px;
+            background: linear-gradient(135deg, #c41e3a 0%, #a01830 100%);
+            color: #fff;
+            font-size: 11px;
+            padding: 4px 12px;
+            border-radius: 10px;
+        }
+
+        /* 운세 선택 */
+        .fortune-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .fortune-option {
+            position: relative;
+        }
+
+        .fortune-option input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .fortune-option label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            border: 1px solid #d4c5a9;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fff;
+        }
+
+        .fortune-option input[type="checkbox"]:checked + label {
+            background: linear-gradient(135deg, #8b7355 0%, #6b5744 100%);
+            color: #fff;
+            border-color: #8b7355;
+        }
+
+        .fortune-option .emoji {
+            font-size: 20px;
+        }
+
+        .fortune-option .text {
+            font-size: 14px;
+        }
+
+        .fortune-option input[type="checkbox"]:disabled + label {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .fortune-hint {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f9f5ef;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #8b7355;
+            text-align: center;
+        }
+
+        /* 질문 체크박스 */
+        .question-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .question-box {
+            background: #f9f5ef;
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        .question-box.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .question-box-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #5a4a3a;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .question-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .question-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .question-check input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #8b7355;
+        }
+
+        .question-check label {
+            font-size: 13px;
+            color: #5a4a3a;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        /* 버튼 */
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #8b7355 0%, #6b5744 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Noto Serif KR', serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 2px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(139, 115, 85, 0.3);
+        }
+
+        /* 완료 페이지 */
+        .complete-page {
+            display: none;
+            padding: 40px 25px;
+            text-align: center;
+        }
+
+        .complete-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .complete-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #3d3225;
+            margin-bottom: 10px;
+        }
+
+        .complete-subtitle {
+            font-size: 14px;
+            color: #7a6a5a;
+            margin-bottom: 30px;
+        }
+
+        .complete-info {
+            background: #f9f5ef;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .complete-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e5dccb;
+        }
+
+        .complete-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .complete-info-label {
+            color: #7a6a5a;
+            font-size: 14px;
+        }
+
+        .complete-info-value {
+            font-weight: 600;
+            color: #3d3225;
+            font-size: 14px;
+        }
+
+        /* ★ 주문코드 스타일 추가 */
+        .order-code-box {
+            background: linear-gradient(135deg, #2c2416 0%, #4a3c2a 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .order-code-label {
+            font-size: 12px;
+            color: #a89068;
+            margin-bottom: 8px;
+        }
+
+        .order-code-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #f5efe3;
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+        }
+
+        .order-code-copy {
+            padding: 10px 20px;
+            background: rgba(212, 175, 130, 0.2);
+            border: 1px solid #a89068;
+            color: #d4af82;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .order-code-copy:hover {
+            background: #d4af82;
+            color: #2c2416;
+        }
+
+        .payment-box {
+            background: #fff;
+            border: 2px solid #8b7355;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .payment-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #3d3225;
+            margin-bottom: 15px;
+        }
+
+        .account-info {
+            background: #f9f5ef;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 15px;
+            color: #3d3225;
+            margin-bottom: 15px;
+        }
+
+        .copy-btn {
+            width: 100%;
+            padding: 12px;
+            background: #fff;
+            border: 1px solid #8b7355;
+            color: #8b7355;
+            border-radius: 8px;
+            font-family: 'Noto Serif KR', serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: #8b7355;
+            color: #fff;
+        }
+
+        .kakao-guide {
+            background: #FEE500;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .kakao-guide-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #3d1c00;
+            margin-bottom: 10px;
+        }
+
+        .kakao-message {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 13px;
+            color: #3d3225;
+            line-height: 1.8;
+            text-align: left;
+            margin-bottom: 10px;
+        }
+
+        .reset-btn {
+            width: 100%;
+            padding: 15px;
+            background: #f5f0e8;
+            border: none;
+            color: #7a6a5a;
+            border-radius: 8px;
+            font-family: 'Noto Serif KR', serif;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* 프리미엄 전용 질문 */
+        .premium-questions {
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 2px dashed #d4c5a9;
+        }
+
+        .premium-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #9b6b4a 0%, #7a5238 100%);
+            color: #fff;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .premium-questions.disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        /* 안내 박스 */
+        .notice-box {
+            background: linear-gradient(135deg, #fff8e7 0%, #fff3d6 100%);
+            border: 1px solid #e8d4a8;
+            border-left: 4px solid #c9a227;
+            margin: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #5a4a2f;
+            line-height: 1.7;
+        }
+
+        .notice-box p {
+            margin-bottom: 5px;
+        }
+
+        .notice-box p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 필드 힌트 */
+        .field-hint {
+            font-size: 12px;
+            color: #7a6b5a;
+            margin-bottom: 10px;
+            line-height: 1.6;
+            background: #f9f6f0;
+            padding: 10px 12px;
+            border-radius: 6px;
+        }
+
+        /* 모바일 최적화 */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                border-radius: 10px;
+                border-width: 1px;
+            }
+
+            .header {
+                padding: 25px 15px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+                letter-spacing: 4px;
+            }
+
+            .header .subtitle {
+                font-size: 12px;
+            }
+
+            .header::after {
+                font-size: 80px;
+            }
+
+            .notice-box {
+                margin: 10px;
+                padding: 12px;
+                font-size: 12px;
+            }
+
+            .form-section {
+                padding: 20px 15px;
+            }
+
+            .section-title {
+                margin-bottom: 15px;
+            }
+
+            .section-title .icon {
+                width: 26px;
+                height: 26px;
+                font-size: 12px;
+            }
+
+            .section-title h2 {
+                font-size: 14px;
+            }
+
+            .form-group {
+                margin-bottom: 15px;
+            }
+
+            .form-group label {
+                font-size: 13px;
+                margin-bottom: 6px;
+            }
+
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 12px;
+                font-size: 14px;
+            }
+
+            .radio-group,
+            .checkbox-group {
+                gap: 8px;
+            }
+
+            .radio-option,
+            .checkbox-option {
+                padding: 10px 14px;
+                font-size: 13px;
+            }
+
+            .date-inputs {
+                gap: 8px;
+            }
+
+            .date-inputs select {
+                padding: 10px 8px;
+                font-size: 13px;
+            }
+
+            .time-inputs {
+                gap: 8px;
+            }
+
+            .time-inputs select {
+                padding: 10px;
+                font-size: 13px;
+            }
+
+            .field-hint {
+                font-size: 11px;
+                padding: 8px 10px;
+            }
+
+            .submit-btn {
+                padding: 16px;
+                font-size: 15px;
+            }
+        }
+
+        /* 궁합 매칭 사전신청 */
+        .matching-section {
+            background: linear-gradient(135deg, #fff5f5 0%, #fff0f5 100%);
+            border: 2px solid #e8b4b8;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 0 25px 20px;
+        }
+
+        .matching-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .matching-header .badge {
+            background: linear-gradient(135deg, #e57373 0%, #c62828 100%);
+            color: #fff;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .matching-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #3d3225;
+            margin: 0;
+        }
+
+        .matching-desc {
+            font-size: 13px;
+            color: #7a6a5a;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .matching-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            background: #fff;
+            border: 1px solid #e8b4b8;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .matching-checkbox.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .matching-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #c62828;
+        }
+
+        .matching-checkbox-label {
+            font-size: 14px;
+            color: #3d3225;
+            font-weight: 500;
+        }
+
+        .matching-checkbox-price {
+            font-size: 13px;
+            color: #c62828;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .matching-hint {
+            font-size: 12px;
+            color: #a08080;
+            margin-top: 8px;
+            padding-left: 28px;
+        }
+
+        .matching-detail {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #e8b4b8;
+            border-radius: 8px;
+        }
+
+        .matching-detail.show {
+            display: block;
+        }
+
+        .matching-age-group {
+            margin-bottom: 15px;
+        }
+
+        .matching-age-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .matching-age-row label {
+            font-size: 13px;
+            color: #5a4a3a;
+            min-width: 45px;
+        }
+
+        .matching-age-row select {
+            padding: 8px 12px;
+            border: 1px solid #d4c5a9;
+            border-radius: 6px;
+            font-family: 'Noto Serif KR', serif;
+            font-size: 13px;
+            background: #fff;
+            color: #3d3225;
+        }
+
+        .matching-age-row span {
+            font-size: 13px;
+            color: #7a6a5a;
+        }
+
+        .matching-age-any {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .matching-age-any input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #c62828;
+        }
+
+        .matching-age-any label {
+            font-size: 13px;
+            color: #5a4a3a;
+            cursor: pointer;
+        }
+
+        .matching-benefits {
+            padding: 12px;
+            background: linear-gradient(135deg, #fff5f5 0%, #fff0f5 100%);
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .matching-benefits-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #c62828;
+            margin-bottom: 8px;
+        }
+
+        .matching-benefits ul {
+            margin: 0;
+            padding-left: 18px;
+            font-size: 12px;
+            color: #7a6a5a;
+            line-height: 1.8;
+        }
+
+        /* 지역 선택 (진태양시용) */
+        .location-inputs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .location-inputs select {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #d4c5a9;
+            border-radius: 8px;
+            font-family: 'Noto Serif KR', serif;
+            font-size: 14px;
+            background: #fff;
+            color: #3d3225;
+        }
+
+        .custom-location {
+            margin-top: 12px;
+            padding: 15px;
+            background: #f9f6f0;
+            border-radius: 8px;
+            border: 1px dashed #d4c5a9;
+        }
+
+        .custom-location-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .custom-location-row:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .custom-location-row label {
+            min-width: 80px;
+            font-size: 13px;
+            color: #5a4a3a;
+        }
+
+        .custom-location-row input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #d4c5a9;
+            border-radius: 6px;
+            font-family: 'Noto Serif KR', serif;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .location-inputs {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .custom-location-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 5px;
+            }
+            
+            .custom-location-row label {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>운명을 듣다</h1>
+            <p class="subtitle">사주 상담 신청서</p>
+        </div>
+
+        <!-- 안내 박스 -->
+        <div class="notice-box">
+            <p>📌 내용을 정확하게 입력해주세요.</p>
+            <p>잘못 입력 후 제출이 되었다면<br><strong>카카오톡 플러스친구</strong>로 수정 요청해주세요.</p>
+        </div>
+
+        <form id="sajuForm">
+            <!-- 기본 정보 -->
+            <div class="form-section">
+                <div class="section-title">
+                    <span class="icon">1</span>
+                    <h2>기본 정보</h2>
+                </div>
+
+                <div class="form-group">
+                    <label>이름 <span class="required">*</span></label>
+                    <input type="text" name="name" required placeholder="실명을 입력해주세요">
+                </div>
+
+                <div class="form-group">
+                    <label>연락처 <span class="required">*</span></label>
+                    <div class="phone-inputs">
+                        <select name="phone_prefix" id="phonePrefix">
+                            <option value="010" selected>010</option>
+                            <option value="070">070</option>
+                            <option value="011">011</option>
+                        </select>
+                        <span class="phone-dash">-</span>
+                        <input type="text" name="phone_mid" id="phoneMid" 
+                               maxlength="4" placeholder="0000" inputmode="numeric" required>
+                        <span class="phone-dash">-</span>
+                        <input type="text" name="phone_last" id="phoneLast" 
+                               maxlength="4" placeholder="0000" inputmode="numeric" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>성별 <span class="required">*</span></label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" name="gender" id="male" value="male" required>
+                            <label for="male">남성</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" name="gender" id="female" value="female">
+                            <label for="female">여성</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 생년월일시 -->
+            <div class="form-section">
+                <div class="section-title">
+                    <span class="icon">2</span>
+                    <h2>생년월일시</h2>
+                </div>
+
+                <div class="form-group">
+                    <label>생년월일 <span class="required">*</span></label>
+                    <div class="birth-inputs">
+                        <select name="birth_year" id="birthYear" required>
+                            <option value="">년도</option>
+                            <script>
+                                for(let y = 2015; y >= 1940; y--) {
+                                    document.write(`<option value="${y}">${y}년</option>`);
+                                }
+                            </script>
+                        </select>
+                        <select name="birth_month" id="birthMonth" required>
+                            <option value="">월</option>
+                            <script>
+                                for(let m = 1; m <= 12; m++) {
+                                    document.write(`<option value="${String(m).padStart(2, '0')}">${m}월</option>`);
+                                }
+                            </script>
+                        </select>
+                        <select name="birth_day" id="birthDay" required>
+                            <option value="">일</option>
+                            <script>
+                                for(let d = 1; d <= 31; d++) {
+                                    document.write(`<option value="${String(d).padStart(2, '0')}">${d}일</option>`);
+                                }
+                            </script>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>음력/양력 <span class="required">*</span></label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" name="calendar" id="solar" value="solar" checked>
+                            <label for="solar">양력</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" name="calendar" id="lunar" value="lunar">
+                            <label for="lunar">음력</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" name="calendar" id="lunar_leap" value="lunar_leap">
+                            <label for="lunar_leap">음력(윤달)</label>
+                        </div>
+                    </div>
+                    <p class="field-hint" id="lunarHint" style="display: none;">💡 윤달 여부는 부모님께 확인하시거나,<br>잘 모르시면 주민등록상 생년월일(양력)을 선택해 주세요.</p>
+                </div>
+
+                <div class="form-group">
+                    <label>태어난 시간</label>
+                    <p class="field-hint">💡 시간을 적으시면 좀 더 정확한 결과가 나타납니다.<br>태어난 시간을 몰라도 괜찮습니다 :)</p>
+                    <div class="time-inputs">
+                        <select name="birth_hour" id="birthHour">
+                            <option value="">시</option>
+                            <script>
+                                for(let i = 0; i < 24; i++) {
+                                    document.write(`<option value="${i}">${i}시</option>`);
+                                }
+                            </script>
+                        </select>
+                        <select name="birth_minute" id="birthMinute">
+                            <option value="">분</option>
+                            <script>
+                                for(let i = 0; i < 60; i += 10) {
+                                    document.write(`<option value="${i}">${i}분</option>`);
+                                }
+                            </script>
+                        </select>
+                    </div>
+                    <div class="time-unknown">
+                        <label>
+                            <input type="checkbox" id="timeUnknown">
+                            정확한 시간을 모르겠어요
+                        </label>
+                    </div>
+
+                    <!-- 자시 옵션 (23시/0시 선택 시에만 표시) -->
+                    <div class="jasi-option" id="jasiOption">
+                        <div class="jasi-title">🌙 자시(子時) 계산 방식</div>
+                        <div class="jasi-radio-group">
+                            <div class="jasi-radio-option">
+                                <input type="radio" name="jasiType" id="jasi_unified" value="unified" checked>
+                                <label for="jasi_unified">통합 자시 (23:00~00:59 동일) - 권장</label>
+                            </div>
+                            <div class="jasi-radio-option">
+                                <input type="radio" name="jasiType" id="jasi_split" value="split">
+                                <label for="jasi_split">분리 자시 (23:00~23:59는 다음날 기준)</label>
+                            </div>
+                        </div>
+                        <div class="jasi-hint">
+                            ⚠️ 자시는 밤 11시~새벽 1시 사이입니다. 학파마다 계산 기준이 달라, "분리 자시" 선택 시 23시대 출생자의 일주(日柱)가 달라질 수 있습니다.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ★ 태어난 지역 (진태양시 보정용) -->
+                <div class="form-group" id="birthLocationGroup">
+                    <label>태어난 지역</label>
+                    <p class="field-hint">🌍 진태양시(眞太陽時) 보정에 사용됩니다.<br>모르시면 '서울'로 두셔도 됩니다.</p>
+                    <div class="location-inputs">
+                        <select name="birth_country" id="birthCountry">
+                            <option value="KR" selected>🇰🇷 한국</option>
+                            <option value="US">🇺🇸 미국</option>
+                            <option value="JP">🇯🇵 일본</option>
+                            <option value="CN">🇨🇳 중국</option>
+                            <option value="TW">🇹🇼 대만</option>
+                            <option value="GB">🇬🇧 영국</option>
+                            <option value="DE">🇩🇪 독일</option>
+                            <option value="FR">🇫🇷 프랑스</option>
+                            <option value="AU">🇦🇺 호주</option>
+                            <option value="CA">🇨🇦 캐나다</option>
+                            <option value="SG">🇸🇬 싱가포르</option>
+                            <option value="VN">🇻🇳 베트남</option>
+                            <option value="TH">🇹🇭 태국</option>
+                            <option value="PH">🇵🇭 필리핀</option>
+                            <option value="MY">🇲🇾 말레이시아</option>
+                            <option value="ID">🇮🇩 인도네시아</option>
+                            <option value="NZ">🇳🇿 뉴질랜드</option>
+                            <option value="RU">🇷🇺 러시아</option>
+                            <option value="AE">🇦🇪 아랍에미리트</option>
+                            <option value="IN">🇮🇳 인도</option>
+                            <option value="CUSTOM">🌍 직접입력</option>
+                        </select>
+                        <select name="birth_city" id="birthCity">
+                            <option value="서울" selected>서울</option>
+                        </select>
+                    </div>
+                    <!-- 직접 입력 (CUSTOM 선택 시 표시) -->
+                    <div class="custom-location" id="customLocationGroup" style="display: none;">
+                        <div class="custom-location-row">
+                            <label>경도 (°)</label>
+                            <input type="number" name="custom_longitude" id="customLongitude" 
+                                   step="0.01" min="-180" max="180" placeholder="예: 127.00">
+                        </div>
+                        <div class="custom-location-row">
+                            <label>UTC 오프셋</label>
+                            <input type="number" name="custom_utc_offset" id="customUtcOffset" 
+                                   step="0.5" min="-12" max="14" placeholder="예: 9">
+                        </div>
+                        <p class="field-hint" style="margin-top: 8px;">💡 한국은 경도 127°, UTC+9 입니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 현재 상태 -->
+            <div class="form-section">
+                <div class="section-title">
+                    <span class="icon">3</span>
+                    <h2>현재 상태</h2>
+                </div>
+
+                <div class="form-group">
+                    <label>연애 상태</label>
+                    <div class="status-options">
+                        <div class="status-option">
+                            <input type="radio" name="loveStatus" id="love_solo" value="솔로">
+                            <label for="love_solo">솔로</label>
+                        </div>
+                        <div class="status-option">
+                            <input type="radio" name="loveStatus" id="love_some" value="썸타는 중">
+                            <label for="love_some">썸타는 중</label>
+                        </div>
+                        <div class="status-option">
+                            <input type="radio" name="loveStatus" id="love_dating" value="연애 중">
+                            <label for="love_dating">연애 중</label>
+                        </div>
+                        <div class="status-option">
+                            <input type="radio" name="loveStatus" id="love_married" value="기혼">
+                            <label for="love_married">기혼</label>
+                        </div>
+                        <div class="status-option">
+                            <input type="radio" name="loveStatus" id="love_breakup" value="이별 후">
+                            <label for="love_breakup">이별 후</label>
+                        </div>
+                        <div class="status-option">
+                            <input type="radio" name="loveStatus" id="love_none" value="선택 안 함" checked>
+                            <label for="love_none">선택 안 함</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>직업 상태</label>
+                    <div class="status-options">
+                        <div class="status-option">
+                            <input type="radio" name="jobStatus" id="job_student" value="학생">
+                            <label for="job_student">학생</label>
+                        </div>
+                        <div class="status-option">
+                            <input type="radio" name="jobStatus" id="job_seeking" value="취준생">
+                            <label for="job_seeking">취준생</label>
+                        </div>
+                        <div class="status-option">
+                            <input type="radio" name="jobStatus" id="job_employee" value="직장인">
+                            <label for="job_employee">직장인</label>
+                        </div>
+                        <div class="status-option">
+                            <input type="radio" name="jobStatus" id="job_freelancer" value="프리랜서">
+                            <label for="job_freelancer">프리랜서</label>
+                        </div>
+                        <div class="status-option">
+                            <input type="radio" name="jobStatus" id="job_business" value="사업자/자영업">
+                            <label for="job_business">사업자/자영업</label>
+                        </div>
+                        <div class="status-option">
+                            <input type="radio" name="jobStatus" id="job_housewife" value="주부">
+                            <label for="job_housewife">주부</label>
+                        </div>
+                        <div class="status-option">
+                            <input type="radio" name="jobStatus" id="job_none" value="선택 안 함" checked>
+                            <label for="job_none">선택 안 함</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 패키지 선택 -->
+            <div class="form-section">
+                <div class="section-title">
+                    <span class="icon">4</span>
+                    <h2>패키지 선택</h2>
+                </div>
+
+                <div class="package-options">
+                    <div class="package-card" onclick="selectPackage('light')">
+                        <input type="radio" name="package" value="light">
+                        <div class="package-header">
+                            <span class="package-name">🌱 라이트</span>
+                            <span class="package-price">9,900원</span>
+                        </div>
+                        <p class="package-desc">
+                            성격 + 2026년 운세 + 연애/직업/재물 기본<br>
+                            <small>21~22p / 추가질문 2회</small>
+                        </p>
+                    </div>
+
+                    <div class="package-card" onclick="selectPackage('standard')">
+                        <input type="radio" name="package" value="standard">
+                        <div class="package-header">
+                            <span class="package-name">⭐ 스탠다드</span>
+                            <span class="package-price">19,900원</span>
+                        </div>
+                        <p class="package-desc">
+                            라이트 전체 + 월별 운세 + 대운 흐름<br>
+                            3년 연운표 포함<br>
+                            <small>25~26p / 추가질문 5회</small>
+                        </p>
+                    </div>
+
+                    <div class="package-card" onclick="selectPackage('premium')">
+                        <span class="package-badge">인기</span>
+                        <input type="radio" name="package" value="premium">
+                        <div class="package-header">
+                            <span class="package-name">👑 프리미엄</span>
+                            <span class="package-price">39,900원</span>
+                        </div>
+                        <p class="package-desc">
+                            스탠다드 전체 + 건강운 + 귀인 분석<br>
+                            성명학·주역·택일·관상·풍수 (10년 연운표)<br>
+                            <small>35~36p / 맞춤질문 3개 + 추가질문 10회</small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 패키지 안내 -->
+            <div class="notice-box">
+                <p>💡 <strong>패키지 안내</strong></p>
+                <p>결과지 수령 후 다른 패키지로 변경이나 업그레이드는 어려워요.<br>
+                더 자세한 분석을 원하시면 처음부터 상위 패키지를 선택해 주세요 ✨</p>
+            </div>
+
+            <!-- 만나고 싶은 인연의 성별 (프리미엄 필수) -->
+            <div class="form-section" id="partnerGenderGroup" style="display:none;">
+                <div class="section-title">
+                    <span class="icon">💕</span>
+                    <h2>만나고 싶은 인연의 성별 <span class="required premium-required" style="display:none;">*</span></h2>
+                </div>
+                <p style="font-size:14px; color:#888; margin-bottom:15px;">인연상 결과에 반영됩니다. 복수 선택 가능해요!</p>
+                <div class="checkbox-group" style="display:flex; gap:20px;">
+                    <div class="checkbox-option" style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" name="partnerGender" id="partnerMale" value="male">
+                        <label for="partnerMale" style="cursor:pointer; font-size:16px;">남성</label>
+                    </div>
+                    <div class="checkbox-option" style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" name="partnerGender" id="partnerFemale" value="female">
+                        <label for="partnerFemale" style="cursor:pointer; font-size:16px;">여성</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 운세 선택 -->
+            <div class="form-section" id="fortuneSection">
+                <div class="section-title">
+                    <span class="icon">5</span>
+                    <h2>보고 싶은 운세</h2>
+                </div>
+
+                <div class="fortune-grid">
+                    <div class="fortune-option">
+                        <input type="checkbox" name="fortune_type" id="fortune_love" value="love">
+                        <label for="fortune_love">
+                            <span class="emoji">💕</span>
+                            <span class="text">연애/결혼운</span>
+                        </label>
+                    </div>
+                    <div class="fortune-option">
+                        <input type="checkbox" name="fortune_type" id="fortune_career" value="career">
+                        <label for="fortune_career">
+                            <span class="emoji">💼</span>
+                            <span class="text">직업/진로운</span>
+                        </label>
+                    </div>
+                    <div class="fortune-option">
+                        <input type="checkbox" name="fortune_type" id="fortune_wealth" value="wealth">
+                        <label for="fortune_wealth">
+                            <span class="emoji">💰</span>
+                            <span class="text">재물/사업운</span>
+                        </label>
+                    </div>
+                    <div class="fortune-option">
+                        <input type="checkbox" name="fortune_type" id="fortune_health" value="health" disabled>
+                        <label for="fortune_health">
+                            <span class="emoji">🏥</span>
+                            <span class="text">건강운 (프리미엄)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="fortune-hint" id="fortuneHint">
+                    라이트: 1가지 / 스탠다드: 2가지 / 프리미엄: 전체 포함
+                </div>
+            </div>
+
+            <!-- 질문지 -->
+            <div class="form-section">
+                <div class="section-title">
+                    <span class="icon">6</span>
+                    <h2>궁금한 것들</h2>
+                </div>
+
+                <p id="questionHint" style="font-size: 13px; color: #8b7355; margin-bottom: 20px;">
+                    먼저 위에서 보고 싶은 운세를 선택해주세요 ☝️
+                </p>
+
+                <div class="question-grid">
+                    <!-- 연애 관련 -->
+                    <div class="question-box disabled" data-fortune="love">
+                        <div class="question-box-title">💕 연애/결혼 관련</div>
+                        <div class="question-options">
+                            <div class="question-check">
+                                <input type="checkbox" name="questions" id="q_love1" value="올해 좋은 인연 들어올까요?" disabled>
+                                <label for="q_love1">올해 좋은 인연 들어올까요?</label>
+                            </div>
+                            <div class="question-check">
+                                <input type="checkbox" name="questions" id="q_love2" value="지금 만나는 사람과 잘 될까요?" disabled>
+                                <label for="q_love2">지금 만나는 사람과 잘 될까요?</label>
+                            </div>
+                            <div class="question-check">
+                                <input type="checkbox" name="questions" id="q_love3" value="결혼 시기가 언제쯤일까요?" disabled>
+                                <label for="q_love3">결혼 시기가 언제쯤일까요?</label>
+                            </div>
+                            <div class="question-check">
+                                <input type="checkbox" name="questions" id="q_love4" value="어떤 사람이 저와 잘 맞을까요?" disabled>
+                                <label for="q_love4">어떤 사람이 저와 잘 맞을까요?</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 직업 관련 -->
+                    <div class="question-box disabled" data-fortune="career">
+                        <div class="question-box-title">💼 직업/진로 관련</div>
+                        <div class="question-options">
+                            <div class="question-check">
+                                <input type="checkbox" name="questions" id="q_career1" value="이직해도 괜찮을까요?" disabled>
+                                <label for="q_career1">이직해도 괜찮을까요?</label>
+                            </div>
+                            <div class="question-check">
+                                <input type="checkbox" name="questions" id="q_career2" value="어떤 분야가 저한테 맞을까요?" disabled>
+                                <label for="q_career2">어떤 분야가 저한테 맞을까요?</label>
+                            </div>
+                            <div class="question-check">
+                                <input type="checkbox" name="questions" id="q_career3" value="승진/합격 운이 있을까요?" disabled>
+                                <label for="q_career3">승진/합격 운이 있을까요?</label>
+                            </div>
+                            <div class="question-check">
+                                <input type="checkbox" name="questions" id="q_career4" value="사업 시작해도 될까요?" disabled>
+                                <label for="q_career4">사업 시작해도 될까요?</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 재물 관련 -->
+                    <div class="question-box disabled" data-fortune="wealth">
+                        <div class="question-box-title">💰 재물/사업 관련</div>
+                        <div class="question-options">
+                            <div class="question-check">
+                                <input type="checkbox" name="questions" id="q_wealth1" value="올해 재물운이 어떤가요?" disabled>
+                                <label for="q_wealth1">올해 재물운이 어떤가요?</label>
+                            </div>
+                            <div class="question-check">
+                                <input type="checkbox" name="questions" id="q_wealth2" value="투자해도 괜찮을까요?" disabled>
+                                <label for="q_wealth2">투자해도 괜찮을까요?</label>
+                            </div>
+                            <div class="question-check">
+                                <input type="checkbox" name="questions" id="q_wealth3" value="부동산 운이 있을까요?" disabled>
+                                <label for="q_wealth3">부동산 운이 있을까요?</label>
+                            </div>
+                            <div class="question-check">
+                                <input type="checkbox" name="questions" id="q_wealth4" value="돈이 새는 곳이 어딜까요?" disabled>
+                                <label for="q_wealth4">돈이 새는 곳이 어딜까요?</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 기타 -->
+                    <div class="question-box" data-fortune="general">
+                        <div class="question-box-title">✨ 기타</div>
+                        <div class="question-options">
+                            <div class="question-check">
+                                <input type="checkbox" name="questions" id="q_general1" value="올해 조심해야 할 시기가 언제인가요?">
+                                <label for="q_general1">올해 조심해야 할 시기가 언제인가요?</label>
+                            </div>
+                            <div class="question-check">
+                                <input type="checkbox" name="questions" id="q_general2" value="저한테 맞는 방향/색깔이 있을까요?">
+                                <label for="q_general2">저한테 맞는 방향/색깔이 있을까요?</label>
+                            </div>
+                            <div class="question-check">
+                                <input type="checkbox" name="questions" id="q_general3" value="제 성격에서 고쳐야 할 점이 있을까요?">
+                                <label for="q_general3">제 성격에서 고쳐야 할 점이 있을까요?</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 프리미엄 전용 질문 -->
+                <div class="premium-questions disabled" id="premiumQuestions">
+                    <span class="premium-badge">👑 프리미엄 전용</span>
+                    <p class="field-hint" style="margin-top:10px;">✍️ 구체적으로 적을수록 더 정확하고 맞춤화된 결과를 받아보실 수 있어요!</p>
+                    
+                    <div class="form-group">
+                        <label>가장 큰 고민거리</label>
+                        <input type="text" name="main_concern" placeholder="예: 이직을 고민하고 있어요" disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>반복되는 패턴</label>
+                        <input type="text" name="repeat_pattern" placeholder="예: 연애할 때 항상 비슷한 이유로 헤어져요" disabled>
+                    </div>
+
+                    <div class="form-group">
+                        <label>직접 질문 작성 (3가지까지)</label>
+                        <textarea name="custom_question" placeholder="궁금한 것을 자유롭게 적어주세요&#10;(한 줄에 하나씩)&#10;&#10;예시:&#10;• 올해 이직하면 좋을까요?&#10;• 내년에 결혼 운이 있을까요?&#10;• 사업을 시작하기 좋은 시기는 언제인가요?" disabled></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 궁합 매칭 사전신청 -->
+            <div class="matching-section" id="matchingSection">
+                <div class="matching-header">
+                    <span class="badge">NEW</span>
+                    <h3>🔮 궁합 매칭 서비스 사전신청</h3>
+                </div>
+                <p class="matching-desc">
+                    2026년 내 앱 출시 예정! 사주 궁합으로 나와 맞는 사람을 찾아드려요 💕
+                </p>
+                
+                <label class="matching-checkbox disabled" id="matchingCheckboxLabel">
+                    <input type="checkbox" name="matching_interest" id="matchingInterest" disabled>
+                    <span class="matching-checkbox-label">관심 있어요!</span>
+                    <span class="matching-checkbox-price" id="matchingPrice"></span>
+                </label>
+                <p class="matching-hint">체크하면 자세한 설명을 볼 수 있어요!</p>
+                
+                <div class="matching-detail" id="matchingDetail">
+                    <div class="matching-age-group">
+                        <div class="matching-age-row">
+                            <label>연상:</label>
+                            <select name="matching_age_upper" id="matchingAgeUpper">
+                                <option value="1">1세</option>
+                                <option value="2">2세</option>
+                                <option value="3" selected>3세</option>
+                                <option value="5">5세</option>
+                                <option value="7">7세</option>
+                                <option value="10">10세</option>
+                            </select>
+                            <span>위까지 괜찮아요</span>
+                        </div>
+                        <div class="matching-age-row">
+                            <label>연하:</label>
+                            <select name="matching_age_lower" id="matchingAgeLower">
+                                <option value="1">1세</option>
+                                <option value="2">2세</option>
+                                <option value="3" selected>3세</option>
+                                <option value="5">5세</option>
+                                <option value="7">7세</option>
+                                <option value="10">10세</option>
+                            </select>
+                            <span>아래까지 괜찮아요</span>
+                        </div>
+                        <div class="matching-age-any">
+                            <input type="checkbox" id="matchingAgeAny" name="matching_age_any">
+                            <label for="matchingAgeAny">나이 상관없어요</label>
+                        </div>
+                    </div>
+                    
+                    <div class="matching-benefits" id="matchingBenefits">
+                        <div class="matching-benefits-title">✨ 사전신청 혜택</div>
+                        <ul id="matchingBenefitsList">
+                            <li>출시 시 가장 먼저 연락드려요!</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 제출 버튼 -->
+            <div class="form-section" style="border-bottom: none;">
+                <button type="submit" class="submit-btn">
+                    ✨ 사주 상담 신청하기
+                </button>
+            </div>
+        </form>
+
+        <!-- 완료 페이지 -->
+        <div class="complete-page" id="completePage">
+            <div class="complete-icon">✨</div>
+            <h2 class="complete-title">신청이 완료되었습니다!</h2>
+            <p class="complete-subtitle">아래 정보를 확인해주세요</p>
+
+            <!-- ★ 주문코드 박스 추가 -->
+            <div class="order-code-box">
+                <div class="order-code-label">주문코드</div>
+                <div class="order-code-value" id="completeOrderCode">P-241210-001</div>
+                <button class="order-code-copy" onclick="copyOrderCode()">📋 코드 복사</button>
+            </div>
+
+            <div class="complete-info">
+                <div class="complete-info-row">
+                    <span class="complete-info-label">신청자</span>
+                    <span class="complete-info-value" id="completeName">홍길동</span>
+                </div>
+                <div class="complete-info-row">
+                    <span class="complete-info-label">패키지</span>
+                    <span class="complete-info-value" id="completePackage">⭐ 스탠다드</span>
+                </div>
+                <div class="complete-info-row">
+                    <span class="complete-info-label">결제 금액</span>
+                    <span class="complete-info-value" id="completePrice">19,900원</span>
+                </div>
+            </div>
+
+            <div class="payment-box">
+                <div class="payment-title">💳 입금 안내</div>
+                <div class="account-info">
+                    <strong>토스뱅크 100025300833</strong><br>
+                    예금주: 신은지
+                </div>
+                <button class="copy-btn" onclick="copyAccount()">📋 계좌번호 복사</button>
+            </div>
+
+            <div class="kakao-guide">
+                <div class="kakao-guide-title">📱 카카오톡으로 입금 확인 요청</div>
+                <div class="kakao-message">
+                    <strong>[주문코드]</strong> <span id="kakaoOrderCode">P-241210-001</span><br>
+                    <strong>[이름]</strong> <span id="kakaoName">홍길동</span><br>
+                    <strong>[연락처]</strong> <span id="kakaoPhone">010-1234-5678</span><br>
+                    <strong>[패키지]</strong> <span id="kakaoPackage">⭐ 스탠다드 (19,900원)</span><br><br>
+                    입금 완료했습니다!
+                </div>
+                <button class="copy-btn" onclick="copyKakaoMessage()">📋 메시지 복사</button>
+                <a href="http://pf.kakao.com/_LcJxgn/friend" target="_blank" class="copy-btn" style="display:inline-block; text-align:center; text-decoration:none; background:linear-gradient(135deg,#FFE812,#FFD700); color:#3C1E1E; margin-top:10px;">💬 카카오톡 열기</a>
+            </div>
+
+            <button class="reset-btn" onclick="resetForm()">새로운 신청하기</button>
+        </div>
+    </div>
+
+    <script>
+        // 현재 선택된 패키지
+        let currentPackage = 'standard';
+        let maxFortuneSelect = 2;
+
+        // ========== 진태양시용 도시 데이터 ==========
+        const CITY_DATA = {
+            "KR": ["서울", "인천", "수원", "고양", "용인", "성남", "부천", "부산", "대구", "대전", "광주", "울산", "세종", "청주", "전주", "천안", "창원", "포항", "제주", "강릉", "춘천", "원주", "여수", "순천", "목포", "군산", "익산", "경주", "안동", "김해", "구미"],
+            "US": ["뉴욕", "로스앤젤레스", "시카고", "휴스턴", "피닉스", "샌프란시스코", "시애틀", "덴버", "보스턴", "애틀랜타", "마이애미", "라스베이거스", "하와이(호놀룰루)"],
+            "JP": ["도쿄", "오사카", "나고야", "삿포로", "후쿠오카", "교토", "고베", "요코하마", "오키나와(나하)"],
+            "CN": ["베이징", "상하이", "광저우", "선전", "청두", "충칭", "톈진", "우한", "항저우", "시안", "칭다오", "다롄", "하얼빈", "선양"],
+            "TW": ["타이베이", "가오슝", "타이중"],
+            "GB": ["런던", "맨체스터", "버밍엄", "에든버러"],
+            "DE": ["베를린", "뮌헨", "함부르크", "프랑크푸르트"],
+            "FR": ["파리", "마르세유", "리옹"],
+            "AU": ["시드니", "멜버른", "브리즈번", "퍼스"],
+            "CA": ["토론토", "밴쿠버", "몬트리올", "캘거리"],
+            "SG": ["싱가포르"],
+            "VN": ["호치민", "하노이", "다낭"],
+            "TH": ["방콕", "치앙마이", "푸켓"],
+            "PH": ["마닐라", "세부"],
+            "MY": ["쿠알라룸푸르"],
+            "ID": ["자카르타", "발리(덴파사르)"],
+            "NZ": ["오클랜드", "웰링턴"],
+            "RU": ["모스크바", "상트페테르부르크", "블라디보스토크"],
+            "AE": ["두바이", "아부다비"],
+            "IN": ["뭄바이", "델리", "방갈로르"],
+            "CUSTOM": []
+        };
+
+        // 국가 선택 시 도시 목록 업데이트
+        document.getElementById('birthCountry').addEventListener('change', function() {
+            const country = this.value;
+            const citySelect = document.getElementById('birthCity');
+            const customGroup = document.getElementById('customLocationGroup');
+            
+            // 도시 목록 초기화
+            citySelect.innerHTML = '';
+            
+            if (country === 'CUSTOM') {
+                // 직접 입력 모드
+                citySelect.innerHTML = '<option value="">직접 입력</option>';
+                citySelect.disabled = true;
+                customGroup.style.display = 'block';
+            } else {
+                // 해당 국가의 도시 목록 추가
+                const cities = CITY_DATA[country] || ['서울'];
+                cities.forEach(city => {
+                    const option = document.createElement('option');
+                    option.value = city;
+                    option.textContent = city;
+                    citySelect.appendChild(option);
+                });
+                citySelect.disabled = false;
+                customGroup.style.display = 'none';
+            }
+        });
+
+        // 시간 모름 체크 시 지역 선택 숨김
+        document.getElementById('timeUnknown').addEventListener('change', function() {
+            const locationGroup = document.getElementById('birthLocationGroup');
+            if (this.checked) {
+                locationGroup.style.display = 'none';
+            } else {
+                locationGroup.style.display = 'block';
+            }
+        });
+
+        // ★★★ 자시 옵션 표시/숨김 처리 ★★★
+        document.getElementById('birthHour').addEventListener('change', function() {
+            const hour = parseInt(this.value);
+            const jasiOption = document.getElementById('jasiOption');
+            
+            // 23시 또는 0시 선택 시에만 자시 옵션 표시
+            if (hour === 23 || hour === 0) {
+                jasiOption.classList.add('show');
+            } else {
+                jasiOption.classList.remove('show');
+                // 다른 시간 선택 시 기본값(통합)으로 리셋
+                document.getElementById('jasi_unified').checked = true;
+            }
+        });
+
+        // ★★★ 주문코드 생성 함수 ★★★
+        function generateOrderCode(packageType) {
+            const prefix = {
+                'light': 'L',
+                'standard': 'S',
+                'premium': 'P'
+            };
+            
+            const now = new Date();
+            const dateStr = now.getFullYear().toString().slice(-2) + 
+                           String(now.getMonth() + 1).padStart(2, '0') + 
+                           String(now.getDate()).padStart(2, '0');
+            
+            // 시분 + 랜덤 3자리 (중복 방지)
+            const timeStr = String(now.getHours()).padStart(2, '0') + 
+                            String(now.getMinutes()).padStart(2, '0');
+            const randomStr = Math.random().toString(36).substring(2, 5).toUpperCase();
+            
+            return `${prefix[packageType] || 'S'}-${dateStr}-${timeStr}-${randomStr}`;
+        }
+
+        // ★★★ 주문코드 복사 함수 ★★★
+        function copyOrderCode() {
+            const code = document.getElementById('completeOrderCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                alert('주문코드가 복사되었습니다!\n추가 질문할 때 이 코드를 사용하세요 📋');
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = code;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('주문코드가 복사되었습니다!\n추가 질문할 때 이 코드를 사용하세요 📋');
+            });
+        }
+
+        // 패키지 선택
+        function selectPackage(pkg) {
+            currentPackage = pkg;
+            
+            document.querySelectorAll('.package-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            const selectedCard = document.querySelector(`input[name="package"][value="${pkg}"]`).closest('.package-card');
+            selectedCard.classList.add('selected');
+            selectedCard.querySelector('input').checked = true;
+
+            // 운세 선택 제한
+            const fortuneCheckboxes = document.querySelectorAll('input[name="fortune_type"]');
+            const healthCheckbox = document.getElementById('fortune_health');
+            
+            if (pkg === 'premium') {
+                // 프리미엄: 전체 선택, 변경 불가
+                fortuneCheckboxes.forEach(cb => {
+                    cb.checked = true;
+                    cb.disabled = true;
+                });
+                maxFortuneSelect = 4;
+                document.getElementById('fortuneHint').textContent = '👑 프리미엄은 모든 운세가 포함됩니다';
+            } else {
+                healthCheckbox.checked = false;
+                healthCheckbox.disabled = true;
+                
+                ['love', 'career', 'wealth'].forEach(type => {
+                    const cb = document.getElementById(`fortune_${type}`);
+                    cb.disabled = false;
+                    cb.checked = false;
+                });
+                
+                if (pkg === 'light') {
+                    maxFortuneSelect = 1;
+                    document.getElementById('fortuneHint').textContent = '🌱 라이트: 1가지만 선택하세요';
+                } else {
+                    maxFortuneSelect = 2;
+                    document.getElementById('fortuneHint').textContent = '⭐ 스탠다드: 2가지를 선택하세요';
+                }
+            }
+
+            // 프리미엄 질문 활성화
+            const premiumSection = document.getElementById('premiumQuestions');
+            if (pkg === 'premium') {
+                premiumSection.classList.remove('disabled');
+                premiumSection.querySelectorAll('input, textarea').forEach(el => el.disabled = false);
+            } else {
+                premiumSection.classList.add('disabled');
+                premiumSection.querySelectorAll('input, textarea').forEach(el => {
+                    el.disabled = true;
+                    el.value = '';
+                });
+            }
+
+            // 만나고 싶은 인연의 성별 (프리미엄만 표시/필수)
+            const partnerGenderGroup = document.getElementById('partnerGenderGroup');
+            const partnerGenderRequired = document.querySelector('.premium-required');
+            if (pkg === 'premium') {
+                partnerGenderGroup.style.display = 'block';
+                partnerGenderRequired.style.display = 'inline';
+            } else {
+                partnerGenderGroup.style.display = 'none';
+                partnerGenderRequired.style.display = 'none';
+                // 체크 해제
+                document.querySelectorAll('input[name="partnerGender"]').forEach(cb => cb.checked = false);
+            }
+
+            updateQuestionBoxes();
+        }
+
+        // 운세 선택 제한
+        document.querySelectorAll('input[name="fortune_type"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const checked = document.querySelectorAll('input[name="fortune_type"]:checked');
+                
+                if (checked.length > maxFortuneSelect) {
+                    this.checked = false;
+                    alert(`${maxFortuneSelect}가지만 선택할 수 있어요!`);
+                }
+                
+                updateQuestionBoxes();
+            });
+        });
+
+        // 질문 박스 활성화/비활성화
+        function updateQuestionBoxes() {
+            const selectedFortunes = Array.from(document.querySelectorAll('input[name="fortune_type"]:checked')).map(el => el.value);
+            const questionBoxes = document.querySelectorAll('.question-box[data-fortune]');
+            
+            questionBoxes.forEach(box => {
+                const fortune = box.getAttribute('data-fortune');
+                
+                // 기타(general)는 항상 활성화
+                if (fortune === 'general') {
+                    box.classList.remove('disabled');
+                    box.querySelectorAll('input').forEach(input => input.disabled = false);
+                    return;
+                }
+                
+                // 선택된 운세에 해당하는 질문만 활성화
+                if (selectedFortunes.includes(fortune)) {
+                    box.classList.remove('disabled');
+                    box.querySelectorAll('input').forEach(input => input.disabled = false);
+                } else {
+                    box.classList.add('disabled');
+                    box.querySelectorAll('input').forEach(input => {
+                        input.disabled = true;
+                        input.checked = false;
+                    });
+                }
+            });
+            
+            // 힌트 업데이트
+            const hint = document.getElementById('questionHint');
+            if (selectedFortunes.length === 0) {
+                hint.textContent = '먼저 위에서 보고 싶은 운세를 선택해주세요 ☝️';
+            } else {
+                hint.textContent = '선택한 운세에 맞는 질문을 골라주세요';
+            }
+        }
+
+        // 시간 모름 체크박스
+        document.getElementById('timeUnknown').addEventListener('change', function() {
+            const hourSelect = document.getElementById('birthHour');
+            const minuteSelect = document.getElementById('birthMinute');
+            
+            if (this.checked) {
+                hourSelect.disabled = true;
+                minuteSelect.disabled = true;
+                hourSelect.value = '';
+                minuteSelect.value = '';
+            } else {
+                hourSelect.disabled = false;
+                minuteSelect.disabled = false;
+            }
+        });
+
+        // 폼 제출
+        document.getElementById('sajuForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 패키지 선택 확인
+            const packageSelected = document.querySelector('input[name="package"]:checked');
+            if (!packageSelected) {
+                alert('패키지를 선택해주세요.');
+                return;
+            }
+
+            // 운세 선택 확인 (프리미엄 제외)
+            if (currentPackage !== 'premium') {
+                const fortuneChecked = document.querySelectorAll('input[name="fortune_type"]:checked');
+                if (fortuneChecked.length < maxFortuneSelect) {
+                    alert(`운세를 ${maxFortuneSelect}가지 선택해주세요.`);
+                    return;
+                }
+            }
+
+            // 프리미엄: 만나고 싶은 인연의 성별 필수 체크
+            if (currentPackage === 'premium') {
+                const partnerGenderChecked = document.querySelectorAll('input[name="partnerGender"]:checked');
+                if (partnerGenderChecked.length === 0) {
+                    alert('만나고 싶은 인연의 성별을 선택해주세요.\n(복수 선택 가능)');
+                    return;
+                }
+            }
+
+            // 폼 데이터 수집
+            const formData = new FormData(this);
+            
+            // 생년월일 가져오기
+            const birthYear = formData.get('birth_year') || '';
+            const birthMonth = formData.get('birth_month') || '';
+            const birthDay = formData.get('birth_day') || '';
+            
+            // ★★★ 주문코드 생성 ★★★
+            const orderCode = generateOrderCode(formData.get('package'));
+            
+            // 시트 전송용 데이터 구성
+            const data = {
+                timestamp: new Date().toISOString(),
+                orderCode: orderCode,  // ★ 주문코드 추가
+                name: formData.get('name'),
+                phone: `${formData.get('phone_prefix')}-${formData.get('phone_mid')}-${formData.get('phone_last')}`,
+                birthYear: birthYear,
+                birthMonth: birthMonth,
+                birthDay: birthDay,
+                birthHour: formData.get('birth_hour') || '',
+                birthMinute: formData.get('birth_minute') || '',
+                isLunar: ['lunar', 'lunar_leap'].includes(formData.get('calendar')) ? 'Y' : 'N',
+                gender: formData.get('gender'),
+                partnerGender: Array.from(document.querySelectorAll('input[name="partnerGender"]:checked')).map(el => el.value).join(',') || '',
+                loveStatus: formData.get('loveStatus') || '선택 안 함',
+                jobStatus: formData.get('jobStatus') || '선택 안 함',
+                package: formData.get('package'),
+                fortuneType: Array.from(document.querySelectorAll('input[name="fortune_type"]:checked')).map(el => el.value).join(','),
+                questions: Array.from(document.querySelectorAll('input[name="questions"]:checked')).map(el => el.value).join(','),
+                customQuestion: (formData.get('custom_question') || '').replace(/\n/g, ' ∥ '),
+                mainConcern: (formData.get('main_concern') || '').replace(/\n/g, ' ∥ '),
+                repeatPattern: (formData.get('repeat_pattern') || '').replace(/\n/g, ' ∥ '),
+                jasiType: formData.get('jasiType') || 'unified',
+                // ★ 진태양시용 지역 정보
+                birthCountry: formData.get('birth_country') || 'KR',
+                birthCity: formData.get('birth_city') || '서울',
+                customLongitude: formData.get('custom_longitude') || '',
+                customUtcOffset: formData.get('custom_utc_offset') || '',
+                status: '신규',
+                paymentStatus: '대기',
+                // 궁합 매칭 사전신청
+                matchingInterest: document.getElementById('matchingInterest').checked ? 'Y' : 'N',
+                matchingAgeUpper: document.getElementById('matchingInterest').checked ? (document.getElementById('matchingAgeAny').checked ? '상관없음' : formData.get('matching_age_upper')) : '',
+                matchingAgeLower: document.getElementById('matchingInterest').checked ? (document.getElementById('matchingAgeAny').checked ? '상관없음' : formData.get('matching_age_lower')) : ''
+            };
+
+            console.log('제출 데이터:', data);
+            
+            // ★ localStorage에 저장 (관리자 페이지에서 읽기 위해)
+            try {
+                const existingData = JSON.parse(localStorage.getItem('saju_customers') || '[]');
+                data.id = Date.now(); // 고유 ID
+                existingData.push(data);
+                localStorage.setItem('saju_customers', JSON.stringify(existingData));
+                console.log('localStorage 저장 완료:', data);
+            } catch (e) {
+                console.log('localStorage 저장 실패:', e);
+            }
+            
+            // Google Sheets + Supabase 이중 저장
+            const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzlnTB3d3tO_qvRNKgiLkGgy3EmH_92eYslv4mODGzV7QCiVHYTDLEl4duNlp3PO_kclA/exec';
+            const SUPABASE_URL = 'https://hvxacycvwfwhzfqftscx.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2eGFjeWN2d2Z3aHpmcWZ0c2N4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2MTAyMjQsImV4cCI6MjA4MzE4NjIyNH0.MK6k6hOQA9YajKqNvRoBelW6aO7eSjW8g5m72JWL4Tg';
+
+            // 먼저 모달 표시
+            showPaymentModal(data);
+
+            // 백그라운드로 Google Sheets 전송
+            try {
+                fetch(SHEET_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                console.log('📊 Google Sheets 전송 완료');
+            } catch (error) {
+                console.log('시트 전송 실패:', error);
+            }
+
+            // ★ Supabase에도 저장 (더 빠른 로딩을 위해)
+            try {
+                const supabaseData = {
+                    order_code: data.orderCode,
+                    name: data.name,
+                    birth_year: parseInt(data.birthYear),
+                    birth_month: parseInt(data.birthMonth),
+                    birth_day: parseInt(data.birthDay),
+                    birth_hour: data.birthHour,
+                    birth_minute: data.birthMinute,
+                    gender: data.gender,
+                    calendar_type: data.calendarType,
+                    package: data.package,
+                    status: '신규',
+                    phone: data.phone,
+                    email: data.email,
+                    main_concern: data.mainConcern,
+                    repeat_pattern: data.repeatPattern,
+                    custom_question: data.customQuestion,
+                    fortune_type: data.fortuneType,
+                    love_status: data.loveStatus,
+                    job_status: data.jobStatus,
+                    partner_gender: data.partnerGender,
+                    matching_interest: data.matchingInterest,
+                    birth_country: data.birthCountry || 'KR',
+                    birth_city: data.birthCity || '서울',
+                    custom_longitude: data.customLongitude ? parseFloat(data.customLongitude) : null,
+                    custom_utc_offset: data.customUtcOffset ? parseFloat(data.customUtcOffset) : null
+                };
+
+                fetch(`${SUPABASE_URL}/rest/v1/customers`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify(supabaseData)
+                }).then(res => {
+                    if (res.ok) {
+                        console.log('⚡ Supabase 저장 완료');
+                    } else {
+                        console.log('Supabase 저장 실패:', res.status);
+                    }
+                });
+            } catch (error) {
+                console.log('Supabase 전송 실패:', error);
+            }
+        });
+
+        // 완료 페이지 표시
+        function showPaymentModal(data) {
+            const packageNames = {
+                'light': '🌱 라이트',
+                'standard': '⭐ 스탠다드',
+                'premium': '👑 프리미엄'
+            };
+            const basePrices = {
+                'light': 9900,
+                'standard': 19900,
+                'premium': 39900
+            };
+
+            // 매칭 추가 금액 계산 (남성 + 매칭 선택 시)
+            let matchingFee = 0;
+            if (data.gender === 'male' && data.matchingInterest === 'Y') {
+                matchingFee = 3000;
+            }
+            const totalPrice = basePrices[data.package] + matchingFee;
+            const priceText = totalPrice.toLocaleString() + '원';
+            const priceWithMatching = matchingFee > 0 ? priceText + ' (매칭 포함)' : priceText;
+
+            // ★ 주문코드 표시
+            document.getElementById('completeOrderCode').textContent = data.orderCode;
+            document.getElementById('kakaoOrderCode').textContent = data.orderCode;
+
+            // 완료 페이지에 정보 표시
+            document.getElementById('completeName').textContent = data.name;
+            document.getElementById('completePackage').textContent = packageNames[data.package];
+            document.getElementById('completePrice').textContent = priceWithMatching;
+            
+            // 카카오톡 메시지용 정보
+            document.getElementById('kakaoName').textContent = data.name;
+            document.getElementById('kakaoPhone').textContent = data.phone;
+            document.getElementById('kakaoPackage').textContent = packageNames[data.package] + ' (' + priceWithMatching + ')';
+            
+            // 전역 변수에 저장 (복사용)
+            window.customerData = data;
+            
+            // 폼 숨기고 완료 페이지 표시
+            document.getElementById('sajuForm').style.display = 'none';
+            document.getElementById('completePage').style.display = 'block';
+            
+            // 페이지 상단으로 스크롤
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 카카오톡 메시지 복사
+        function copyKakaoMessage() {
+            const data = window.customerData;
+            const basePrices = {
+                'light': 9900,
+                'standard': 19900,
+                'premium': 39900
+            };
+            const packageKorean = {
+                'light': '라이트',
+                'standard': '스탠다드',
+                'premium': '프리미엄'
+            };
+            
+            // 매칭 추가 금액 계산
+            let matchingFee = 0;
+            if (data.gender === 'male' && data.matchingInterest === 'Y') {
+                matchingFee = 3000;
+            }
+            const totalPrice = basePrices[data.package] + matchingFee;
+            const priceText = totalPrice.toLocaleString() + '원';
+            
+            // 매칭 신청 여부 텍스트
+            let matchingText = '';
+            if (data.matchingInterest === 'Y') {
+                matchingText = '\n• 궁합 매칭: 사전신청 ✓';
+            }
+            
+            // ★ 주문코드 포함
+            const message = `안녕하세요! 사주 상담 신청했습니다 ✨
+
+• 주문코드: ${data.orderCode}
+• 이름: ${data.name}
+• 연락처: ${data.phone}
+• 패키지: ${packageKorean[data.package]} (${priceText})${matchingText}
+
+입금 완료 후 캡쳐화면 보내드릴게요!`;
+            
+            navigator.clipboard.writeText(message).then(() => {
+                alert('메시지가 복사되었습니다!\n카카오톡에 붙여넣기 해주세요 📋');
+            }).catch(() => {
+                // 폴백
+                const textarea = document.createElement('textarea');
+                textarea.value = message;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('메시지가 복사되었습니다!\n카카오톡에 붙여넣기 해주세요 📋');
+            });
+        }
+
+        // 폼 리셋 (새로운 신청)
+        function resetForm() {
+            document.getElementById('sajuForm').reset();
+            document.getElementById('sajuForm').style.display = 'block';
+            document.getElementById('completePage').style.display = 'none';
+            selectPackage('standard');
+            updateQuestionBoxes();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 계좌번호 복사
+        function copyAccount() {
+            const account = '토스뱅크 100025300833 신은지';
+            navigator.clipboard.writeText(account).then(() => {
+                alert('계좌번호가 복사되었습니다!');
+            }).catch(() => {
+                // 폴백
+                const textarea = document.createElement('textarea');
+                textarea.value = account;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('계좌번호가 복사되었습니다!');
+            });
+        }
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            selectPackage('standard');
+            updateQuestionBoxes();
+            initMatchingSection();
+            initPhoneInputs();  // 전화번호 입력 초기화
+            initBirthInputs();  // 생년월일 입력 초기화
+            initLunarHint();    // 음력 힌트 초기화
+        });
+
+        // 음력 선택 시 힌트 표시
+        function initLunarHint() {
+            const calendarRadios = document.querySelectorAll('input[name="calendar"]');
+            const lunarHint = document.getElementById('lunarHint');
+
+            calendarRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'lunar' || this.value === 'lunar_leap') {
+                        lunarHint.style.display = 'block';
+                    } else {
+                        lunarHint.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // 생년월일 입력 - 월에 따른 일수 조절
+        function initBirthInputs() {
+            const yearSelect = document.getElementById('birthYear');
+            const monthSelect = document.getElementById('birthMonth');
+            const daySelect = document.getElementById('birthDay');
+
+            function updateDays() {
+                const year = parseInt(yearSelect.value) || 2000;
+                const month = parseInt(monthSelect.value) || 1;
+                const currentDay = daySelect.value;
+
+                // 해당 월의 마지막 날 계산
+                const lastDay = new Date(year, month, 0).getDate();
+
+                // 일 옵션 재생성
+                daySelect.innerHTML = '<option value="">일</option>';
+                for (let d = 1; d <= lastDay; d++) {
+                    const val = String(d).padStart(2, '0');
+                    const selected = val === currentDay ? 'selected' : '';
+                    daySelect.innerHTML += `<option value="${val}" ${selected}>${d}일</option>`;
+                }
+            }
+
+            yearSelect.addEventListener('change', updateDays);
+            monthSelect.addEventListener('change', updateDays);
+        }
+
+        // 전화번호 입력 편의기능
+        function initPhoneInputs() {
+            const phoneMid = document.getElementById('phoneMid');
+            const phoneLast = document.getElementById('phoneLast');
+
+            // 숫자만 입력 + 자동 이동
+            phoneMid.addEventListener('input', function(e) {
+                this.value = this.value.replace(/[^0-9]/g, '');
+                if (this.value.length === 4) {
+                    phoneLast.focus();
+                }
+            });
+
+            phoneLast.addEventListener('input', function(e) {
+                this.value = this.value.replace(/[^0-9]/g, '');
+            });
+
+            // 붙여넣기 처리 (전체 번호 붙여넣기 시 자동 분배)
+            phoneMid.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const pasted = (e.clipboardData || window.clipboardData).getData('text');
+                const numbers = pasted.replace(/[^0-9]/g, '');
+                
+                if (numbers.length >= 7) {
+                    // 010-1234-5678 형태로 붙여넣기 된 경우
+                    const mid = numbers.slice(-8, -4);
+                    const last = numbers.slice(-4);
+                    phoneMid.value = mid;
+                    phoneLast.value = last;
+                    phoneLast.focus();
+                } else {
+                    phoneMid.value = numbers.slice(0, 4);
+                    if (numbers.length > 4) {
+                        phoneLast.value = numbers.slice(4, 8);
+                        phoneLast.focus();
+                    }
+                }
+            });
+        }
+
+        // 궁합 매칭 섹션 초기화
+        function initMatchingSection() {
+            const genderRadios = document.querySelectorAll('input[name="gender"]');
+            const matchingCheckbox = document.getElementById('matchingInterest');
+            const matchingCheckboxLabel = document.getElementById('matchingCheckboxLabel');
+            const matchingPrice = document.getElementById('matchingPrice');
+            const matchingDetail = document.getElementById('matchingDetail');
+            const matchingBenefitsList = document.getElementById('matchingBenefitsList');
+            const matchingAgeAny = document.getElementById('matchingAgeAny');
+            const matchingAgeUpper = document.getElementById('matchingAgeUpper');
+            const matchingAgeLower = document.getElementById('matchingAgeLower');
+
+            // 성별 선택 시 매칭 섹션 활성화
+            genderRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const gender = this.value;
+                    
+                    // 체크박스 활성화
+                    matchingCheckbox.disabled = false;
+                    matchingCheckboxLabel.classList.remove('disabled');
+                    
+                    // 성별에 따라 가격 및 혜택 변경
+                    if (gender === 'female') {
+                        matchingPrice.textContent = '(무료)';
+                        matchingBenefitsList.innerHTML = '<li>출시 시 가장 먼저 연락드려요!</li>';
+                    } else {
+                        matchingPrice.textContent = '(+3,000원)';
+                        matchingBenefitsList.innerHTML = `
+                            <li>출시 시 가장 먼저 연락드려요</li>
+                            <li>정식 가격보다 할인 적용</li>
+                            <li>우선 매칭 기회 제공</li>
+                        `;
+                    }
+                });
+            });
+
+            // 매칭 체크박스 클릭 시 상세 펼침
+            matchingCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    matchingDetail.classList.add('show');
+                } else {
+                    matchingDetail.classList.remove('show');
+                }
+            });
+
+            // 나이 상관없음 체크 시 드롭다운 비활성화
+            matchingAgeAny.addEventListener('change', function() {
+                if (this.checked) {
+                    matchingAgeUpper.disabled = true;
+                    matchingAgeLower.disabled = true;
+                } else {
+                    matchingAgeUpper.disabled = false;
+                    matchingAgeLower.disabled = false;
+                }
+            });
+        }
+    </script>
+<!-- 플로팅 관리자 버튼 -->
+<a href="index.html" style="position:fixed; bottom:20px; right:20px; z-index:9999; width:50px; height:50px; background:linear-gradient(135deg,#d4af82,#b8956a); border-radius:50%; display:flex; align-items:center; justify-content:center; text-decoration:none; font-size:24px; box-shadow:0 4px 15px rgba(0,0,0,0.3);">🏠</a>
+</body>
+</html>
