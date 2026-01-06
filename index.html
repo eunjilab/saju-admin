@@ -7555,7 +7555,7 @@ ${questionList}
             return new Promise((resolve, reject) => {
                 // iframe 생성
                 const iframe = document.createElement('iframe');
-                iframe.src = '5_prompt.html';
+                iframe.src = '5_prompt.html?v=' + Date.now();
                 iframe.style.cssText = 'position:absolute; left:-9999px; width:1px; height:1px;';
                 document.body.appendChild(iframe);
                 
