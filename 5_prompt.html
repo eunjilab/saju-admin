@@ -745,6 +745,16 @@
 💑 육합: 자축합
 ⚔️ 충: 자오충"></textarea>
             </div>
+            <div class="form-row" style="margin-top: 15px;">
+                <div class="form-group">
+                    <label>🌟 귀인 띠 (천을귀인)</label>
+                    <input type="text" id="guininDdi" placeholder="예: 소띠 🐮, 양띠 🐑">
+                </div>
+                <div class="form-group">
+                    <label>⚠️ 피해야 할 띠 (원진살)</label>
+                    <input type="text" id="avoidDdi" placeholder="예: 양띠 🐑">
+                </div>
+            </div>
         </div>
 
         <!-- 질문지 -->
@@ -868,7 +878,7 @@ Q3: 이직해도 될까요?"></textarea>
                 'dayganStrength', 'yongsin', 'yongsinDesc', 'huisin', 'huisinDesc', 'gisin', 'gisinDesc',
                 'gyeokgukText', 'jijangganText',
                 'daeunStartAge', 'daeunDirection', 'currentDaeun', 'daeunSipsung', 'seun2026', 'daeunListText',
-                'hapchungText', 'fortuneTypes', 'mainConcern', 'repeatPattern', 'customQuestion', 'checkedQuestions'
+                'hapchungText', 'guininDdi', 'avoidDdi', 'fortuneTypes', 'mainConcern', 'repeatPattern', 'customQuestion', 'checkedQuestions'
             ];
             fieldsToReset.forEach(id => {
                 const el = document.getElementById(id);
@@ -1131,6 +1141,24 @@ Q3: 이직해도 될까요?"></textarea>
                 // "사주 내 합충형파해 없음" 또는 "정보 없음"이 아닌 경우만 저장
                 if (hapchungContent && !hapchungContent.includes('없음')) {
                     document.getElementById('hapchungText').value = hapchungContent;
+                    parsed++;
+                }
+            }
+
+            // 귀인/피해야할 띠 파싱
+            const guininMatch = text.match(/🌟\s*귀인 띠[^:]*:\s*([^←\n]+)/);
+            if (guininMatch) {
+                const guininText = guininMatch[1].trim();
+                if (guininText && !guininText.includes('정보 없음')) {
+                    document.getElementById('guininDdi').value = guininText;
+                    parsed++;
+                }
+            }
+            const avoidMatch = text.match(/⚠️\s*피해야 할 띠[^:]*:\s*([^←\n]+)/);
+            if (avoidMatch) {
+                const avoidText = avoidMatch[1].trim();
+                if (avoidText && !avoidText.includes('정보 없음')) {
+                    document.getElementById('avoidDdi').value = avoidText;
                     parsed++;
                 }
             }
@@ -1410,6 +1438,8 @@ Q3: 이직해도 될까요?"></textarea>
             const gilsinText = document.getElementById('gilsinText').value;
             const yangmyeonText = document.getElementById('yangmyeonText').value;
             const hapchungText = document.getElementById('hapchungText').value;
+            const guininDdi = document.getElementById('guininDdi').value;
+            const avoidDdi = document.getElementById('avoidDdi').value;
 
             // 용신/기신 변수
             const dayganStrength = document.getElementById('dayganStrength').value;
@@ -1793,6 +1823,12 @@ ${gilsinText || yangmyeonText ? `- 🌟 **길신**: ${gilsinText || '없음'}
 
 ### ⚔️ 합충형파해 (사주 내 천간/지지 관계)
 ${hapchungText ? hapchungText : '(합충형파해 정보 없음 - 사주계산기 결과를 확인하세요)'}
+
+### 🎯 귀인/피해야 할 띠 (인연 해석 시 필수 참조!)
+- 🌟 **귀인 띠 (천을귀인)**: ${guininDdi || '정보 없음'} ← 이 띠의 사람과 만나면 도움받음
+- ⚠️ **피해야 할 띠 (원진살)**: ${avoidDdi || '정보 없음'} ← 이 띠의 사람과는 갈등 소지
+
+⚠️ **중요: 인연수/배우자상 해석 시 반드시 위 띠 정보를 언급하세요!**
 
 ### 오행 분포
 | 목(木) | 화(火) | 토(土) | 금(金) | 수(水) |
