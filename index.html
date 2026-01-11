@@ -3494,7 +3494,7 @@
 
                 // 완료 상태가 아닌 고객 (전체 데이터) - 페이지네이션 적용
                 const activeResponse = await fetch(
-                    `${SAJU_CONFIG.supabase.url}/rest/v1/customers?status=neq.완료&order=created_at.desc&limit=${PAGE_SIZE}&offset=${offset}`,
+                    `${SAJU_CONFIG.supabase.url}/rest/v1/customers?status=neq.완료&select=*&order=created_at.desc&limit=${PAGE_SIZE}&offset=${offset}`,
                     { headers: { ...supabaseHeaders, 'Prefer': 'count=exact' } }
                 );
 
@@ -3513,18 +3513,15 @@
                     hasMoreData = activeCustomers.length === PAGE_SIZE;
                 }
 
-                // 첫 페이지면 완료된 고객도 함께 로드 (별도 페이징)
+                // 첫 페이지면 완료된 고객도 함께 로드 (전체 필드)
                 let completedCustomers = [];
                 if (page === 1) {
                     const completedResponse = await fetch(
-                        `${SAJU_CONFIG.supabase.url}/rest/v1/customers?status=eq.완료&select=${basicFields}&order=created_at.desc&limit=${PAGE_SIZE}`,
+                        `${SAJU_CONFIG.supabase.url}/rest/v1/customers?status=eq.완료&select=*&order=created_at.desc&limit=${PAGE_SIZE}`,
                         { headers: supabaseHeaders }
                     );
                     if (completedResponse.ok) {
                         completedCustomers = await completedResponse.json();
-                        completedCustomers.forEach(c => {
-                            c._needsDetailLoad = true;
-                        });
                     }
                 }
 
