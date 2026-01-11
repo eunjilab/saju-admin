@@ -3744,6 +3744,20 @@
             }
         }
 
+        // Supabase 고객 삭제
+        async function supabaseDeleteCustomer(orderCode) {
+            try {
+                const response = await fetch(
+                    `${SAJU_CONFIG.supabase.url}/rest/v1/customers?order_code=eq.${encodeURIComponent(orderCode)}`,
+                    { method: 'DELETE', headers: supabaseHeaders }
+                );
+                return response.ok;
+            } catch (error) {
+                console.error('Supabase 고객 삭제 에러:', error);
+                return false;
+            }
+        }
+
         // Google Sheets 형식 → Supabase 형식 변환
         function convertToSupabaseFormat(customer) {
             // Supabase 테이블에 있는 필드만 매핑
@@ -4791,7 +4805,16 @@
                     document.getElementById('sajuResultBadge').textContent = '저장실패';
                     document.getElementById('sajuResultBadge').style.background = '#c00';
                 });
-                
+
+                // Supabase에도 저장
+                if (customer.orderCode) {
+                    supabaseUpdateCustomer(customer.orderCode, { sajuResult: text }).then(result => {
+                        if (result) console.log('⚡ Supabase sajuResult 저장 완료');
+                    }).catch(error => {
+                        console.log('Supabase 저장 실패:', error);
+                    });
+                }
+
                 alert('📥 사주계산 결과가 붙여넣기 되었습니다!');
                 
             } catch (error) {
@@ -4856,7 +4879,16 @@
                 // 로컬 데이터 업데이트
                 customer.inyeonCalcResult = text;
                 localStorage.setItem('saju_customers', JSON.stringify(customers));
-                
+
+                // Supabase에도 저장
+                if (customer.orderCode) {
+                    supabaseUpdateCustomer(customer.orderCode, { inyeonCalcResult: text }).then(result => {
+                        if (result) console.log('⚡ Supabase inyeonCalcResult 저장 완료');
+                    }).catch(error => {
+                        console.log('Supabase 저장 실패:', error);
+                    });
+                }
+
                 alert('📥 인연상 계산 결과가 붙여넣기 되었습니다!');
                 
             } catch (error) {
@@ -4909,7 +4941,16 @@
                 // 로컬 데이터 업데이트
                 customer.inyeonHTML = text;
                 localStorage.setItem('saju_customers', JSON.stringify(customers));
-                
+
+                // Supabase에도 저장
+                if (customer.orderCode) {
+                    supabaseUpdateCustomer(customer.orderCode, { inyeonHTML: text }).then(result => {
+                        if (result) console.log('⚡ Supabase inyeonHTML 저장 완료');
+                    }).catch(error => {
+                        console.log('Supabase 저장 실패:', error);
+                    });
+                }
+
                 alert('📥 인연상 HTML이 붙여넣기 되었습니다!');
                 
             } catch (error) {
@@ -5001,7 +5042,16 @@
                     document.getElementById('promptResultBadge').textContent = '저장실패';
                     document.getElementById('promptResultBadge').style.background = '#c00';
                 });
-                
+
+                // Supabase에도 저장
+                if (customer.orderCode) {
+                    supabaseUpdateCustomer(customer.orderCode, { promptResult: text }).then(result => {
+                        if (result) console.log('⚡ Supabase promptResult 저장 완료');
+                    }).catch(error => {
+                        console.log('Supabase 저장 실패:', error);
+                    });
+                }
+
                 alert('📥 프롬프트 결과가 붙여넣기 되었습니다!');
                 
             } catch (error) {
@@ -5233,6 +5283,15 @@
                     customer.status = '변환요청';
                     localStorage.setItem('saju_customers', JSON.stringify(customers));
 
+                    // Supabase에 status도 저장
+                    if (customer.orderCode) {
+                        supabaseUpdateCustomer(customer.orderCode, { status: '변환요청' }).then(result => {
+                            if (result) console.log('⚡ Supabase status 변환요청 저장 완료');
+                        }).catch(error => {
+                            console.log('Supabase 저장 실패:', error);
+                        });
+                    }
+
                     // UI 업데이트
                     document.getElementById('mainResultStatus').textContent = '✅ 저장 완료! (상태: 변환요청)';
                     document.getElementById('statusSelect').value = '변환요청';
@@ -5278,6 +5337,15 @@
                     customer.additionalResultText = text;
                     customer._answerStatus = '추가변환요청';
                     localStorage.setItem('saju_customers', JSON.stringify(customers));
+
+                    // Supabase에 _answerStatus도 저장
+                    if (customer.orderCode) {
+                        supabaseUpdateCustomer(customer.orderCode, { _answerStatus: '추가변환요청' }).then(result => {
+                            if (result) console.log('⚡ Supabase _answerStatus 추가변환요청 저장 완료');
+                        }).catch(error => {
+                            console.log('Supabase 저장 실패:', error);
+                        });
+                    }
 
                     // UI 업데이트
                     document.getElementById('additionalResultStatus').textContent = '✅ 저장 완료! (상태: 추가변환요청)';
@@ -5356,6 +5424,15 @@
                     customer.status = '변환요청';
                     localStorage.setItem('saju_customers', JSON.stringify(customers));
 
+                    // Supabase에 status도 저장
+                    if (customer.orderCode) {
+                        supabaseUpdateCustomer(customer.orderCode, { status: '변환요청' }).then(result => {
+                            if (result) console.log('⚡ Supabase status 변환요청 저장 완료');
+                        }).catch(error => {
+                            console.log('Supabase 저장 실패:', error);
+                        });
+                    }
+
                     // 뱃지 업데이트
                     document.getElementById('mainResultCardBadge').textContent = '저장됨';
                     document.getElementById('mainResultCardBadge').style.background = '#4a7c59';
@@ -5378,7 +5455,7 @@
                 alert('붙여넣기 실패: 클립보드 접근 권한을 확인해주세요.');
             }
         }
-        
+
         // Step 7: 답변글 카드에서 직접 붙여넣기
         async function pasteAdditionalResultDirect() {
             if (selectedCustomer === null) return;
@@ -5404,6 +5481,15 @@
                     customer._answerStatus = '추가변환요청';
                     localStorage.setItem('saju_customers', JSON.stringify(customers));
 
+                    // Supabase에 _answerStatus도 저장
+                    if (customer.orderCode) {
+                        supabaseUpdateCustomer(customer.orderCode, { _answerStatus: '추가변환요청' }).then(result => {
+                            if (result) console.log('⚡ Supabase _answerStatus 추가변환요청 저장 완료');
+                        }).catch(error => {
+                            console.log('Supabase 저장 실패:', error);
+                        });
+                    }
+
                     // 뱃지 업데이트
                     document.getElementById('additionalResultCardBadge').textContent = '저장됨';
                     document.getElementById('additionalResultCardBadge').style.background = '#4a7c59';
@@ -5426,7 +5512,7 @@
                 alert('붙여넣기 실패: 클립보드 접근 권한을 확인해주세요.');
             }
         }
-        
+
         // Google Sheets에 주요결과글 저장 (iframe form 방식)
         function saveMainResultText(orderCode, text) {
             return new Promise((resolve) => {
@@ -5474,6 +5560,14 @@
                     document.body.removeChild(form);
                     document.body.removeChild(iframe);
                     console.log('✅ 주요결과글 저장 요청 완료:', orderCode);
+
+                    // Supabase에도 저장
+                    supabaseUpdateCustomer(orderCode, { mainResultText: text }).then(result => {
+                        if (result) console.log('⚡ Supabase mainResultText 저장 완료');
+                    }).catch(error => {
+                        console.log('Supabase 저장 실패:', error);
+                    });
+
                     resolve({ success: true });
                 }, 2000);
             });
@@ -5520,11 +5614,19 @@
                     document.body.removeChild(form);
                     document.body.removeChild(iframe);
                     console.log('✅ 추가질문결과글 저장 요청 완료:', orderCode);
+
+                    // Supabase에도 저장
+                    supabaseUpdateCustomer(orderCode, { additionalResultText: text }).then(result => {
+                        if (result) console.log('⚡ Supabase additionalResultText 저장 완료');
+                    }).catch(error => {
+                        console.log('Supabase 저장 실패:', error);
+                    });
+
                     resolve({ success: true });
                 }, 2000);
             });
         }
-        
+
         // ========== 결과 링크 직접 저장 ==========
         async function saveResultLink(resultType) {
             if (selectedCustomer === null) return;
@@ -5570,8 +5672,18 @@
             } catch (error) {
                 console.log('결과 링크 저장 실패:', error);
             }
+
+            // Supabase에도 저장
+            const updateData = resultType === 'main'
+                ? { resultUrl: url }
+                : { additionalResultUrl: url };
+            supabaseUpdateCustomer(customer.orderCode, updateData).then(result => {
+                if (result) console.log('⚡ Supabase 결과링크 저장 완료');
+            }).catch(error => {
+                console.log('Supabase 저장 실패:', error);
+            });
         }
-        
+
         // ========== 결과 파일 업로드 ==========
         async function uploadResultFile(resultType) {
             if (selectedCustomer === null) return;
@@ -5831,7 +5943,16 @@
             } catch (error) {
                 console.log('Google Sheets 삭제 실패:', error);
             }
-            
+
+            // Supabase에서 삭제
+            if (customer.orderCode) {
+                supabaseDeleteCustomer(customer.orderCode).then(result => {
+                    if (result) console.log('⚡ Supabase 고객 삭제 완료');
+                }).catch(error => {
+                    console.log('Supabase 삭제 실패:', error);
+                });
+            }
+
             // localStorage에서 삭제
             customers.splice(selectedCustomer, 1);
             localStorage.setItem('saju_customers', JSON.stringify(customers));
@@ -7094,16 +7215,23 @@ ${questionList}
                 alert('서버 연결 실패');
                 loadAdminList();
             });
+
+            // Supabase에도 저장
+            supabaseUpsertAdmin(adminData).then(result => {
+                if (result) console.log('⚡ Supabase 관리자 저장 완료');
+            }).catch(error => {
+                console.log('Supabase 저장 실패:', error);
+            });
         }
 
         // 관리자 삭제
         async function deleteAdmin(adminId) {
             if (!confirm('정말 이 관리자를 삭제할까요?')) return;
-            
+
             // UI 먼저 업데이트
             adminList = adminList.filter(a => a.id !== adminId);
             renderAdminList();
-            
+
             // 백그라운드에서 API 호출
             const url = `${SAJU_CONFIG.googleSheets.webAppUrl}?action=deleteAdmin&adminId=${encodeURIComponent(adminId)}`;
             fetch(url).then(r => r.json()).then(result => {
@@ -7114,6 +7242,13 @@ ${questionList}
             }).catch(() => {
                 alert('서버 연결 실패');
                 loadAdminList();
+            });
+
+            // Supabase에서도 삭제
+            supabaseDeleteAdmin(adminId).then(result => {
+                if (result) console.log('⚡ Supabase 관리자 삭제 완료');
+            }).catch(error => {
+                console.log('Supabase 삭제 실패:', error);
             });
         }
         
