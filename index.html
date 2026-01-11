@@ -3112,13 +3112,32 @@
         // ========== 새 고객 실시간 알림 시스템 (Supabase Realtime) ==========
         let lastCustomerCount = 0;
         let realtimeChannel = null;
+        let notifiedCustomers = new Set(); // 이미 알림 보낸 고객 추적
+        let lastNotificationTime = 0; // 마지막 알림 시간
 
         function startNewCustomerPolling() {
-            // 현재 고객 수 저장
-            lastCustomerCount = customers.length;
+            // Supabase에서 정확한 고객 수 가져오기
+            fetchCustomerCount().then(count => {
+                lastCustomerCount = count;
+                console.log('🔔 초기 고객 수:', count);
+            });
 
             // Supabase Realtime 구독 시작
             setupRealtimeSubscription();
+        }
+
+        // 정확한 고객 수 가져오기
+        async function fetchCustomerCount() {
+            try {
+                const response = await fetch(
+                    `${SAJU_CONFIG.supabase.url}/rest/v1/customers?select=count`,
+                    { headers: { ...supabaseHeaders, 'Prefer': 'count=exact' } }
+                );
+                const contentRange = response.headers.get('content-range');
+                return contentRange ? parseInt(contentRange.split('/')[1]) : 0;
+            } catch (e) {
+                return customers.length;
+            }
         }
 
         // Supabase Realtime 구독 설정
@@ -3168,6 +3187,25 @@
                         // INSERT 이벤트 감지
                         if (msg.event === 'postgres_changes' && msg.payload?.data?.type === 'INSERT') {
                             const newCustomer = msg.payload.data.record;
+                            const customerId = newCustomer.order_code || newCustomer.id;
+
+                            // 중복 알림 방지: 이미 알림 보낸 고객이면 스킵
+                            if (notifiedCustomers.has(customerId)) {
+                                console.log('🔔 중복 알림 스킵:', newCustomer.name);
+                                return;
+                            }
+
+                            // 너무 빈번한 알림 방지: 3초 이내 알림은 스킵
+                            const now = Date.now();
+                            if (now - lastNotificationTime < 3000) {
+                                console.log('🔔 빈번한 알림 스킵');
+                                return;
+                            }
+
+                            notifiedCustomers.add(customerId);
+                            lastNotificationTime = now;
+                            lastCustomerCount++;
+
                             console.log('🎉 새 고객 실시간 감지:', newCustomer.name);
                             showNewCustomerAlert(1, newCustomer.name);
                             loadCustomers(true); // 목록 새로고침
@@ -3205,26 +3243,21 @@
 
         async function checkNewCustomers() {
             try {
-                // Supabase에서 최신 고객 수 확인
-                const response = await fetch(
-                    `${SAJU_CONFIG.supabase.url}/rest/v1/customers?select=id&order=created_at.desc&limit=1`,
-                    { headers: supabaseHeaders }
-                );
-                if (!response.ok) return;
+                // 너무 빈번한 체크 방지
+                const now = Date.now();
+                if (now - lastNotificationTime < 5000) return;
 
                 // 전체 고객 수 확인
-                const countResponse = await fetch(
-                    `${SAJU_CONFIG.supabase.url}/rest/v1/customers?select=count`,
-                    { headers: { ...supabaseHeaders, 'Prefer': 'count=exact' } }
-                );
-
-                const contentRange = countResponse.headers.get('content-range');
-                const totalCount = contentRange ? parseInt(contentRange.split('/')[1]) : 0;
+                const totalCount = await fetchCustomerCount();
 
                 if (totalCount > lastCustomerCount && lastCustomerCount > 0) {
                     const newCount = totalCount - lastCustomerCount;
-                    showNewCustomerAlert(newCount);
+
+                    // 중복 알림 방지
+                    lastNotificationTime = now;
                     lastCustomerCount = totalCount;
+
+                    showNewCustomerAlert(newCount);
 
                     // 자동 새로고침
                     await loadCustomers(true);
