@@ -32,9 +32,15 @@
 
 ### 5. 작업 완료 시 커밋 및 배포
 작업이 마무리되면 잊지 않고 다음을 수행한다:
-- git 커밋: 변경사항을 커밋
+- git 커밋: 변경사항을 커밋 및 푸시
 - 사이트 배포: Netlify 등에 업로드
 - 사용자에게 완료 여부 확인
 
-### 6. 최신 문서 참조
+### 6. 입력폼 수정 시 배포 규칙 (중요!)
+입력폼(1_input.html, input-form-deploy/index.html) 수정 시 **반드시 3곳 모두 배포**:
+1. **관리자페이지**: `npx netlify deploy --prod` (saju-admin.netlify.app)
+2. **입력폼**: `cd input-form-deploy && npx netlify deploy --prod` (lucky-cactus-b5f9e6.netlify.app)
+3. **GitHub**: `git add -A && git commit && git push origin main`
+
+### 7. 최신 문서 참조
 코드 작성 시 라이브러리 최신 문법이 필요하면 Context 7을 사용해서 최신 공식 문서를 참고한다.
