@@ -792,6 +792,8 @@ Q3: 이직해도 될까요?"></textarea>
             <!-- 신살 (자동 파싱, 숨김) -->
             <textarea id="gilsinText" style="display:none;"></textarea>
             <textarea id="yangmyeonText" style="display:none;"></textarea>
+            <textarea id="gilsinDetailText" style="display:none;"></textarea>
+            <textarea id="yangmyeonDetailText" style="display:none;"></textarea>
             <div class="form-group" style="margin-top: 15px;">
                 <label>✨ 맞춤 질문 (프리미엄)</label>
                 <input type="text" id="customQuestion" placeholder="프리미엄 패키지 선택 시 작성한 질문">
@@ -878,7 +880,8 @@ Q3: 이직해도 될까요?"></textarea>
                 'dayganStrength', 'yongsin', 'yongsinDesc', 'huisin', 'huisinDesc', 'gisin', 'gisinDesc',
                 'gyeokgukText', 'jijangganText',
                 'daeunStartAge', 'daeunDirection', 'currentDaeun', 'daeunSipsung', 'seun2026', 'daeunListText',
-                'hapchungText', 'guininDdi', 'avoidDdi', 'fortuneTypes', 'mainConcern', 'repeatPattern', 'customQuestion', 'checkedQuestions'
+                'hapchungText', 'guininDdi', 'avoidDdi', 'gilsinDetailText', 'yangmyeonDetailText',
+                'fortuneTypes', 'mainConcern', 'repeatPattern', 'customQuestion', 'checkedQuestions'
             ];
             fieldsToReset.forEach(id => {
                 const el = document.getElementById(id);
@@ -1122,7 +1125,7 @@ Q3: 이직해도 될까요?"></textarea>
                 document.getElementById('gusinDesc').value = gusinDescMatch[1].trim();
             }
 
-            // 신살 파싱
+            // 신살 파싱 (이름 목록)
             const gilsinMatch = text.match(/🌟\s*길신[^:]*:\s*([^\n]+)/);
             if (gilsinMatch) {
                 document.getElementById('gilsinText').value = gilsinMatch[1].trim();
@@ -1132,6 +1135,42 @@ Q3: 이직해도 될까요?"></textarea>
             if (yangmyeonMatch) {
                 document.getElementById('yangmyeonText').value = yangmyeonMatch[1].trim();
                 parsed++;
+            }
+
+            // 신살 상세 정보 파싱 (- 신살명: 설명 [위치] 형태)
+            // 신살 분석 섹션에서 상세 라인들 추출
+            const sinsalSectionMatch = text.match(/### 신살 분석[^\n]*\n([\s\S]*?)(?=###|$)/);
+            if (sinsalSectionMatch) {
+                const sinsalContent = sinsalSectionMatch[1];
+                // "- 신살명: 설명 [위치]" 형태의 라인들 추출
+                const detailLines = sinsalContent.match(/-\s*[^:]+:\s*[^\n]+\[[^\]]+\]/g);
+                if (detailLines) {
+                    // 길신과 양면신 분리 (길신 목록과 양면신 목록 기준)
+                    const gilsinNames = (document.getElementById('gilsinText').value || '').split(',').map(s => s.trim());
+                    const yangmyeonNames = (document.getElementById('yangmyeonText').value || '').split(',').map(s => s.trim());
+
+                    const gilsinDetails = [];
+                    const yangmyeonDetails = [];
+
+                    detailLines.forEach(line => {
+                        const nameMatch = line.match(/-\s*([^:]+):/);
+                        if (nameMatch) {
+                            const name = nameMatch[1].trim();
+                            if (gilsinNames.includes(name)) {
+                                gilsinDetails.push(line);
+                            } else if (yangmyeonNames.includes(name)) {
+                                yangmyeonDetails.push(line);
+                            }
+                        }
+                    });
+
+                    if (gilsinDetails.length > 0) {
+                        document.getElementById('gilsinDetailText').value = gilsinDetails.join('\n');
+                    }
+                    if (yangmyeonDetails.length > 0) {
+                        document.getElementById('yangmyeonDetailText').value = yangmyeonDetails.join('\n');
+                    }
+                }
             }
 
             // 합충형파해 파싱
@@ -1437,6 +1476,8 @@ Q3: 이직해도 될까요?"></textarea>
             const gyeokgukText = document.getElementById('gyeokgukText').value;
             const gilsinText = document.getElementById('gilsinText').value;
             const yangmyeonText = document.getElementById('yangmyeonText').value;
+            const gilsinDetailText = document.getElementById('gilsinDetailText').value;
+            const yangmyeonDetailText = document.getElementById('yangmyeonDetailText').value;
             const hapchungText = document.getElementById('hapchungText').value;
             const guininDdi = document.getElementById('guininDdi').value;
             const avoidDdi = document.getElementById('avoidDdi').value;
@@ -1664,7 +1705,7 @@ Q3: 이직해도 될까요?"></textarea>
 | **sipsung-guide.md** | 십성 해석 | 성격, 직업, 연애 |
 | **hapchung-guide.md** | 합충형파해 | 관계, 운세 변화 |
 | **byeongjon-guide.md** | 병존/반복 구조 | 특수 패턴 |
-| **sinsal-guide.md** | 48종 신살 | 신살 해석 전체 |
+| **sinsal-guide.md** | 신살 해석 톤/문체 | ⚠️ 계산기 결과 신살만 해석! |
 | **daeun-guide.md** | 대운/세운 | 올해 운세, 월별 |
 | **gyeokguk-guide.md** | 격국/용신 | 직업, 에너지 |
 | **premium-result.md** | 해석 방법 | 문체, 표현법 |
@@ -1815,11 +1856,23 @@ ${gyeokgukText || '(격국/용신 정보 없음)'}
 - 🚫 **구신 (더 피해야 할 기운)**: ${gusin || '미입력'}${gusinDesc ? ` - ${gusinDesc}` : ''}
 
 ### 🌟 신살 분석 (사주계산기 결과)
-${gilsinText || yangmyeonText ? `- 🌟 **길신**: ${gilsinText || '없음'}
-- ⚡ **양면신**: ${yangmyeonText || '없음'}
 
-⚠️ **중요: 위 신살 목록에 없는 신살은 해석하지 마세요!**
-사주계산기에서 계산된 신살만 해석해야 합니다.` : '(신살 정보 없음 - 사주계산기 결과를 붙여넣으세요)'}
+## 🚨 신살 해석 절대 규칙
+⛔ **절대 금지:**
+- sinsal-guide.md로 신살을 직접 계산하지 마세요
+- 아래 목록에 없는 신살을 추가로 해석하지 마세요
+- 스킬 파일은 "해석 톤/방법" 참고용입니다
+
+✅ **필수 준수:**
+- 아래 신살 목록은 **사주계산기가 검증된 규칙으로 계산한 결과**입니다
+- 이 목록에 있는 신살**만** 해석하세요
+- 설명과 위치 정보를 그대로 활용하세요
+
+${gilsinText || yangmyeonText ? `**🌟 길신 (좋은 기운):**
+${gilsinDetailText ? gilsinDetailText : (gilsinText ? gilsinText.split(',').map(s => '- ' + s.trim()).join('\\n') : '- 없음')}
+
+**⚡ 양면신 (양면의 기운):**
+${yangmyeonDetailText ? yangmyeonDetailText : (yangmyeonText ? yangmyeonText.split(',').map(s => '- ' + s.trim()).join('\\n') : '- 없음')}` : '(신살 정보 없음 - 사주계산기 결과를 붙여넣으세요)'}
 
 ### ⚔️ 합충형파해 (사주 내 천간/지지 관계)
 ${hapchungText ? hapchungText : '(합충형파해 정보 없음 - 사주계산기 결과를 확인하세요)'}
