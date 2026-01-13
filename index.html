@@ -1266,6 +1266,86 @@
             box-shadow: 0 4px 12px rgba(212, 175, 130, 0.4);
         }
 
+        /* ========== MD 렌더링 스타일 ========== */
+        .md-rendered {
+            color: var(--text-dark);
+        }
+        .md-rendered h1 {
+            font-size: 24px;
+            color: #2d2418;
+            border-bottom: 2px solid #8b6914;
+            padding-bottom: 12px;
+            margin: 0 0 20px 0;
+        }
+        .md-rendered h2 {
+            font-size: 18px;
+            color: #4a3d30;
+            border-bottom: 1px solid #e5dccb;
+            padding-bottom: 8px;
+            margin: 30px 0 15px 0;
+        }
+        .md-rendered h3 {
+            font-size: 15px;
+            color: #5d4e37;
+            margin: 20px 0 10px 0;
+        }
+        .md-rendered p {
+            margin: 10px 0;
+        }
+        .md-rendered ul, .md-rendered ol {
+            margin: 10px 0 10px 20px;
+        }
+        .md-rendered li {
+            margin: 5px 0;
+        }
+        .md-rendered strong {
+            color: #c41e1e;
+        }
+        .md-rendered em {
+            color: #8b6914;
+        }
+        .md-rendered blockquote {
+            border-left: 3px solid #d4af82;
+            padding-left: 15px;
+            margin: 15px 0;
+            color: #666;
+            background: #f9f6ef;
+            padding: 10px 15px;
+            border-radius: 0 8px 8px 0;
+        }
+        .md-rendered hr {
+            border: none;
+            border-top: 1px solid #e5dccb;
+            margin: 20px 0;
+        }
+        .md-rendered code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .md-rendered table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .md-rendered th, .md-rendered td {
+            border: 1px solid #e5dccb;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        .md-rendered th {
+            background: #f9f6ef;
+            font-weight: 700;
+        }
+
+        /* 검토 결과 스타일 */
+        .review-section { margin-bottom: 20px; }
+        .review-ok { color: #2e7d32; }
+        .review-warn { color: #e65100; }
+        .review-error { color: #c62828; }
+
         /* ========== 로그인 화면 ========== */
         .login-screen {
             position: fixed;
@@ -2280,6 +2360,52 @@
                     </div>
                     <div id="additionalResultStatus" style="margin-top:8px; font-size:12px; color:#999; text-align:center;"></div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MD 검토 결과 모달 -->
+    <div class="edit-modal" id="mdReviewModal" onclick="if(event.target===this)closeMdReviewModal()">
+        <div class="edit-modal-content" style="max-width:700px;">
+            <div class="edit-modal-header" style="background:linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);">
+                <h2>🔍 MD 검토 결과</h2>
+                <button class="edit-modal-close" onclick="closeMdReviewModal()">×</button>
+            </div>
+            <div class="edit-modal-body" style="padding:20px; max-height:70vh; overflow-y:auto;">
+                <div id="mdReviewContent" style="font-size:13px; line-height:1.8;"></div>
+            </div>
+            <div class="edit-modal-footer" style="display:flex; gap:10px; padding:15px 20px; border-top:1px solid #e5dccb; background:#f9f6ef;">
+                <button class="edit-btn cancel" onclick="closeMdReviewModal()" style="flex:1;">닫기</button>
+                <button class="edit-btn" onclick="copyReviewResult()" style="flex:1; background:#e3f2fd; color:#1976d2;">📋 복사</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MD 미리보기 모달 (마크다운 렌더링) -->
+    <div class="edit-modal" id="mdPreviewModal" onclick="if(event.target===this)closeMdPreviewModal()">
+        <div class="edit-modal-content" style="max-width:850px; max-height:90vh;">
+            <div class="edit-modal-header" style="background:linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);">
+                <h2>👁️ MD 미리보기</h2>
+                <div style="display:flex; gap:10px; margin-left:auto; margin-right:20px;">
+                    <button onclick="togglePreviewMode('raw')" id="previewRawBtn" style="background:rgba(255,255,255,0.2); border:none; color:#fff; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px;">📝 원본</button>
+                    <button onclick="togglePreviewMode('render')" id="previewRenderBtn" style="background:rgba(255,255,255,0.4); border:none; color:#fff; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px;">✨ 렌더링</button>
+                </div>
+                <button class="edit-modal-close" onclick="closeMdPreviewModal()">×</button>
+            </div>
+            <div class="edit-modal-body" style="padding:0; overflow:hidden; flex:1; display:flex; flex-direction:column;">
+                <!-- 원본 뷰 -->
+                <div id="mdPreviewRaw" style="display:none; flex:1; overflow-y:auto; padding:20px;">
+                    <pre id="mdPreviewRawContent" style="white-space:pre-wrap; font-family:'Courier New', monospace; font-size:12px; line-height:1.6; margin:0;"></pre>
+                </div>
+                <!-- 렌더링 뷰 -->
+                <div id="mdPreviewRender" style="flex:1; overflow-y:auto; padding:25px 30px;">
+                    <div id="mdPreviewRenderContent" class="md-rendered" style="font-size:14px; line-height:1.9;"></div>
+                </div>
+            </div>
+            <div class="edit-modal-footer" style="display:flex; gap:10px; padding:15px 20px; border-top:1px solid #e5dccb; background:#f9f6ef;">
+                <button class="edit-btn cancel" onclick="closeMdPreviewModal()" style="flex:1;">닫기</button>
+                <button class="edit-btn" onclick="downloadMD()" style="flex:1; background:#e3f2fd; color:#1976d2;">💾 다운로드</button>
+                <button class="edit-btn" onclick="applyMDToResult();closeMdPreviewModal();" style="flex:1; background:#e8f5e9; color:#2e7d32;">✅ 적용</button>
             </div>
         </div>
     </div>
@@ -5314,6 +5440,17 @@
                 return;
             }
 
+            // 계산 결과 누락 경고
+            const warnings = checkMissingData(customer);
+            if (warnings.length > 0) {
+                const proceed = confirm(
+                    '⚠️ 누락된 데이터가 있습니다:\n\n' +
+                    warnings.join('\n') +
+                    '\n\n계속 진행하시겠습니까?'
+                );
+                if (!proceed) return;
+            }
+
             // UI 상태 변경
             document.getElementById('mdGenerateBtn').disabled = true;
             document.getElementById('mdGenerateLoading').style.display = 'block';
@@ -5354,6 +5491,7 @@
 
                 if (result.success) {
                     generatedMD = result.content;
+                    saveMdToHistory(result.content); // 히스토리에 저장
                     document.getElementById('mdGenerateResult').style.display = 'block';
                     document.getElementById('mdGenerateBadge').textContent = '생성완료';
                     document.getElementById('mdGenerateBadge').style.background = '#4a7c59';
@@ -5454,7 +5592,8 @@
 
                 if (result.success) {
                     // 검토 결과를 모달로 표시
-                    alert('📋 검토 결과:\n\n' + result.content.substring(0, 1000) + (result.content.length > 1000 ? '...' : ''));
+                    lastReviewResult = result.content;
+                    showReviewModal(result.content);
                     document.getElementById('mdGenerateBadge').textContent = '검토완료';
                     document.getElementById('mdGenerateBadge').style.background = '#4a7c59';
                 } else {
@@ -5468,33 +5607,165 @@
             }
         }
 
+        // 검토 결과 저장 (복사용)
+        let lastReviewResult = '';
+
+        // MD 히스토리 저장
+        let mdHistory = [];
+
+        // 검토 결과 모달 표시
+        function showReviewModal(content) {
+            // 마크다운 형식의 검토 결과를 HTML로 변환
+            const htmlContent = simpleMarkdownToHtml(content);
+            document.getElementById('mdReviewContent').innerHTML = htmlContent;
+            document.getElementById('mdReviewModal').classList.add('show');
+        }
+
+        function closeMdReviewModal() {
+            document.getElementById('mdReviewModal').classList.remove('show');
+        }
+
+        function copyReviewResult() {
+            if (!lastReviewResult) {
+                alert('복사할 검토 결과가 없습니다.');
+                return;
+            }
+            navigator.clipboard.writeText(lastReviewResult).then(() => {
+                alert('📋 검토 결과가 복사되었습니다!');
+            });
+        }
+
+        // 미리보기 모달
+        let currentPreviewMode = 'render';
+
         function previewMD() {
             if (!generatedMD) {
                 alert('먼저 MD를 생성해주세요.');
                 return;
             }
 
-            // 새 창에서 마크다운 미리보기
-            const previewWindow = window.open('', '_blank');
-            previewWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>MD 미리보기</title>
-                    <style>
-                        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.8; }
-                        pre { background: #f5f5f5; padding: 15px; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; }
-                        h1,h2,h3 { color: #2d2418; }
-                        h1 { border-bottom: 2px solid #8b6914; padding-bottom: 10px; }
-                        h2 { border-bottom: 1px solid #e5dccb; padding-bottom: 8px; margin-top: 30px; }
-                    </style>
-                </head>
-                <body>
-                    <pre>${generatedMD.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
-                </body>
-                </html>
-            `);
-            previewWindow.document.close();
+            // 원본 텍스트
+            document.getElementById('mdPreviewRawContent').textContent = generatedMD;
+
+            // 렌더링된 HTML
+            const renderedHtml = simpleMarkdownToHtml(generatedMD);
+            document.getElementById('mdPreviewRenderContent').innerHTML = renderedHtml;
+
+            // 기본 모드로 열기
+            togglePreviewMode('render');
+            document.getElementById('mdPreviewModal').classList.add('show');
+        }
+
+        function closeMdPreviewModal() {
+            document.getElementById('mdPreviewModal').classList.remove('show');
+        }
+
+        function togglePreviewMode(mode) {
+            currentPreviewMode = mode;
+            const rawDiv = document.getElementById('mdPreviewRaw');
+            const renderDiv = document.getElementById('mdPreviewRender');
+            const rawBtn = document.getElementById('previewRawBtn');
+            const renderBtn = document.getElementById('previewRenderBtn');
+
+            if (mode === 'raw') {
+                rawDiv.style.display = 'block';
+                renderDiv.style.display = 'none';
+                rawBtn.style.background = 'rgba(255,255,255,0.4)';
+                renderBtn.style.background = 'rgba(255,255,255,0.2)';
+            } else {
+                rawDiv.style.display = 'none';
+                renderDiv.style.display = 'block';
+                rawBtn.style.background = 'rgba(255,255,255,0.2)';
+                renderBtn.style.background = 'rgba(255,255,255,0.4)';
+            }
+        }
+
+        // 간단한 마크다운 → HTML 변환
+        function simpleMarkdownToHtml(md) {
+            if (!md) return '';
+
+            let html = md
+                // 이스케이프
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                // 헤딩
+                .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+                .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+                // 굵게/이탤릭
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                // 리스트
+                .replace(/^- (.+)$/gm, '<li>$1</li>')
+                .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+                // 인용
+                .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+                // 수평선
+                .replace(/^---$/gm, '<hr>')
+                // 코드 (인라인)
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                // 줄바꿈
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+
+            // 연속된 li를 ul로 감싸기
+            html = html.replace(/(<li>.*?<\/li>)+/g, '<ul>$&</ul>');
+
+            return '<p>' + html + '</p>';
+        }
+
+        // MD 생성 시 히스토리에 저장
+        function saveMdToHistory(content) {
+            mdHistory.push({
+                content: content,
+                timestamp: new Date().toISOString(),
+                version: mdHistory.length + 1
+            });
+        }
+
+        // 계산 결과 누락 체크
+        function checkMissingData(customer) {
+            const warnings = [];
+
+            // 사주 계산 결과 내용 확인
+            if (customer.sajuResult) {
+                const saju = customer.sajuResult;
+
+                // 대운 정보 확인
+                if (!saju.includes('대운') && !saju.includes('大運')) {
+                    warnings.push('• 대운 정보가 없습니다');
+                }
+
+                // 신살 정보 확인
+                if (!saju.includes('신살') && !saju.includes('神殺')) {
+                    warnings.push('• 신살 정보가 없습니다');
+                }
+
+                // 오행 비율 확인
+                if (!saju.includes('오행') && !saju.includes('五行')) {
+                    warnings.push('• 오행 비율이 없습니다');
+                }
+
+                // 십성 정보 확인
+                if (!saju.includes('십성') && !saju.includes('十星')) {
+                    warnings.push('• 십성 정보가 없습니다');
+                }
+            }
+
+            // 프리미엄 패키지인 경우 인연상 확인
+            if (customer.package === 'premium') {
+                if (!customer.inyeonCalcResult || !customer.inyeonCalcResult.trim()) {
+                    warnings.push('• 인연상 계산 결과가 없습니다 (프리미엄)');
+                }
+            }
+
+            // 맞춤 질문 확인
+            if (!customer.mainConcern || !customer.mainConcern.trim()) {
+                warnings.push('• 고객의 가장 큰 고민이 없습니다');
+            }
+
+            return warnings;
         }
 
         function downloadMD() {
