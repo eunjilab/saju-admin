@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인연상 계산 테스트</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #fff;
+        }
+        h1 { color: #d4af82; border-bottom: 2px solid #d4af82; padding-bottom: 10px; }
+        h2 { color: #a89068; margin-top: 30px; }
+        .test-suite { margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; }
+        .test-case { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .test-case:last-child { border-bottom: none; }
+        .pass { color: #4caf50; }
+        .fail { color: #f44336; }
+        .test-name { font-weight: 600; }
+        .test-detail { font-size: 12px; color: #888; margin-top: 4px; }
+        .summary {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(212,175,130,0.1);
+            border-radius: 8px;
+            border: 1px solid #d4af82;
+        }
+        .summary-pass { color: #4caf50; font-size: 24px; font-weight: 700; }
+        .summary-fail { color: #f44336; font-size: 24px; font-weight: 700; }
+        button {
+            background: #d4af82;
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover { background: #c4a072; }
+    </style>
+</head>
+<body>
+    <h1>인연상 계산기 테스트</h1>
+    <p>인연상/배우자상 계산 함수들이 올바르게 동작하는지 테스트합니다.</p>
+
+    <button onclick="runAllTests()">전체 테스트 실행</button>
+    <button onclick="location.reload()">초기화</button>
+
+    <div id="results"></div>
+    <div id="summary"></div>
+
+    <script>
+        // ========== 상수 정의 ==========
+
+        // 천간 오행
+        const 천간오행 = {
+            "甲": "목", "乙": "목",
+            "丙": "화", "丁": "화",
+            "戊": "토", "己": "토",
+            "庚": "금", "辛": "금",
+            "壬": "수", "癸": "수"
+        };
+
+        // 오행 상생관계 (핵심!)
+        const 오행상생관계 = {
+            "목": { "인연상오행": "화", "배우자상오행": "수" },  // 목생화, 수생목
+            "화": { "인연상오행": "토", "배우자상오행": "목" },  // 화생토, 목생화
+            "토": { "인연상오행": "금", "배우자상오행": "화" },  // 토생금, 화생토
+            "금": { "인연상오행": "수", "배우자상오행": "토" },  // 금생수, 토생금
+            "수": { "인연상오행": "목", "배우자상오행": "금" }   // 수생목, 금생수
+        };
+
+        // 육합 매핑 (일지 기반 성격)
+        const 육합매핑 = {
+            "子": { "육합지지": "丑", "인연유형": "신뢰의 인연", "키워드": "안정, 신뢰, 성실, 꾸준함" },
+            "丑": { "육합지지": "子", "인연유형": "지혜의 인연", "키워드": "지혜, 차분함, 분석력, 감성" },
+            "寅": { "육합지지": "亥", "인연유형": "감동의 인연", "키워드": "포용, 이해, 깊은 감성, 배려" },
+            "卯": { "육합지지": "戌", "인연유형": "충성의 인연", "키워드": "의리, 보호, 헌신, 믿음직" },
+            "辰": { "육합지지": "酉", "인연유형": "세련의 인연", "키워드": "디테일, 품격, 완벽주의, 세심" },
+            "巳": { "육합지지": "申", "인연유형": "지성의 인연", "키워드": "똑똒, 논리적, 소통, 재치" },
+            "午": { "육합지지": "未", "인연유형": "포용의 인연", "키워드": "너그러움, 중재, 조화, 평화" },
+            "未": { "육합지지": "午", "인연유형": "에너지의 인연", "키워드": "열정, 활력, 긍정, 추진력" },
+            "申": { "육합지지": "巳", "인연유형": "통찰의 인연", "키워드": "직관, 영적, 통찰력, 깊이" },
+            "酉": { "육합지지": "辰", "인연유형": "비전의 인연", "키워드": "야망, 도전, 리더십, 창의" },
+            "戌": { "육합지지": "卯", "인연유형": "감성의 인연", "키워드": "예술적, 공감, 섬세함, 감수성" },
+            "亥": { "육합지지": "寅", "인연유형": "열정의 인연", "키워드": "추진력, 리더십, 카리스마, 보호" }
+        };
+
+        // 만남 시기 (일간이 생하는 오행의 대표 지지)
+        const 만남시기매핑 = {
+            "목": ["巳", "午"],  // 목생화 → 사,오월/년
+            "화": ["辰", "戌", "丑", "未"],  // 화생토 → 토월
+            "토": ["申", "酉"],  // 토생금 → 신,유월/년
+            "금": ["子", "亥"],  // 금생수 → 자,해월/년
+            "수": ["寅", "卯"]   // 수생목 → 인,묘월/년
+        };
+
+        // ========== 테스트할 함수들 ==========
+
+        // 일간에서 오행 추출
+        function getIlganOhaeng(ilgan) {
+            return 천간오행[ilgan];
+        }
+
+        // 인연상 오행 계산 (내가 생하는 오행)
+        function getInyeonOhaeng(myOhaeng) {
+            return 오행상생관계[myOhaeng]?.인연상오행;
+        }
+
+        // 배우자상 오행 계산 (나를 생하는 오행)
+        function getBaewujaOhaeng(myOhaeng) {
+            return 오행상생관계[myOhaeng]?.배우자상오행;
+        }
+
+        // 육합 지지 가져오기
+        function getYukhapJiji(ilji) {
+            return 육합매핑[ilji]?.육합지지;
+        }
+
+        // 인연 유형 가져오기
+        function getInyeonType(ilji) {
+            return 육합매핑[ilji]?.인연유형;
+        }
+
+        // 만남 시기 가져오기
+        function getMeetingTime(myOhaeng) {
+            return 만남시기매핑[myOhaeng] || [];
+        }
+
+        // ========== 테스트 프레임워크 ==========
+        let totalTests = 0;
+        let passedTests = 0;
+        let failedTests = 0;
+
+        function assert(condition, testName, expected, actual) {
+            totalTests++;
+            const result = condition ? 'pass' : 'fail';
+            if (condition) passedTests++;
+            else failedTests++;
+
+            return {
+                name: testName,
+                result: result,
+                expected: expected,
+                actual: actual
+            };
+        }
+
+        function assertEqual(actual, expected, testName) {
+            const condition = JSON.stringify(actual) === JSON.stringify(expected);
+            return assert(condition, testName, expected, actual);
+        }
+
+        function renderResults(suiteName, results) {
+            const container = document.getElementById('results');
+            let html = `<div class="test-suite"><h2>${suiteName}</h2>`;
+
+            for (const r of results) {
+                const icon = r.result === 'pass' ? '✅' : '❌';
+                const className = r.result;
+                html += `
+                    <div class="test-case">
+                        <div class="test-name ${className}">${icon} ${r.name}</div>
+                        ${r.result === 'fail' ? `<div class="test-detail">예상: ${JSON.stringify(r.expected)}<br>실제: ${JSON.stringify(r.actual)}</div>` : ''}
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+            container.innerHTML += html;
+        }
+
+        function renderSummary() {
+            const container = document.getElementById('summary');
+            container.innerHTML = `
+                <div class="summary">
+                    <h2>테스트 결과</h2>
+                    <p>총 ${totalTests}개 테스트</p>
+                    <p class="summary-pass">통과: ${passedTests}개</p>
+                    <p class="summary-fail">실패: ${failedTests}개</p>
+                    <p>통과율: ${((passedTests / totalTests) * 100).toFixed(1)}%</p>
+                </div>
+            `;
+        }
+
+        // ========== 테스트 케이스 ==========
+
+        function testCheonganOhaeng() {
+            const results = [];
+
+            // 천간 → 오행 매핑 테스트
+            results.push(assertEqual(getIlganOhaeng("甲"), "목", "甲 = 목"));
+            results.push(assertEqual(getIlganOhaeng("乙"), "목", "乙 = 목"));
+            results.push(assertEqual(getIlganOhaeng("丙"), "화", "丙 = 화"));
+            results.push(assertEqual(getIlganOhaeng("丁"), "화", "丁 = 화"));
+            results.push(assertEqual(getIlganOhaeng("戊"), "토", "戊 = 토"));
+            results.push(assertEqual(getIlganOhaeng("己"), "토", "己 = 토"));
+            results.push(assertEqual(getIlganOhaeng("庚"), "금", "庚 = 금"));
+            results.push(assertEqual(getIlganOhaeng("辛"), "금", "辛 = 금"));
+            results.push(assertEqual(getIlganOhaeng("壬"), "수", "壬 = 수"));
+            results.push(assertEqual(getIlganOhaeng("癸"), "수", "癸 = 수"));
+
+            renderResults("천간 → 오행 매핑 테스트", results);
+        }
+
+        function testSangsaeng() {
+            const results = [];
+
+            // 오행 상생 관계 테스트 (인연상 = 내가 생하는 오행)
+            results.push(assertEqual(getInyeonOhaeng("목"), "화", "목 → 화 (목생화)"));
+            results.push(assertEqual(getInyeonOhaeng("화"), "토", "화 → 토 (화생토)"));
+            results.push(assertEqual(getInyeonOhaeng("토"), "금", "토 → 금 (토생금)"));
+            results.push(assertEqual(getInyeonOhaeng("금"), "수", "금 → 수 (금생수)"));
+            results.push(assertEqual(getInyeonOhaeng("수"), "목", "수 → 목 (수생목)"));
+
+            // 배우자상 = 나를 생하는 오행
+            results.push(assertEqual(getBaewujaOhaeng("목"), "수", "수 → 목 (수생목)"));
+            results.push(assertEqual(getBaewujaOhaeng("화"), "목", "목 → 화 (목생화)"));
+            results.push(assertEqual(getBaewujaOhaeng("토"), "화", "화 → 토 (화생토)"));
+            results.push(assertEqual(getBaewujaOhaeng("금"), "토", "토 → 금 (토생금)"));
+            results.push(assertEqual(getBaewujaOhaeng("수"), "금", "금 → 수 (금생수)"));
+
+            renderResults("오행 상생 관계 테스트", results);
+        }
+
+        function testYukhap() {
+            const results = [];
+
+            // 육합 관계 테스트
+            results.push(assertEqual(getYukhapJiji("子"), "丑", "子 ↔ 丑 육합"));
+            results.push(assertEqual(getYukhapJiji("丑"), "子", "丑 ↔ 子 육합"));
+            results.push(assertEqual(getYukhapJiji("寅"), "亥", "寅 ↔ 亥 육합"));
+            results.push(assertEqual(getYukhapJiji("卯"), "戌", "卯 ↔ 戌 육합"));
+            results.push(assertEqual(getYukhapJiji("辰"), "酉", "辰 ↔ 酉 육합"));
+            results.push(assertEqual(getYukhapJiji("巳"), "申", "巳 ↔ 申 육합"));
+            results.push(assertEqual(getYukhapJiji("午"), "未", "午 ↔ 未 육합"));
+            results.push(assertEqual(getYukhapJiji("未"), "午", "未 ↔ 午 육합"));
+            results.push(assertEqual(getYukhapJiji("申"), "巳", "申 ↔ 巳 육합"));
+            results.push(assertEqual(getYukhapJiji("酉"), "辰", "酉 ↔ 辰 육합"));
+            results.push(assertEqual(getYukhapJiji("戌"), "卯", "戌 ↔ 卯 육합"));
+            results.push(assertEqual(getYukhapJiji("亥"), "寅", "亥 ↔ 寅 육합"));
+
+            renderResults("육합 관계 테스트", results);
+        }
+
+        function testInyeonType() {
+            const results = [];
+
+            // 인연 유형 테스트
+            results.push(assertEqual(getInyeonType("子"), "신뢰의 인연", "子 = 신뢰의 인연"));
+            results.push(assertEqual(getInyeonType("寅"), "감동의 인연", "寅 = 감동의 인연"));
+            results.push(assertEqual(getInyeonType("午"), "포용의 인연", "午 = 포용의 인연"));
+            results.push(assertEqual(getInyeonType("酉"), "비전의 인연", "酉 = 비전의 인연"));
+
+            renderResults("인연 유형 테스트", results);
+        }
+
+        function testMeetingTime() {
+            const results = [];
+
+            // 만남 시기 테스트
+            results.push(assert(getMeetingTime("목").includes("巳"), "목 → 巳 포함", "巳 포함", getMeetingTime("목")));
+            results.push(assert(getMeetingTime("목").includes("午"), "목 → 午 포함", "午 포함", getMeetingTime("목")));
+            results.push(assert(getMeetingTime("금").includes("子"), "금 → 子 포함", "子 포함", getMeetingTime("금")));
+            results.push(assert(getMeetingTime("수").includes("寅"), "수 → 寅 포함", "寅 포함", getMeetingTime("수")));
+
+            renderResults("만남 시기 테스트", results);
+        }
+
+        function testFullCalculation() {
+            const results = [];
+
+            // 실제 사례 테스트: 甲子 일주
+            const ilju = "甲子";
+            const ilgan = ilju.charAt(0);  // 甲
+            const ilji = ilju.charAt(1);   // 子
+
+            const myOhaeng = getIlganOhaeng(ilgan);  // 목
+            const inyeonOhaeng = getInyeonOhaeng(myOhaeng);  // 화
+            const baewujaOhaeng = getBaewujaOhaeng(myOhaeng);  // 수
+            const yukhapJiji = getYukhapJiji(ilji);  // 丑
+
+            results.push(assertEqual(myOhaeng, "목", "甲子 → 본인 오행 = 목"));
+            results.push(assertEqual(inyeonOhaeng, "화", "甲子 → 인연상 오행 = 화"));
+            results.push(assertEqual(baewujaOhaeng, "수", "甲子 → 배우자상 오행 = 수"));
+            results.push(assertEqual(yukhapJiji, "丑", "子 → 육합 지지 = 丑"));
+
+            // 실제 사례 테스트: 丁巳 일주
+            const ilju2 = "丁巳";
+            const ilgan2 = ilju2.charAt(0);  // 丁
+            const ilji2 = ilju2.charAt(1);   // 巳
+
+            const myOhaeng2 = getIlganOhaeng(ilgan2);  // 화
+            const inyeonOhaeng2 = getInyeonOhaeng(myOhaeng2);  // 토
+            const baewujaOhaeng2 = getBaewujaOhaeng(myOhaeng2);  // 목
+
+            results.push(assertEqual(myOhaeng2, "화", "丁巳 → 본인 오행 = 화"));
+            results.push(assertEqual(inyeonOhaeng2, "토", "丁巳 → 인연상 오행 = 토"));
+            results.push(assertEqual(baewujaOhaeng2, "목", "丁巳 → 배우자상 오행 = 목"));
+
+            renderResults("전체 계산 통합 테스트", results);
+        }
+
+        function runAllTests() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('summary').innerHTML = '';
+            totalTests = 0;
+            passedTests = 0;
+            failedTests = 0;
+
+            testCheonganOhaeng();
+            testSangsaeng();
+            testYukhap();
+            testInyeonType();
+            testMeetingTime();
+            testFullCalculation();
+
+            renderSummary();
+        }
+
+        // 페이지 로드 시 자동 실행
+        window.onload = runAllTests;
+    </script>
+</body>
+</html>

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사주 계산 테스트</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #fff;
+        }
+        h1 { color: #d4af82; border-bottom: 2px solid #d4af82; padding-bottom: 10px; }
+        h2 { color: #a89068; margin-top: 30px; }
+        .test-suite { margin: 20px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; }
+        .test-case { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .test-case:last-child { border-bottom: none; }
+        .pass { color: #4caf50; }
+        .fail { color: #f44336; }
+        .test-name { font-weight: 600; }
+        .test-detail { font-size: 12px; color: #888; margin-top: 4px; }
+        .summary {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(212,175,130,0.1);
+            border-radius: 8px;
+            border: 1px solid #d4af82;
+        }
+        .summary-pass { color: #4caf50; font-size: 24px; font-weight: 700; }
+        .summary-fail { color: #f44336; font-size: 24px; font-weight: 700; }
+        button {
+            background: #d4af82;
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover { background: #c4a072; }
+    </style>
+</head>
+<body>
+    <h1>사주 계산기 테스트</h1>
+    <p>핵심 계산 함수들이 올바르게 동작하는지 테스트합니다.</p>
+
+    <button onclick="runAllTests()">전체 테스트 실행</button>
+    <button onclick="location.reload()">초기화</button>
+
+    <div id="results"></div>
+    <div id="summary"></div>
+
+    <script>
+        // ========== 상수 정의 ==========
+        const CHEONGAN = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
+        const CHEONGAN_KR = ["갑", "을", "병", "정", "무", "기", "경", "신", "임", "계"];
+        const JIJI = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+        const JIJI_KR = ["자", "축", "인", "묘", "진", "사", "오", "미", "신", "유", "술", "해"];
+
+        const CHEONGAN_OHAENG = {
+            "甲": "목", "乙": "목", "丙": "화", "丁": "화", "戊": "토",
+            "己": "토", "庚": "금", "辛": "금", "壬": "수", "癸": "수"
+        };
+
+        const JIJI_OHAENG = {
+            "子": "수", "丑": "토", "寅": "목", "卯": "목", "辰": "토", "巳": "화",
+            "午": "화", "未": "토", "申": "금", "酉": "금", "戌": "토", "亥": "수"
+        };
+
+        const JIJANGGAN = {
+            "子": ["癸"],
+            "丑": ["己", "癸", "辛"],
+            "寅": ["甲", "丙", "戊"],
+            "卯": ["乙"],
+            "辰": ["戊", "乙", "癸"],
+            "巳": ["丙", "庚", "戊"],
+            "午": ["丁", "己"],
+            "未": ["己", "丁", "乙"],
+            "申": ["庚", "壬", "戊"],
+            "酉": ["辛"],
+            "戌": ["戊", "辛", "丁"],
+            "亥": ["壬", "甲"]
+        };
+
+        const JIJANGGAN_RATIO = {
+            "子": [30],
+            "丑": [9, 3, 18],
+            "寅": [7, 7, 16],
+            "卯": [30],
+            "辰": [9, 3, 18],
+            "巳": [7, 7, 16],
+            "午": [10, 20],
+            "未": [9, 3, 18],
+            "申": [7, 7, 16],
+            "酉": [30],
+            "戌": [9, 3, 18],
+            "亥": [7, 23]
+        };
+
+        const SIPSUNG_MATRIX = {
+            "甲": { "甲": "비견", "乙": "겁재", "丙": "식신", "丁": "상관", "戊": "편재", "己": "정재", "庚": "편관", "辛": "정관", "壬": "편인", "癸": "정인" },
+            "乙": { "甲": "겁재", "乙": "비견", "丙": "상관", "丁": "식신", "戊": "정재", "己": "편재", "庚": "정관", "辛": "편관", "壬": "정인", "癸": "편인" },
+            "丙": { "甲": "편인", "乙": "정인", "丙": "비견", "丁": "겁재", "戊": "식신", "己": "상관", "庚": "편재", "辛": "정재", "壬": "편관", "癸": "정관" },
+            "丁": { "甲": "정인", "乙": "편인", "丙": "겁재", "丁": "비견", "戊": "상관", "己": "식신", "庚": "정재", "辛": "편재", "壬": "정관", "癸": "편관" },
+            "戊": { "甲": "편관", "乙": "정관", "丙": "편인", "丁": "정인", "戊": "비견", "己": "겁재", "庚": "식신", "辛": "상관", "壬": "편재", "癸": "정재" },
+            "己": { "甲": "정관", "乙": "편관", "丙": "정인", "丁": "편인", "戊": "겁재", "己": "비견", "庚": "상관", "辛": "식신", "壬": "정재", "癸": "편재" },
+            "庚": { "甲": "편재", "乙": "정재", "丙": "편관", "丁": "정관", "戊": "편인", "己": "정인", "庚": "비견", "辛": "겁재", "壬": "식신", "癸": "상관" },
+            "辛": { "甲": "정재", "乙": "편재", "丙": "정관", "丁": "편관", "戊": "정인", "己": "편인", "庚": "겁재", "辛": "비견", "壬": "상관", "癸": "식신" },
+            "壬": { "甲": "식신", "乙": "상관", "丙": "편재", "丁": "정재", "戊": "편관", "己": "정관", "庚": "편인", "辛": "정인", "壬": "비견", "癸": "겁재" },
+            "癸": { "甲": "상관", "乙": "식신", "丙": "정재", "丁": "편재", "戊": "정관", "己": "편관", "庚": "정인", "辛": "편인", "壬": "겁재", "癸": "비견" }
+        };
+
+        const SIPSUNG_GROUP = {
+            "비견": "비겁", "겁재": "비겁",
+            "식신": "식상", "상관": "식상",
+            "편재": "재성", "정재": "재성",
+            "편관": "관성", "정관": "관성",
+            "편인": "인성", "정인": "인성"
+        };
+
+        // 합충형파해 상수
+        const YUKCHUNG = { "子": "午", "丑": "未", "寅": "申", "卯": "酉", "辰": "戌", "巳": "亥" };
+        const YUKHAP = { "子": "丑", "寅": "亥", "卯": "戌", "辰": "酉", "巳": "申", "午": "未" };
+        const HYUNG = { "寅": "巳", "巳": "申", "申": "寅", "丑": "戌", "戌": "未", "未": "丑", "子": "卯", "卯": "子" };
+
+        // ========== 테스트할 함수들 ==========
+
+        // 오행 계산
+        function calculateOhaeng(pillars) {
+            const count = { 목: 0, 화: 0, 토: 0, 금: 0, 수: 0 };
+            for (const p of pillars) {
+                if (!p) continue;
+                count[CHEONGAN_OHAENG[p.gan]] += 1;
+                count[JIJI_OHAENG[p.ji]] += 0.5;
+                const jjgList = JIJANGGAN[p.ji] || [];
+                for (let i = 0; i < jjgList.length; i++) {
+                    count[CHEONGAN_OHAENG[jjgList[i]]] += 0.25;
+                }
+            }
+            for (const k in count) count[k] = Math.round(count[k] * 100) / 100;
+            return count;
+        }
+
+        // 십성 계산
+        function calculateSipsung(dayGan, pillars) {
+            const count = { 비겁: 0, 식상: 0, 재성: 0, 관성: 0, 인성: 0 };
+            for (let idx = 0; idx < pillars.length; idx++) {
+                const p = pillars[idx];
+                if (!p) continue;
+                if (idx !== 2) {
+                    const sipsung = SIPSUNG_MATRIX[dayGan][p.gan];
+                    if (sipsung && SIPSUNG_GROUP[sipsung]) {
+                        count[SIPSUNG_GROUP[sipsung]] += 1;
+                    }
+                }
+                const jjgList = JIJANGGAN[p.ji] || [];
+                const ratioList = JIJANGGAN_RATIO[p.ji] || [];
+                for (let i = 0; i < jjgList.length; i++) {
+                    const sipsung = SIPSUNG_MATRIX[dayGan][jjgList[i]];
+                    const ratio = ratioList[i] || 10;
+                    if (sipsung && SIPSUNG_GROUP[sipsung]) {
+                        count[SIPSUNG_GROUP[sipsung]] += ratio / 30;
+                    }
+                }
+            }
+            for (const k in count) count[k] = parseFloat(count[k].toFixed(2));
+            return count;
+        }
+
+        // 충 판별
+        function isChung(ji1, ji2) {
+            return YUKCHUNG[ji1] === ji2 || YUKCHUNG[ji2] === ji1;
+        }
+
+        // 합 판별
+        function isHap(ji1, ji2) {
+            return YUKHAP[ji1] === ji2 || YUKHAP[ji2] === ji1;
+        }
+
+        // 형 판별
+        function isHyung(ji1, ji2) {
+            return HYUNG[ji1] === ji2;
+        }
+
+        // ========== 테스트 프레임워크 ==========
+        let totalTests = 0;
+        let passedTests = 0;
+        let failedTests = 0;
+
+        function assert(condition, testName, expected, actual) {
+            totalTests++;
+            const result = condition ? 'pass' : 'fail';
+            if (condition) passedTests++;
+            else failedTests++;
+
+            return {
+                name: testName,
+                result: result,
+                expected: expected,
+                actual: actual
+            };
+        }
+
+        function assertEqual(actual, expected, testName) {
+            const condition = JSON.stringify(actual) === JSON.stringify(expected);
+            return assert(condition, testName, expected, actual);
+        }
+
+        function assertApproxEqual(actual, expected, testName, tolerance = 0.01) {
+            let condition = true;
+            if (typeof actual === 'object' && typeof expected === 'object') {
+                for (const key in expected) {
+                    if (Math.abs(actual[key] - expected[key]) > tolerance) {
+                        condition = false;
+                        break;
+                    }
+                }
+            } else {
+                condition = Math.abs(actual - expected) <= tolerance;
+            }
+            return assert(condition, testName, expected, actual);
+        }
+
+        function renderResults(suiteName, results) {
+            const container = document.getElementById('results');
+            let html = `<div class="test-suite"><h2>${suiteName}</h2>`;
+
+            for (const r of results) {
+                const icon = r.result === 'pass' ? '✅' : '❌';
+                const className = r.result;
+                html += `
+                    <div class="test-case">
+                        <div class="test-name ${className}">${icon} ${r.name}</div>
+                        ${r.result === 'fail' ? `<div class="test-detail">예상: ${JSON.stringify(r.expected)}<br>실제: ${JSON.stringify(r.actual)}</div>` : ''}
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+            container.innerHTML += html;
+        }
+
+        function renderSummary() {
+            const container = document.getElementById('summary');
+            container.innerHTML = `
+                <div class="summary">
+                    <h2>테스트 결과</h2>
+                    <p>총 ${totalTests}개 테스트</p>
+                    <p class="summary-pass">통과: ${passedTests}개</p>
+                    <p class="summary-fail">실패: ${failedTests}개</p>
+                    <p>통과율: ${((passedTests / totalTests) * 100).toFixed(1)}%</p>
+                </div>
+            `;
+        }
+
+        // ========== 테스트 케이스 ==========
+
+        function testOhaeng() {
+            const results = [];
+
+            // 테스트 1: 甲子, 乙丑, 丙寅, 丁卯 (목 많은 사주)
+            const pillars1 = [
+                { gan: "甲", ji: "子" },
+                { gan: "乙", ji: "丑" },
+                { gan: "丙", ji: "寅" },
+                { gan: "丁", ji: "卯" }
+            ];
+            const ohaeng1 = calculateOhaeng(pillars1);
+            results.push(assert(ohaeng1.목 > ohaeng1.금, "목 > 금 (목 많은 사주)", "목이 금보다 많음", `목=${ohaeng1.목}, 금=${ohaeng1.금}`));
+
+            // 테스트 2: 庚申, 辛酉, 庚申, 辛酉 (금 많은 사주)
+            const pillars2 = [
+                { gan: "庚", ji: "申" },
+                { gan: "辛", ji: "酉" },
+                { gan: "庚", ji: "申" },
+                { gan: "辛", ji: "酉" }
+            ];
+            const ohaeng2 = calculateOhaeng(pillars2);
+            results.push(assert(ohaeng2.금 > 3, "금 > 3 (금 많은 사주)", "금이 3보다 큼", `금=${ohaeng2.금}`));
+
+            // 테스트 3: 오행 합계 검증
+            const total = Object.values(ohaeng1).reduce((a, b) => a + b, 0);
+            results.push(assert(total > 0, "오행 합계 > 0", "양수", total));
+
+            renderResults("오행 계산 테스트", results);
+        }
+
+        function testSipsung() {
+            const results = [];
+
+            // 테스트 1: 甲일간, 모든 천간이 甲이면 비겁이 많아야 함
+            const pillars1 = [
+                { gan: "甲", ji: "子" },
+                { gan: "甲", ji: "子" },
+                { gan: "甲", ji: "子" },  // 일주
+                { gan: "甲", ji: "子" }
+            ];
+            const sipsung1 = calculateSipsung("甲", pillars1);
+            results.push(assert(sipsung1.비겁 > 0, "甲일간 + 甲천간 = 비겁 있음", "비겁 > 0", sipsung1.비겁));
+
+            // 테스트 2: 甲일간, 庚이 많으면 관성이 많아야 함
+            const pillars2 = [
+                { gan: "庚", ji: "申" },
+                { gan: "庚", ji: "申" },
+                { gan: "甲", ji: "寅" },  // 일주
+                { gan: "庚", ji: "申" }
+            ];
+            const sipsung2 = calculateSipsung("甲", pillars2);
+            results.push(assert(sipsung2.관성 > sipsung2.식상, "甲일간 + 庚 = 관성 많음", "관성 > 식상", `관성=${sipsung2.관성}`));
+
+            // 테스트 3: 십성 그룹 합계 검증
+            const total = Object.values(sipsung1).reduce((a, b) => a + b, 0);
+            results.push(assert(total > 0, "십성 합계 > 0", "양수", total));
+
+            renderResults("십성 계산 테스트", results);
+        }
+
+        function testHapChung() {
+            const results = [];
+
+            // 충 테스트
+            results.push(assertEqual(isChung("子", "午"), true, "子午충 = true"));
+            results.push(assertEqual(isChung("丑", "未"), true, "丑未충 = true"));
+            results.push(assertEqual(isChung("寅", "申"), true, "寅申충 = true"));
+            results.push(assertEqual(isChung("卯", "酉"), true, "卯酉충 = true"));
+            results.push(assertEqual(isChung("辰", "戌"), true, "辰戌충 = true"));
+            results.push(assertEqual(isChung("巳", "亥"), true, "巳亥충 = true"));
+            results.push(assertEqual(isChung("子", "丑"), false, "子丑 = 충 아님"));
+
+            // 합 테스트
+            results.push(assertEqual(isHap("子", "丑"), true, "子丑합 = true"));
+            results.push(assertEqual(isHap("寅", "亥"), true, "寅亥합 = true"));
+            results.push(assertEqual(isHap("卯", "戌"), true, "卯戌합 = true"));
+            results.push(assertEqual(isHap("辰", "酉"), true, "辰酉합 = true"));
+            results.push(assertEqual(isHap("巳", "申"), true, "巳申합 = true"));
+            results.push(assertEqual(isHap("午", "未"), true, "午未합 = true"));
+            results.push(assertEqual(isHap("子", "午"), false, "子午 = 합 아님"));
+
+            // 형 테스트
+            results.push(assertEqual(isHyung("寅", "巳"), true, "寅巳형 = true"));
+            results.push(assertEqual(isHyung("巳", "申"), true, "巳申형 = true"));
+            results.push(assertEqual(isHyung("丑", "戌"), true, "丑戌형 = true"));
+            results.push(assertEqual(isHyung("子", "卯"), true, "子卯형 = true"));
+
+            renderResults("합충형 테스트", results);
+        }
+
+        function testCheonganOhaeng() {
+            const results = [];
+
+            // 천간 오행 매핑 테스트
+            results.push(assertEqual(CHEONGAN_OHAENG["甲"], "목", "甲 = 목"));
+            results.push(assertEqual(CHEONGAN_OHAENG["乙"], "목", "乙 = 목"));
+            results.push(assertEqual(CHEONGAN_OHAENG["丙"], "화", "丙 = 화"));
+            results.push(assertEqual(CHEONGAN_OHAENG["丁"], "화", "丁 = 화"));
+            results.push(assertEqual(CHEONGAN_OHAENG["戊"], "토", "戊 = 토"));
+            results.push(assertEqual(CHEONGAN_OHAENG["己"], "토", "己 = 토"));
+            results.push(assertEqual(CHEONGAN_OHAENG["庚"], "금", "庚 = 금"));
+            results.push(assertEqual(CHEONGAN_OHAENG["辛"], "금", "辛 = 금"));
+            results.push(assertEqual(CHEONGAN_OHAENG["壬"], "수", "壬 = 수"));
+            results.push(assertEqual(CHEONGAN_OHAENG["癸"], "수", "癸 = 수"));
+
+            renderResults("천간-오행 매핑 테스트", results);
+        }
+
+        function testJijiOhaeng() {
+            const results = [];
+
+            // 지지 오행 매핑 테스트
+            results.push(assertEqual(JIJI_OHAENG["子"], "수", "子 = 수"));
+            results.push(assertEqual(JIJI_OHAENG["丑"], "토", "丑 = 토"));
+            results.push(assertEqual(JIJI_OHAENG["寅"], "목", "寅 = 목"));
+            results.push(assertEqual(JIJI_OHAENG["卯"], "목", "卯 = 목"));
+            results.push(assertEqual(JIJI_OHAENG["辰"], "토", "辰 = 토"));
+            results.push(assertEqual(JIJI_OHAENG["巳"], "화", "巳 = 화"));
+            results.push(assertEqual(JIJI_OHAENG["午"], "화", "午 = 화"));
+            results.push(assertEqual(JIJI_OHAENG["未"], "토", "未 = 토"));
+            results.push(assertEqual(JIJI_OHAENG["申"], "금", "申 = 금"));
+            results.push(assertEqual(JIJI_OHAENG["酉"], "금", "酉 = 금"));
+            results.push(assertEqual(JIJI_OHAENG["戌"], "토", "戌 = 토"));
+            results.push(assertEqual(JIJI_OHAENG["亥"], "수", "亥 = 수"));
+
+            renderResults("지지-오행 매핑 테스트", results);
+        }
+
+        function testSipsungMatrix() {
+            const results = [];
+
+            // 십성 매트릭스 테스트 (甲 일간 기준)
+            results.push(assertEqual(SIPSUNG_MATRIX["甲"]["甲"], "비견", "甲-甲 = 비견"));
+            results.push(assertEqual(SIPSUNG_MATRIX["甲"]["乙"], "겁재", "甲-乙 = 겁재"));
+            results.push(assertEqual(SIPSUNG_MATRIX["甲"]["丙"], "식신", "甲-丙 = 식신"));
+            results.push(assertEqual(SIPSUNG_MATRIX["甲"]["丁"], "상관", "甲-丁 = 상관"));
+            results.push(assertEqual(SIPSUNG_MATRIX["甲"]["戊"], "편재", "甲-戊 = 편재"));
+            results.push(assertEqual(SIPSUNG_MATRIX["甲"]["己"], "정재", "甲-己 = 정재"));
+            results.push(assertEqual(SIPSUNG_MATRIX["甲"]["庚"], "편관", "甲-庚 = 편관"));
+            results.push(assertEqual(SIPSUNG_MATRIX["甲"]["辛"], "정관", "甲-辛 = 정관"));
+            results.push(assertEqual(SIPSUNG_MATRIX["甲"]["壬"], "편인", "甲-壬 = 편인"));
+            results.push(assertEqual(SIPSUNG_MATRIX["甲"]["癸"], "정인", "甲-癸 = 정인"));
+
+            renderResults("십성 매트릭스 테스트 (甲 일간)", results);
+        }
+
+        function runAllTests() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('summary').innerHTML = '';
+            totalTests = 0;
+            passedTests = 0;
+            failedTests = 0;
+
+            testCheonganOhaeng();
+            testJijiOhaeng();
+            testSipsungMatrix();
+            testOhaeng();
+            testSipsung();
+            testHapChung();
+
+            renderSummary();
+        }
+
+        // 페이지 로드 시 자동 실행
+        window.onload = runAllTests;
+    </script>
+</body>
+</html>
