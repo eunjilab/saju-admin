@@ -1,0 +1,8 @@
+{
+  "name": "saju-admin",
+  "version": "1.0.0",
+  "description": "사주 관리자페이지",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0"
+  }
+}
