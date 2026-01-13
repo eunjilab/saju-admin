@@ -2765,10 +2765,42 @@
                     </div>
                 </div>
 
-                <!-- Step 6: 결과글 저장 -->
+                <!-- Step 6: MD 자동생성 (Claude API) -->
+                <div class="card" id="mdGenerateCard" style="display:none;">
+                    <div class="card-header">
+                        <span class="step-badge" style="background:#9b59b6; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; margin-right:8px;">Step 6</span>
+                        <span class="icon">🤖</span>
+                        <h3>MD 자동생성</h3>
+                        <span id="mdGenerateBadge" style="margin-left:auto; font-size:11px; background:#999; color:#fff; padding:3px 10px; border-radius:12px;">미생성</span>
+                    </div>
+                    <div class="card-body">
+                        <div style="display:flex; gap:10px; margin-bottom:10px;">
+                            <button class="action-btn primary" id="mdGenerateBtn" onclick="generateMD()" style="flex:1;">🤖 MD 생성</button>
+                            <button class="action-btn" onclick="reviewMD()" style="flex:1; background:#fff3e0; color:#e65100; border:1px solid #ffcc80;" id="mdReviewBtn" disabled>🔍 검토</button>
+                        </div>
+                        <div id="mdGenerateLoading" style="display:none; text-align:center; padding:15px;">
+                            <div style="font-size:24px; margin-bottom:10px;">⏳</div>
+                            <div style="font-size:12px; color:#666;">MD 생성 중... (약 30초~1분 소요)</div>
+                        </div>
+                        <div id="mdGenerateResult" style="display:none;">
+                            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                                <button class="action-btn" onclick="previewMD()" style="flex:1;">👁️ 미리보기</button>
+                                <button class="action-btn" onclick="downloadMD()" style="flex:1; background:#e3f2fd; color:#1976d2; border:1px solid #90caf9;">💾 다운로드</button>
+                            </div>
+                            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                                <input type="text" id="mdModifyRequest" placeholder="수정 요청 (예: 건강운 더 자세하게)" style="flex:1; padding:10px 12px; border:1px solid #e5dccb; border-radius:6px; font-size:12px;">
+                                <button class="action-btn" onclick="modifyMD()" style="padding:10px 14px; font-size:12px; background:#fff3e0; color:#e65100; border:1px solid #ffcc80;">✏️ 수정</button>
+                            </div>
+                            <button class="action-btn" onclick="applyMDToResult()" style="width:100%; background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7;">✅ 결과글에 적용</button>
+                        </div>
+                        <p style="font-size:11px; color:#999; margin-top:10px;">Claude API로 사주 보고서를 자동 생성합니다.</p>
+                    </div>
+                </div>
+
+                <!-- Step 7: 결과글 저장 -->
                 <div class="card" id="mainResultCard" style="display:none;">
                     <div class="card-header">
-                        <span class="step-badge" style="background:#4a7c59; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; margin-right:8px;">Step 6</span>
+                        <span class="step-badge" style="background:#4a7c59; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; margin-right:8px;">Step 7</span>
                         <span class="icon">🎯</span>
                         <h3>결과글</h3>
                         <span id="mainResultCardBadge" style="margin-left:auto; font-size:11px; background:#999; color:#fff; padding:3px 10px; border-radius:12px;">미저장</span>
@@ -2783,10 +2815,10 @@
                     </div>
                 </div>
 
-                <!-- Step 7: 기본 결과파일 -->
+                <!-- Step 8: 기본 결과파일 -->
                 <div class="card" id="mainResultFileCard" style="display:none;">
                     <div class="card-header">
-                        <span class="step-badge" style="background:#4a7c59; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; margin-right:8px;">Step 7</span>
+                        <span class="step-badge" style="background:#4a7c59; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; margin-right:8px;">Step 8</span>
                         <span class="icon">📄</span>
                         <h3>결과파일</h3>
                         <span id="mainResultFileStatus" style="margin-left:auto; font-size:11px; background:#999; color:#fff; padding:3px 10px; border-radius:12px;">미등록</span>
@@ -2810,10 +2842,10 @@
                     <div style="border-bottom:2px solid #ffcc80; margin-top:-8px;"></div>
                 </div>
 
-                <!-- Step 8: 추가질문 프롬프트 -->
+                <!-- Step 9: 추가질문 프롬프트 -->
                 <div class="card" id="additionalPromptCard" style="display:none;">
                     <div class="card-header">
-                        <span class="step-badge" style="background:#e65100; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; margin-right:8px;">Step 8</span>
+                        <span class="step-badge" style="background:#e65100; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; margin-right:8px;">Step 9</span>
                         <span class="icon">❓</span>
                         <h3>추가질문 프롬프트</h3>
                         <span id="questionCountBadge" style="margin-left:auto; font-size:11px; background:var(--point-gold); color:#fff; padding:3px 10px; border-radius:12px;">0개</span>
@@ -2828,10 +2860,10 @@
                     </div>
                 </div>
 
-                <!-- Step 9: 답변글 저장 -->
+                <!-- Step 10: 답변글 저장 -->
                 <div class="card" id="additionalResultCard" style="display:none;">
                     <div class="card-header">
-                        <span class="step-badge" style="background:#e65100; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; margin-right:8px;">Step 9</span>
+                        <span class="step-badge" style="background:#e65100; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; margin-right:8px;">Step 10</span>
                         <span class="icon">💬</span>
                         <h3>답변글</h3>
                         <span id="additionalResultCardBadge" style="margin-left:auto; font-size:11px; background:#999; color:#fff; padding:3px 10px; border-radius:12px;">미저장</span>
@@ -2846,10 +2878,10 @@
                     </div>
                 </div>
 
-                <!-- Step 10: 추가질문 결과파일 -->
+                <!-- Step 11: 추가질문 결과파일 -->
                 <div class="card" id="additionalResultFileCard" style="display:none;">
                     <div class="card-header">
-                        <span class="step-badge" style="background:#e65100; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; margin-right:8px;">Step 10</span>
+                        <span class="step-badge" style="background:#e65100; color:#fff; padding:2px 8px; border-radius:10px; font-size:11px; margin-right:8px;">Step 11</span>
                         <span class="icon">📄</span>
                         <h3>답변파일</h3>
                         <span id="additionalResultFileStatus" style="margin-left:auto; font-size:11px; background:#999; color:#fff; padding:3px 10px; border-radius:12px;">미등록</span>
@@ -4530,26 +4562,35 @@
             // 기본 결과지 섹션 카드들
             const mainDivider = document.getElementById('mainSectionDivider');
             const copyCard = document.getElementById('copyDataCard');
+            const mdGenerateCard = document.getElementById('mdGenerateCard');
             const mainResultCard = document.getElementById('mainResultCard');
             const mainFileCard = document.getElementById('mainResultFileCard');
-            
+
             // 추가질문 섹션 카드들
             const additionalDivider = document.getElementById('additionalSectionDivider');
             const additionalResultCard = document.getElementById('additionalResultCard');
             const additionalFileCard = document.getElementById('additionalResultFileCard');
-            
+
             // 완료 링크 카드
             const completedLinksCard = document.getElementById('completedLinksCard');
-            
+
             // 입금확인 이상이면 기본 결과지 섹션 표시
             if (['입금확인', '작성중', '변환요청', '완료'].includes(status)) {
                 mainDivider.style.display = 'block';
                 copyCard.style.display = 'block';
+                mdGenerateCard.style.display = 'block';
                 mainResultCard.style.display = 'block';
                 mainFileCard.style.display = 'block';
+                // MD 생성 상태 초기화
+                generatedMD = '';
+                document.getElementById('mdGenerateResult').style.display = 'none';
+                document.getElementById('mdGenerateBadge').textContent = '미생성';
+                document.getElementById('mdGenerateBadge').style.background = '#999';
+                document.getElementById('mdReviewBtn').disabled = true;
             } else {
                 mainDivider.style.display = 'none';
                 copyCard.style.display = 'none';
+                mdGenerateCard.style.display = 'none';
                 mainResultCard.style.display = 'none';
                 mainFileCard.style.display = 'none';
             }
@@ -5259,7 +5300,251 @@
         function closeResultModal() {
             document.getElementById('resultModal').classList.remove('show');
         }
-        
+
+        // ========== MD 자동생성 관련 ==========
+        let generatedMD = ''; // 생성된 MD 저장
+
+        async function generateMD() {
+            if (selectedCustomer === null) return;
+            const customer = customers[selectedCustomer];
+
+            // 필수 데이터 확인
+            if (!customer.sajuResult || !customer.sajuResult.trim()) {
+                alert('⚠️ 사주계산 결과가 없습니다. 먼저 변환을 실행해주세요.');
+                return;
+            }
+
+            // UI 상태 변경
+            document.getElementById('mdGenerateBtn').disabled = true;
+            document.getElementById('mdGenerateLoading').style.display = 'block';
+            document.getElementById('mdGenerateResult').style.display = 'none';
+            document.getElementById('mdGenerateBadge').textContent = '생성중...';
+            document.getElementById('mdGenerateBadge').style.background = '#ff9800';
+
+            try {
+                const response = await fetch('/.netlify/functions/generate-md', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customer: {
+                            name: customer.name,
+                            birthYear: customer.birthYear,
+                            birthMonth: customer.birthMonth,
+                            birthDay: customer.birthDay,
+                            birthHour: customer.birthHour,
+                            birthMinute: customer.birthMinute,
+                            gender: customer.gender,
+                            package: customer.package,
+                            sajuResult: customer.sajuResult,
+                            promptResult: customer.promptResult,
+                            inyeonCalcResult: customer.inyeonCalcResult,
+                            inyeonHTML: customer.inyeonHTML,
+                            questions: customer.questions,
+                            customQuestion: customer.customQuestion,
+                            mainConcern: customer.mainConcern,
+                            repeatPattern: customer.repeatPattern,
+                            loveStatus: customer.loveStatus,
+                            jobStatus: customer.jobStatus
+                        },
+                        action: 'generate'
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    generatedMD = result.content;
+                    document.getElementById('mdGenerateResult').style.display = 'block';
+                    document.getElementById('mdGenerateBadge').textContent = '생성완료';
+                    document.getElementById('mdGenerateBadge').style.background = '#4a7c59';
+                    document.getElementById('mdReviewBtn').disabled = false;
+                } else {
+                    throw new Error(result.error || 'MD 생성 실패');
+                }
+            } catch (error) {
+                console.error('MD 생성 오류:', error);
+                alert('❌ MD 생성 실패: ' + error.message);
+                document.getElementById('mdGenerateBadge').textContent = '실패';
+                document.getElementById('mdGenerateBadge').style.background = '#e53935';
+            } finally {
+                document.getElementById('mdGenerateBtn').disabled = false;
+                document.getElementById('mdGenerateLoading').style.display = 'none';
+            }
+        }
+
+        async function modifyMD() {
+            if (!generatedMD) {
+                alert('먼저 MD를 생성해주세요.');
+                return;
+            }
+
+            const modifyRequest = document.getElementById('mdModifyRequest').value.trim();
+            if (!modifyRequest) {
+                alert('수정 요청을 입력해주세요.');
+                return;
+            }
+
+            if (selectedCustomer === null) return;
+            const customer = customers[selectedCustomer];
+
+            document.getElementById('mdGenerateBtn').disabled = true;
+            document.getElementById('mdGenerateLoading').style.display = 'block';
+            document.getElementById('mdGenerateBadge').textContent = '수정중...';
+            document.getElementById('mdGenerateBadge').style.background = '#ff9800';
+
+            try {
+                const response = await fetch('/.netlify/functions/generate-md', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customer: { name: customer.name, sajuResult: customer.sajuResult, inyeonCalcResult: customer.inyeonCalcResult },
+                        action: 'modify',
+                        previousMd: generatedMD,
+                        modificationRequest: modifyRequest
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    generatedMD = result.content;
+                    document.getElementById('mdModifyRequest').value = '';
+                    document.getElementById('mdGenerateBadge').textContent = '수정완료';
+                    document.getElementById('mdGenerateBadge').style.background = '#4a7c59';
+                    alert('✅ MD가 수정되었습니다. 미리보기로 확인해주세요.');
+                } else {
+                    throw new Error(result.error || 'MD 수정 실패');
+                }
+            } catch (error) {
+                console.error('MD 수정 오류:', error);
+                alert('❌ MD 수정 실패: ' + error.message);
+                document.getElementById('mdGenerateBadge').textContent = '수정실패';
+                document.getElementById('mdGenerateBadge').style.background = '#e53935';
+            } finally {
+                document.getElementById('mdGenerateBtn').disabled = false;
+                document.getElementById('mdGenerateLoading').style.display = 'none';
+            }
+        }
+
+        async function reviewMD() {
+            if (!generatedMD) {
+                alert('먼저 MD를 생성해주세요.');
+                return;
+            }
+
+            if (selectedCustomer === null) return;
+            const customer = customers[selectedCustomer];
+
+            document.getElementById('mdReviewBtn').disabled = true;
+            document.getElementById('mdGenerateBadge').textContent = '검토중...';
+            document.getElementById('mdGenerateBadge').style.background = '#2196f3';
+
+            try {
+                const response = await fetch('/.netlify/functions/generate-md', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customer: { name: customer.name, sajuResult: customer.sajuResult, inyeonCalcResult: customer.inyeonCalcResult },
+                        action: 'review',
+                        previousMd: generatedMD
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // 검토 결과를 모달로 표시
+                    alert('📋 검토 결과:\n\n' + result.content.substring(0, 1000) + (result.content.length > 1000 ? '...' : ''));
+                    document.getElementById('mdGenerateBadge').textContent = '검토완료';
+                    document.getElementById('mdGenerateBadge').style.background = '#4a7c59';
+                } else {
+                    throw new Error(result.error || '검토 실패');
+                }
+            } catch (error) {
+                console.error('검토 오류:', error);
+                alert('❌ 검토 실패: ' + error.message);
+            } finally {
+                document.getElementById('mdReviewBtn').disabled = false;
+            }
+        }
+
+        function previewMD() {
+            if (!generatedMD) {
+                alert('먼저 MD를 생성해주세요.');
+                return;
+            }
+
+            // 새 창에서 마크다운 미리보기
+            const previewWindow = window.open('', '_blank');
+            previewWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>MD 미리보기</title>
+                    <style>
+                        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.8; }
+                        pre { background: #f5f5f5; padding: 15px; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; }
+                        h1,h2,h3 { color: #2d2418; }
+                        h1 { border-bottom: 2px solid #8b6914; padding-bottom: 10px; }
+                        h2 { border-bottom: 1px solid #e5dccb; padding-bottom: 8px; margin-top: 30px; }
+                    </style>
+                </head>
+                <body>
+                    <pre>${generatedMD.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                </body>
+                </html>
+            `);
+            previewWindow.document.close();
+        }
+
+        function downloadMD() {
+            if (!generatedMD) {
+                alert('먼저 MD를 생성해주세요.');
+                return;
+            }
+
+            if (selectedCustomer === null) return;
+            const customer = customers[selectedCustomer];
+
+            const blob = new Blob([generatedMD], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${customer.name}_사주보고서_${new Date().toISOString().split('T')[0]}.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function applyMDToResult() {
+            if (!generatedMD) {
+                alert('먼저 MD를 생성해주세요.');
+                return;
+            }
+
+            // mainResultTextarea에 MD 내용 적용
+            const textarea = document.getElementById('mainResultTextarea');
+            if (textarea) {
+                textarea.value = generatedMD;
+            }
+
+            // 직접 붙여넣기 함수 호출 (저장까지 진행)
+            if (selectedCustomer !== null) {
+                const customer = customers[selectedCustomer];
+                customer.mainResultText = generatedMD;
+
+                // Supabase에 저장
+                updateCustomerField(customer.orderCode, 'main_result_text', generatedMD).then(() => {
+                    alert('✅ 결과글에 적용되었습니다!');
+                    showCustomerDetail(customer);
+                }).catch(err => {
+                    console.error(err);
+                    alert('저장 중 오류가 발생했습니다.');
+                });
+            }
+        }
+
         // 주요결과글 복사
         function copyMainResult() {
             const textarea = document.getElementById('mainResultTextarea');
