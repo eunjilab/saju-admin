@@ -2904,9 +2904,16 @@
                             <button class="action-btn primary" id="mdGenerateBtn" onclick="generateMD()" style="flex:1;">🤖 MD 생성</button>
                             <button class="action-btn" onclick="reviewMD()" style="flex:1; background:#fff3e0; color:#e65100; border:1px solid #ffcc80;" id="mdReviewBtn" disabled>🔍 검토</button>
                         </div>
-                        <div id="mdGenerateLoading" style="display:none; text-align:center; padding:15px;">
-                            <div style="font-size:24px; margin-bottom:10px;">⏳</div>
-                            <div style="font-size:12px; color:#666;">MD 생성 중... (약 30초~1분 소요)</div>
+                        <div id="mdGenerateLoading" style="display:none; padding:15px;">
+                            <div style="text-align:center; margin-bottom:15px;">
+                                <div style="font-size:24px; margin-bottom:10px;">⏳</div>
+                                <div id="mdProgressText" style="font-size:12px; color:#666;">MD 생성 준비 중...</div>
+                            </div>
+                            <!-- 섹션별 진행상황 -->
+                            <div id="mdSectionProgress" style="background:#f5f5f5; border-radius:8px; padding:12px; font-size:11px;">
+                                <div style="font-weight:bold; margin-bottom:10px; color:#333;">섹션별 진행상황</div>
+                                <div id="sectionList"></div>
+                            </div>
                         </div>
                         <div id="mdGenerateResult" style="display:none;">
                             <div style="display:flex; gap:10px; margin-bottom:10px;">
@@ -5430,6 +5437,38 @@
         // ========== MD 자동생성 관련 ==========
         let generatedMD = ''; // 생성된 MD 저장
 
+        // 섹션 정의
+        const MD_SECTIONS = [
+            { id: 'intro', name: '표지+기본정보', order: 1 },
+            { id: 'oheng', name: '오행+십성', order: 2 },
+            { id: 'sinsal', name: '신살+격국', order: 3 },
+            { id: 'yearly', name: '올해운세', order: 4 },
+            { id: 'category', name: '분야별운세', order: 5 },
+            { id: 'inyeon', name: '인연상', order: 6, premiumOnly: true },
+            { id: 'ending', name: '맞춤답변+마무리', order: 7 }
+        ];
+
+        // 섹션 상태 UI 업데이트
+        function updateSectionUI(sections, currentIndex, status) {
+            const sectionList = document.getElementById('sectionList');
+            sectionList.innerHTML = sections.map((s, i) => {
+                let icon = '⬜';
+                let color = '#999';
+                if (i < currentIndex) {
+                    icon = '✅';
+                    color = '#4a7c59';
+                } else if (i === currentIndex) {
+                    icon = status === 'error' ? '❌' : '🔄';
+                    color = status === 'error' ? '#e53935' : '#ff9800';
+                }
+                return `<div style="display:flex; align-items:center; gap:8px; padding:4px 0; color:${color};">
+                    <span>${icon}</span>
+                    <span>${s.name}</span>
+                    ${s.premiumOnly ? '<span style="font-size:9px; background:#9b59b6; color:#fff; padding:1px 4px; border-radius:3px;">프리미엄</span>' : ''}
+                </div>`;
+            }).join('');
+        }
+
         async function generateMD() {
             if (selectedCustomer === null) return;
             const customer = customers[selectedCustomer];
@@ -5451,54 +5490,99 @@
                 if (!proceed) return;
             }
 
+            // 패키지에 따른 섹션 필터링
+            const sections = MD_SECTIONS.filter(s => !s.premiumOnly || customer.package === 'premium');
+
             // UI 상태 변경
             document.getElementById('mdGenerateBtn').disabled = true;
             document.getElementById('mdGenerateLoading').style.display = 'block';
             document.getElementById('mdGenerateResult').style.display = 'none';
             document.getElementById('mdGenerateBadge').textContent = '생성중...';
             document.getElementById('mdGenerateBadge').style.background = '#ff9800';
+            document.getElementById('mdProgressText').textContent = 'MD 생성 준비 중...';
+            updateSectionUI(sections, -1, 'pending');
+
+            const customerData = {
+                name: customer.name,
+                birthYear: customer.birthYear,
+                birthMonth: customer.birthMonth,
+                birthDay: customer.birthDay,
+                birthHour: customer.birthHour,
+                birthMinute: customer.birthMinute,
+                gender: customer.gender,
+                package: customer.package,
+                sajuResult: customer.sajuResult,
+                promptResult: customer.promptResult,
+                inyeonCalcResult: customer.inyeonCalcResult,
+                inyeonHTML: customer.inyeonHTML,
+                questions: customer.questions,
+                customQuestion: customer.customQuestion,
+                mainConcern: customer.mainConcern,
+                repeatPattern: customer.repeatPattern,
+                loveStatus: customer.loveStatus,
+                jobStatus: customer.jobStatus
+            };
 
             try {
-                const response = await fetch('/.netlify/functions/generate-md', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        customer: {
-                            name: customer.name,
-                            birthYear: customer.birthYear,
-                            birthMonth: customer.birthMonth,
-                            birthDay: customer.birthDay,
-                            birthHour: customer.birthHour,
-                            birthMinute: customer.birthMinute,
-                            gender: customer.gender,
-                            package: customer.package,
-                            sajuResult: customer.sajuResult,
-                            promptResult: customer.promptResult,
-                            inyeonCalcResult: customer.inyeonCalcResult,
-                            inyeonHTML: customer.inyeonHTML,
-                            questions: customer.questions,
-                            customQuestion: customer.customQuestion,
-                            mainConcern: customer.mainConcern,
-                            repeatPattern: customer.repeatPattern,
-                            loveStatus: customer.loveStatus,
-                            jobStatus: customer.jobStatus
-                        },
-                        action: 'generate'
-                    })
-                });
+                let fullContent = '';
 
-                const result = await response.json();
+                // 섹션별 순차 생성
+                for (let i = 0; i < sections.length; i++) {
+                    const section = sections[i];
 
-                if (result.success) {
-                    generatedMD = result.content;
-                    saveMdToHistory(result.content); // 히스토리에 저장
-                    document.getElementById('mdGenerateResult').style.display = 'block';
-                    document.getElementById('mdGenerateBadge').textContent = '생성완료';
-                    document.getElementById('mdGenerateBadge').style.background = '#4a7c59';
-                    document.getElementById('mdReviewBtn').disabled = false;
-                } else {
-                    throw new Error(result.error || 'MD 생성 실패');
+                    // UI 업데이트
+                    document.getElementById('mdProgressText').textContent =
+                        `섹션 ${i + 1}/${sections.length}: ${section.name} 생성 중...`;
+                    updateSectionUI(sections, i, 'loading');
+                    document.getElementById('mdGenerateBadge').textContent =
+                        `${i + 1}/${sections.length}`;
+
+                    try {
+                        const response = await fetch('/.netlify/functions/generate-md', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                customer: customerData,
+                                action: 'section',
+                                section: section.id,
+                                previousContent: fullContent
+                            })
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            if (!result.skipped) {
+                                fullContent += result.content + '\n\n';
+                            }
+                        } else {
+                            throw new Error(result.error || `${section.name} 생성 실패`);
+                        }
+                    } catch (sectionError) {
+                        console.error(`섹션 ${section.name} 오류:`, sectionError);
+                        updateSectionUI(sections, i, 'error');
+
+                        // 오류 발생 시 계속 진행할지 물어보기
+                        const continueGeneration = confirm(
+                            `⚠️ "${section.name}" 섹션 생성 중 오류 발생:\n${sectionError.message}\n\n` +
+                            `나머지 섹션을 계속 생성하시겠습니까?`
+                        );
+                        if (!continueGeneration) {
+                            throw sectionError;
+                        }
+                    }
                 }
+
+                // 모든 섹션 완료
+                generatedMD = fullContent;
+                saveMdToHistory(fullContent);
+                document.getElementById('mdGenerateResult').style.display = 'block';
+                document.getElementById('mdGenerateBadge').textContent = '생성완료';
+                document.getElementById('mdGenerateBadge').style.background = '#4a7c59';
+                document.getElementById('mdReviewBtn').disabled = false;
+                document.getElementById('mdProgressText').textContent = '✅ MD 생성 완료!';
+                updateSectionUI(sections, sections.length, 'complete');
+
             } catch (error) {
                 console.error('MD 생성 오류:', error);
                 alert('❌ MD 생성 실패: ' + error.message);
@@ -5506,7 +5590,6 @@
                 document.getElementById('mdGenerateBadge').style.background = '#e53935';
             } finally {
                 document.getElementById('mdGenerateBtn').disabled = false;
-                document.getElementById('mdGenerateLoading').style.display = 'none';
             }
         }
 

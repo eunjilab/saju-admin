@@ -8,3 +8,4 @@ node_modules/
 .DS_Store
 apps-script/
 files*.zip
+node_modules/
