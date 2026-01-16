@@ -179,25 +179,50 @@ git add -A && git commit -m "메시지" && git push origin main
 ## 폴더 구조
 
 ```
-사주 관리자페이지/
-├── index.html              # 관리자 메인페이지
-├── 1_input.html            # 입력폼
-├── 2_saju.html             # 사주계산기
-├── 3_inyeon_calc.html      # 인연상 계산기
-├── 4_inyeon_gen.html       # 인연상 생성기
-├── 5_prompt.html           # 프롬프트 생성기
-├── 6_result.html           # 결과 작성
-├── 7_question.html         # 추가질문
-├── 8_question_result.html  # 추가질문 결과
-├── skills/                 # 스킬 파일 (공통)
-├── input-form-deploy/      # 입력폼 배포용
-├── netlify/
-│   └── functions/          # Netlify Functions
-├── backup/                 # 백업 파일
-├── .claude/
-│   ├── CLAUDE.md           # Claude Code 규칙
-│   └── commands/           # 커스텀 명령어
-└── README.md               # 이 파일
+사주/
+├── 앱/                         # 메인 앱 파일들
+│   ├── index.html              # 관리자 메인페이지
+│   ├── 1_input.html            # 입력폼
+│   ├── 2_saju.html             # 사주계산기
+│   ├── 3_inyeon_calc.html      # 인연상 계산기
+│   ├── 4_inyeon_gen.html       # 인연상 생성기
+│   ├── 5_prompt.html           # 프롬프트 생성기
+│   ├── 6_result.html           # 결과 작성
+│   ├── 7_question.html         # 추가질문
+│   ├── 8_question_result.html  # 추가질문 결과
+│   └── styles.css              # 공통 스타일
+│
+├── 배포/                       # 배포 관련
+│   ├── 에이전트/               # 에이전트 시스템 (NEW!)
+│   │   ├── 에이전트_시스템_계획.md  # 전체 계획
+│   │   └── MD생성_개선_계획.md     # 상세 계획
+│   ├── netlify-functions/      # Netlify Functions
+│   │   ├── generate-md.js      # MD 생성 API
+│   │   ├── prompts/            # 프롬프트 파일들
+│   │   └── utils/              # 유틸리티 함수
+│   └── input-form/             # 입력폼 배포용
+│
+├── 가이드/                     # 사주 해석 가이드 (10개)
+│   ├── 01_기초_천간지지오행.md
+│   ├── 02_십성_해석.md
+│   ├── 03_합충형파해.md
+│   ├── 04_병존반복구조.md
+│   ├── 05_신살_48종.md
+│   ├── 05_신살_검증표.md
+│   ├── 06_대운세운.md
+│   ├── 07_격국용신.md
+│   ├── 08_프리미엄_해석방법.md
+│   └── 프리미엄_사주_지침_가이드.md
+│
+├── 테스트/                     # 테스트 관련
+│   ├── saju-calc.test.html     # 사주계산 테스트
+│   ├── inyeon-calc.test.html   # 인연상계산 테스트
+│   └── 결과물/                 # 테스트 결과물 저장
+│
+├── 백업/                       # 백업 파일
+│   └── 2_saju_backup.html
+│
+└── README.md                   # 이 파일
 ```
 
 ---
@@ -298,5 +323,12 @@ Step 8: 결과파일 (HTML 결과지)
 ## 향후 계획
 
 - [x] MD 파일 자동 생성 (Netlify Functions + Claude API)
-- [ ] MD 파일 검토 에이전트 고도화
+- [x] 섹션별 분할 생성 시스템 구축
+- [ ] **MD 생성/검증 에이전트 시스템** (진행 중)
+  - [ ] 에이전트1: MD 생성 (섹션별 분할)
+  - [ ] 에이전트2: 검증/자동수정
+  - [ ] 스텝6 UI 개선 (진행상황, 검증결과 표시)
 - [ ] 스탠다드/라이트 패키지 구현
+
+### 에이전트 시스템 상세
+`배포/에이전트/에이전트_시스템_계획.md` 참조

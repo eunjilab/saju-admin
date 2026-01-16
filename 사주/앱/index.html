@@ -2917,6 +2917,7 @@
                         </div>
                         <div id="mdGenerateResult" style="display:none;">
                             <div style="display:flex; gap:10px; margin-bottom:10px;">
+                                <button class="action-btn primary" onclick="copyMD()" style="flex:1;">📋 복사</button>
                                 <button class="action-btn" onclick="previewMD()" style="flex:1;">👁️ 미리보기</button>
                                 <button class="action-btn" onclick="downloadMD()" style="flex:1; background:#e3f2fd; color:#1976d2; border:1px solid #90caf9;">💾 다운로드</button>
                             </div>
@@ -5469,6 +5470,9 @@
             }).join('');
         }
 
+        // MD 생성 폴링 인터벌 저장용
+        let mdPollingInterval = null;
+
         async function generateMD() {
             if (selectedCustomer === null) return;
             const customer = customers[selectedCustomer];
@@ -5499,7 +5503,7 @@
             document.getElementById('mdGenerateResult').style.display = 'none';
             document.getElementById('mdGenerateBadge').textContent = '생성중...';
             document.getElementById('mdGenerateBadge').style.background = '#ff9800';
-            document.getElementById('mdProgressText').textContent = 'MD 생성 준비 중...';
+            document.getElementById('mdProgressText').textContent = 'MD 생성 요청 중...';
             updateSectionUI(sections, -1, 'pending');
 
             const customerData = {
@@ -5524,74 +5528,153 @@
             };
 
             try {
-                let fullContent = '';
+                // 백그라운드 생성 요청
+                const response = await fetch('/.netlify/functions/generate-md-background', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderCode: customer.orderCode,
+                        customer: customerData,
+                        prompt: customer.promptResult || customer.sajuResult
+                    })
+                });
 
-                // 섹션별 순차 생성
-                for (let i = 0; i < sections.length; i++) {
-                    const section = sections[i];
+                // 백그라운드 함수는 202 반환
+                if (response.status === 202 || response.ok) {
+                    document.getElementById('mdProgressText').textContent = '백그라운드에서 생성 시작...';
 
-                    // UI 업데이트
-                    document.getElementById('mdProgressText').textContent =
-                        `섹션 ${i + 1}/${sections.length}: ${section.name} 생성 중...`;
-                    updateSectionUI(sections, i, 'loading');
-                    document.getElementById('mdGenerateBadge').textContent =
-                        `${i + 1}/${sections.length}`;
-
-                    try {
-                        const response = await fetch('/.netlify/functions/generate-md', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                customer: customerData,
-                                action: 'section',
-                                section: section.id,
-                                previousContent: fullContent
-                            })
-                        });
-
-                        const result = await response.json();
-
-                        if (result.success) {
-                            if (!result.skipped) {
-                                fullContent += result.content + '\n\n';
-                            }
-                        } else {
-                            throw new Error(result.error || `${section.name} 생성 실패`);
-                        }
-                    } catch (sectionError) {
-                        console.error(`섹션 ${section.name} 오류:`, sectionError);
-                        updateSectionUI(sections, i, 'error');
-
-                        // 오류 발생 시 계속 진행할지 물어보기
-                        const continueGeneration = confirm(
-                            `⚠️ "${section.name}" 섹션 생성 중 오류 발생:\n${sectionError.message}\n\n` +
-                            `나머지 섹션을 계속 생성하시겠습니까?`
-                        );
-                        if (!continueGeneration) {
-                            throw sectionError;
-                        }
-                    }
+                    // 폴링 시작 (5초마다 상태 확인)
+                    startMdPolling(customer.orderCode, sections);
+                } else {
+                    throw new Error('백그라운드 생성 요청 실패');
                 }
 
-                // 모든 섹션 완료
-                generatedMD = fullContent;
-                saveMdToHistory(fullContent);
-                document.getElementById('mdGenerateResult').style.display = 'block';
-                document.getElementById('mdGenerateBadge').textContent = '생성완료';
-                document.getElementById('mdGenerateBadge').style.background = '#4a7c59';
-                document.getElementById('mdReviewBtn').disabled = false;
-                document.getElementById('mdProgressText').textContent = '✅ MD 생성 완료!';
-                updateSectionUI(sections, sections.length, 'complete');
-
             } catch (error) {
-                console.error('MD 생성 오류:', error);
-                alert('❌ MD 생성 실패: ' + error.message);
+                console.error('MD 생성 요청 오류:', error);
+                alert('❌ MD 생성 요청 실패: ' + error.message);
                 document.getElementById('mdGenerateBadge').textContent = '실패';
                 document.getElementById('mdGenerateBadge').style.background = '#e53935';
-            } finally {
                 document.getElementById('mdGenerateBtn').disabled = false;
             }
         }
+
+        // MD 생성 상태 폴링
+        function startMdPolling(orderCode, sections) {
+            // 기존 폴링 중지
+            if (mdPollingInterval) {
+                clearInterval(mdPollingInterval);
+            }
+
+            let pollCount = 0;
+            const maxPolls = 180; // 최대 15분 (5초 x 180)
+
+            mdPollingInterval = setInterval(async () => {
+                pollCount++;
+
+                if (pollCount > maxPolls) {
+                    clearInterval(mdPollingInterval);
+                    mdPollingInterval = null;
+                    document.getElementById('mdProgressText').textContent = '시간 초과';
+                    document.getElementById('mdGenerateBadge').textContent = '시간초과';
+                    document.getElementById('mdGenerateBadge').style.background = '#e53935';
+                    document.getElementById('mdGenerateBtn').disabled = false;
+                    return;
+                }
+
+                try {
+                    // Supabase에서 상태 조회
+                    const status = await checkMdStatus(orderCode);
+
+                    if (status) {
+                        // UI 업데이트
+                        document.getElementById('mdProgressText').textContent = status.md_message || '처리 중...';
+
+                        // 섹션 진행상황 업데이트 (메시지에서 섹션 번호 추출)
+                        const sectionMatch = status.md_message?.match(/섹션 (\d+)\/(\d+)/);
+                        if (sectionMatch) {
+                            const currentSection = parseInt(sectionMatch[1]) - 1;
+                            updateSectionUI(sections, currentSection, 'loading');
+                            document.getElementById('mdGenerateBadge').textContent = `${sectionMatch[1]}/${sectionMatch[2]}`;
+                        }
+
+                        // 완료 상태
+                        if (status.md_status === 'completed') {
+                            clearInterval(mdPollingInterval);
+                            mdPollingInterval = null;
+
+                            // MD 결과 가져오기
+                            if (status.md_result) {
+                                generatedMD = status.md_result;
+                                saveMdToHistory(status.md_result);
+                            }
+
+                            document.getElementById('mdGenerateResult').style.display = 'block';
+                            document.getElementById('mdGenerateBadge').textContent = '생성완료';
+                            document.getElementById('mdGenerateBadge').style.background = '#4a7c59';
+                            document.getElementById('mdReviewBtn').disabled = false;
+                            document.getElementById('mdProgressText').textContent = '✅ MD 생성 완료! (자동 저장됨)';
+                            updateSectionUI(sections, sections.length, 'complete');
+                            document.getElementById('mdGenerateBtn').disabled = false;
+
+                            // 검증 결과 표시
+                            if (status.md_verify_result) {
+                                try {
+                                    const verifyResult = JSON.parse(status.md_verify_result);
+                                    if (verifyResult.totalErrors > 0) {
+                                        document.getElementById('mdProgressText').innerHTML =
+                                            `✅ MD 생성 완료! <span style="color:#e65100;">(${verifyResult.autoFixed}개 자동수정됨)</span>`;
+                                    }
+                                } catch (e) {}
+                            }
+                        }
+
+                        // 에러 상태
+                        if (status.md_status === 'error') {
+                            clearInterval(mdPollingInterval);
+                            mdPollingInterval = null;
+
+                            document.getElementById('mdGenerateBadge').textContent = '실패';
+                            document.getElementById('mdGenerateBadge').style.background = '#e53935';
+                            document.getElementById('mdProgressText').textContent = '❌ ' + (status.md_message || '생성 실패');
+                            document.getElementById('mdGenerateBtn').disabled = false;
+                        }
+                    }
+                } catch (error) {
+                    console.error('폴링 오류:', error);
+                }
+            }, 5000); // 5초마다
+        }
+
+        // Supabase에서 MD 상태 조회
+        async function checkMdStatus(orderCode) {
+            const SUPABASE_URL = 'https://lgebgmchjmceyzrqawzl.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnZWJnbWNoam1jZXl6cnFhd3psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY2NTk2NzEsImV4cCI6MjA1MjIzNTY3MX0.u1C7MhB3CwBSXPrBZdj7aVZbOJJxsNWG7Q_5g4bcE4E';
+
+            try {
+                const response = await fetch(
+                    `${SUPABASE_URL}/rest/v1/orders?order_code=eq.${orderCode}&select=md_status,md_message,md_result,md_verify_result`,
+                    {
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        }
+                    }
+                );
+
+                const data = await response.json();
+                return data[0] || null;
+            } catch (error) {
+                console.error('Supabase 조회 오류:', error);
+                return null;
+            }
+        }
+
+        // 페이지 떠날 때 폴링 정리
+        window.addEventListener('beforeunload', () => {
+            if (mdPollingInterval) {
+                clearInterval(mdPollingInterval);
+            }
+        });
 
         async function modifyMD() {
             if (!generatedMD) {
@@ -5715,6 +5798,28 @@
             }
             navigator.clipboard.writeText(lastReviewResult).then(() => {
                 alert('📋 검토 결과가 복사되었습니다!');
+            });
+        }
+
+        // MD 복사
+        function copyMD() {
+            if (!generatedMD) {
+                alert('먼저 MD를 생성해주세요.');
+                return;
+            }
+
+            navigator.clipboard.writeText(generatedMD).then(() => {
+                alert('📋 MD 내용이 복사되었습니다!');
+            }).catch(err => {
+                console.error('복사 실패:', err);
+                // 폴백: textarea 사용
+                const textarea = document.createElement('textarea');
+                textarea.value = generatedMD;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('📋 MD 내용이 복사되었습니다!');
             });
         }
 
