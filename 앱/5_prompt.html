@@ -1,0 +1,3334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프롬프트 생성기 V7 | 운명을 듣다</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e0e0e0;
+            line-height: 1.7;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        /* 헤더 */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header .step-badge {
+            display: inline-block;
+            background: rgba(212, 175, 130, 0.2);
+            border: 1px solid #d4af82;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #d4af82;
+            margin-bottom: 10px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            color: #d4af82;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            color: #888;
+            font-size: 14px;
+        }
+        
+        /* 자동 입력 섹션 */
+        .auto-input-section {
+            background: linear-gradient(135deg, rgba(212, 175, 130, 0.1) 0%, rgba(212, 175, 130, 0.05) 100%);
+            border: 2px solid #d4af82;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .auto-input-section h2 {
+            color: #d4af82;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .auto-input-section textarea {
+            width: 100%;
+            height: 200px;
+            background: #1a1a2e;
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: #e0e0e0;
+            padding: 15px;
+            font-size: 0.9em;
+            font-family: monospace;
+            resize: vertical;
+        }
+        
+        /* 인연상 입력 섹션 (프리미엄 전용) */
+        .inyeon-input-section {
+            background: linear-gradient(135deg, rgba(155, 89, 182, 0.1) 0%, rgba(155, 89, 182, 0.05) 100%);
+            border: 2px solid #9b59b6;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            display: none;
+        }
+        .inyeon-input-section.show {
+            display: block;
+        }
+        .inyeon-input-section h2 {
+            color: #9b59b6;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .inyeon-input-section textarea {
+            width: 100%;
+            height: 150px;
+            background: #1a1a2e;
+            border: 1px solid #9b59b6;
+            border-radius: 8px;
+            color: #e0e0e0;
+            padding: 15px;
+            font-size: 0.9em;
+            font-family: monospace;
+            resize: vertical;
+        }
+        .inyeon-input-section .premium-badge {
+            display: inline-block;
+            background: #9b59b6;
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 10px;
+        }
+        
+        .auto-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .auto-buttons button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn-parse {
+            background: linear-gradient(135deg, #d4af82 0%, #b8956a 100%);
+            color: #1a1a2e;
+        }
+        
+        .btn-parse:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(212, 175, 130, 0.4);
+        }
+        
+        .btn-clear {
+            background: #444;
+            color: #e0e0e0;
+        }
+        
+        .parse-status {
+            margin-top: 15px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+        
+        .parse-status.success {
+            background: rgba(0, 200, 100, 0.2);
+            border: 1px solid #00c864;
+            color: #00c864;
+        }
+        
+        .parse-status.error {
+            background: rgba(255, 100, 100, 0.2);
+            border: 1px solid #ff6464;
+            color: #ff6464;
+        }
+        
+        /* 구분선 */
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 30px 0;
+            color: #666;
+        }
+        
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #444, transparent);
+        }
+        
+        .divider span {
+            padding: 0 20px;
+            font-size: 0.9em;
+        }
+        
+        /* 섹션 스타일 */
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .section h3 {
+            color: #d4af82;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(212, 175, 130, 0.3);
+            font-size: 16px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            color: #aaa;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #e0e0e0;
+            font-size: 0.95em;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #d4af82;
+        }
+        
+        /* 사주 4주 그리드 */
+        .pillar-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        
+        .pillar-item {
+            text-align: center;
+        }
+        
+        .pillar-item label {
+            display: block;
+            color: #d4af82;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        
+        .pillar-item input {
+            width: 100%;
+            text-align: center;
+            font-size: 1.2em;
+            padding: 12px;
+        }
+        
+        .pillar-item .sipsung-input {
+            margin-top: 8px;
+            font-size: 0.9em;
+            padding: 8px;
+            color: #aaa;
+        }
+        
+        /* 오행 그리드 */
+        .ohaeng-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+        
+        .ohaeng-item {
+            text-align: center;
+        }
+        
+        .ohaeng-item label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+        }
+        
+        .ohaeng-item input {
+            width: 100%;
+            text-align: center;
+            padding: 10px;
+        }
+        
+        /* 십성 분포 그리드 */
+        .sipsung-count-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+        
+        /* 질문 textarea */
+        .question-textarea {
+            width: 100%;
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        /* 생성 버튼 */
+        .generate-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #d4af82 0%, #b8956a 100%);
+            border: none;
+            border-radius: 12px;
+            color: #1a1a2e;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(212, 175, 130, 0.4);
+        }
+        
+        /* 결과 영역 */
+        .result-area {
+            display: none;
+            margin-top: 30px;
+        }
+        
+        .result-area.show {
+            display: block;
+        }
+        
+        .result-area h3 {
+            color: #d4af82;
+            margin-bottom: 15px;
+        }
+        
+        .result-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(212, 175, 130, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .result-box pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #e0e0e0;
+            font-size: 13px;
+            line-height: 1.8;
+            font-family: 'Nanum Gothic', sans-serif;
+        }
+        
+        .copy-btn {
+            width: 100%;
+            padding: 15px;
+            background: rgba(212, 175, 130, 0.2);
+            border: 1px solid #d4af82;
+            border-radius: 10px;
+            color: #d4af82;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background: rgba(212, 175, 130, 0.3);
+        }
+        
+        .copy-btn.copied {
+            background: rgba(76, 175, 80, 0.3);
+            border-color: #81c784;
+            color: #81c784;
+        }
+        
+        /* 참조 미리보기 */
+        .reference-preview {
+            background: rgba(212, 175, 130, 0.1);
+            border: 1px solid rgba(212, 175, 130, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .reference-preview h4 {
+            color: #d4af82;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .reference-list {
+            font-size: 12px;
+            color: #aaa;
+            line-height: 1.8;
+        }
+        
+        .reference-list .ref-item {
+            padding: 3px 0;
+        }
+        
+        .reference-list .ref-section {
+            color: #d4af82;
+        }
+        
+        /* V5 추가: 확장요소 배지 */
+        .expansion-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-size: 10px;
+            margin-left: 5px;
+        }
+        .expansion-badge.cycle { background: rgba(100,149,237,0.2); color: #6495ed; }
+        .expansion-badge.psyche { background: rgba(186,85,211,0.2); color: #ba55d3; }
+        .expansion-badge.vibration { background: rgba(50,205,50,0.2); color: #32cd32; }
+        .expansion-badge.celestial { background: rgba(255,165,0,0.2); color: #ffa500; }
+        .expansion-badge.sensory { background: rgba(255,105,180,0.2); color: #ff69b4; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <div class="step-badge">STEP 3 / 5</div>
+            <h1>📝 프롬프트 생성기 V6</h1>
+            <p>Part 2 세세한 참조 — 프로젝트 Knowledge용</p>
+        </div>
+        
+        <!-- 자동 입력 섹션 -->
+        <div class="auto-input-section">
+            <h2>🪄 자동 입력 (계산기 결과 붙여넣기)</h2>
+            <textarea id="autoInput" placeholder="사주 계산기 결과를 여기에 붙여넣으세요...
+
+예시:
+=== 사주 계산 결과 ===
+이름: 신은지
+성별: 여
+..."></textarea>
+            <div class="auto-buttons">
+                <button class="btn-parse" onclick="parseCalculatorResult()">✨ 자동으로 채우기</button>
+                <button class="btn-clear" onclick="clearAutoInput()">🗑️ 지우기</button>
+            </div>
+            <div id="parseStatus" class="parse-status" style="display: none;"></div>
+        </div>
+        
+        <!-- 인연상 입력 섹션 (프리미엄 전용) -->
+        <div class="inyeon-input-section" id="inyeonInputSection">
+            <h2>💘 인연상 데이터 입력 <span class="premium-badge">프리미엄 전용</span></h2>
+            <textarea id="inyeonInput" placeholder="인연상 계산기 결과 JSON을 여기에 붙여넣으세요...
+
+예시:
+{
+  &quot;입력&quot;: { &quot;일주&quot;: &quot;甲子&quot;, &quot;본인성별&quot;: &quot;남&quot;, &quot;상대성별&quot;: &quot;여&quot; },
+  &quot;인연상&quot;: { &quot;오행&quot;: &quot;수&quot;, &quot;도출납음&quot;: &quot;대해수&quot;, ... },
+  &quot;배우자상&quot;: { ... }
+}"></textarea>
+            <div class="auto-buttons">
+                <button class="btn-parse" onclick="parseInyeonData()">💘 인연상 정보 적용</button>
+                <button class="btn-clear" onclick="clearInyeonInput()">🗑️ 지우기</button>
+            </div>
+            <div id="inyeonParseStatus" class="parse-status" style="display: none;"></div>
+        </div>
+        
+        <div class="divider"><span>또는 직접 입력</span></div>
+        
+        <!-- 기본 정보 -->
+        <div class="section">
+            <h3>👤 기본 정보</h3>
+            <input type="hidden" id="orderCode">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>이름</label>
+                    <input type="text" id="name" placeholder="홍길동">
+                </div>
+                <div class="form-group">
+                    <label>성별</label>
+                    <select id="gender">
+                        <option value="여">여</option>
+                        <option value="남">남</option>
+                        <option value="여자">여자</option>
+                        <option value="남자">남자</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>만나고 싶은 연인의 성별</label>
+                    <select id="partnerGender">
+                        <option value="">-</option>
+                        <option value="male">남성</option>
+                        <option value="female">여성</option>
+                        <option value="male,female">둘 다</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>생년월일</label>
+                    <input type="text" id="birthDate" placeholder="2000년 3월 3일">
+                </div>
+                <div class="form-group">
+                    <label>태어난 시간</label>
+                    <input type="text" id="birthTime" placeholder="오전 7시 30분">
+                </div>
+                <div class="form-group">
+                    <label>태어난 곳</label>
+                    <input type="text" id="birthPlace" placeholder="부산, KR">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>패키지</label>
+                    <select id="package">
+                        <option value="프리미엄">프리미엄 (39,900원)</option>
+                        <option value="스탠다드">스탠다드 (19,900원)</option>
+                        <option value="라이트">라이트 (9,900원)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>나이 (만)</label>
+                    <input type="number" id="age" placeholder="26">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>💕 연애 상태</label>
+                    <input type="text" id="loveStatus" placeholder="솔로, 연애중, 기혼 등">
+                </div>
+                <div class="form-group">
+                    <label>💼 직업 상태</label>
+                    <input type="text" id="jobStatus" placeholder="학생, 직장인, 사업자 등">
+                </div>
+            </div>
+        </div>
+        
+        <!-- 사주 명식 -->
+        <div class="section">
+            <h3>🎴 사주 명식 (4주 + 십성)</h3>
+            <div class="pillar-grid">
+                <div class="pillar-item">
+                    <label>연주 (年柱)</label>
+                    <input type="text" id="yearPillar" placeholder="庚辰">
+                    <input type="text" id="yearSipsung" class="sipsung-input" placeholder="십성 (예: 편관/편재)">
+                </div>
+                <div class="pillar-item">
+                    <label>월주 (月柱)</label>
+                    <input type="text" id="monthPillar" placeholder="戊寅">
+                    <input type="text" id="monthSipsung" class="sipsung-input" placeholder="십성 (예: 편인/겁재)">
+                </div>
+                <div class="pillar-item">
+                    <label>일주 (日柱)</label>
+                    <input type="text" id="dayPillar" placeholder="甲戌">
+                    <input type="text" id="daySipsung" class="sipsung-input" placeholder="십성 (예: 비견/정재)">
+                </div>
+                <div class="pillar-item">
+                    <label>시주 (時柱)</label>
+                    <input type="text" id="hourPillar" placeholder="丁卯">
+                    <input type="text" id="hourSipsung" class="sipsung-input" placeholder="십성 (예: 상관/겁재)">
+                </div>
+            </div>
+        </div>
+        
+        <!-- 일간 & 십성 -->
+        <div class="section">
+            <h3>🔥 일간 & 십성 분포</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>일간 (한자)</label>
+                    <select id="ilgan">
+                        <option value="甲">甲 (갑목)</option>
+                        <option value="乙">乙 (을목)</option>
+                        <option value="丙">丙 (병화)</option>
+                        <option value="丁">丁 (정화)</option>
+                        <option value="戊">戊 (무토)</option>
+                        <option value="己">己 (기토)</option>
+                        <option value="庚">庚 (경금)</option>
+                        <option value="辛">辛 (신금)</option>
+                        <option value="壬">壬 (임수)</option>
+                        <option value="癸">癸 (계수)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>가장 강한 십성</label>
+                    <select id="dominantSipsung">
+                        <option value="비겁">비겁 (비견/겁재)</option>
+                        <option value="식상">식상 (식신/상관)</option>
+                        <option value="재성">재성 (정재/편재)</option>
+                        <option value="관성">관성 (정관/편관)</option>
+                        <option value="인성">인성 (정인/편인)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>두 번째 강한 십성</label>
+                    <select id="secondSipsung">
+                        <option value="">없음/동일</option>
+                        <option value="비겁">비겁</option>
+                        <option value="식상">식상</option>
+                        <option value="재성">재성</option>
+                        <option value="관성">관성</option>
+                        <option value="인성">인성</option>
+                    </select>
+                </div>
+            </div>
+            <p style="color: #888; font-size: 0.85em; margin: 15px 0;">십성 개수 (0~8, 소수점 가능)</p>
+            <div class="sipsung-count-grid">
+                <div class="form-group">
+                    <label>비겁</label>
+                    <input type="number" id="bigyeop" min="0" max="8" step="0.1" value="0">
+                </div>
+                <div class="form-group">
+                    <label>식상</label>
+                    <input type="number" id="siksang" min="0" max="8" step="0.1" value="0">
+                </div>
+                <div class="form-group">
+                    <label>재성</label>
+                    <input type="number" id="jaeseong" min="0" max="8" step="0.1" value="0">
+                </div>
+                <div class="form-group">
+                    <label>관성</label>
+                    <input type="number" id="gwanseong" min="0" max="8" step="0.1" value="0">
+                </div>
+                <div class="form-group">
+                    <label>인성</label>
+                    <input type="number" id="inseong" min="0" max="8" step="0.1" value="0">
+                </div>
+            </div>
+        </div>
+        
+        <!-- 오행 분포 -->
+        <div class="section">
+            <h3>🌿 오행 분포</h3>
+            <div class="ohaeng-grid">
+                <div class="ohaeng-item">
+                    <label>목(木)</label>
+                    <input type="number" id="wood" min="0" max="10" step="0.1" value="0">
+                </div>
+                <div class="ohaeng-item">
+                    <label>화(火)</label>
+                    <input type="number" id="fire" min="0" max="10" step="0.1" value="0">
+                </div>
+                <div class="ohaeng-item">
+                    <label>토(土)</label>
+                    <input type="number" id="earth" min="0" max="10" step="0.1" value="0">
+                </div>
+                <div class="ohaeng-item">
+                    <label>금(金)</label>
+                    <input type="number" id="metal" min="0" max="10" step="0.1" value="0">
+                </div>
+                <div class="ohaeng-item">
+                    <label>수(水)</label>
+                    <input type="number" id="water" min="0" max="10" step="0.1" value="0">
+                </div>
+            </div>
+        </div>
+
+        <!-- 양/음 분포 -->
+        <div class="section">
+            <h3>☯️ 양/음 분포</h3>
+            <p style="color: #888; font-size: 0.85em; margin-bottom: 15px;">사주팔자의 양(陽)/음(陰) 에너지 밸런스</p>
+            <textarea id="yinyangText" rows="4" placeholder="양/음 분포 데이터 (자동 입력됨)"></textarea>
+        </div>
+
+        <!-- 용신/기신 -->
+        <div class="section">
+            <h3>⚖️ 용신 & 기신 (균형의 열쇠)</h3>
+            <p style="color: #888; font-size: 0.85em; margin-bottom: 15px;">사주의 균형을 잡아주는 기운과 피해야 할 기운</p>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>일간 강약</label>
+                    <select id="dayganStrength">
+                        <option value="신강">신강(身強) - 일간이 강함</option>
+                        <option value="신약">신약(身弱) - 일간이 약함</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row" style="margin-top: 15px;">
+                <div class="form-group" style="background: rgba(0,200,100,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(0,200,100,0.3);">
+                    <label style="color: #00c864;">✨ 용신 (필요한 기운)</label>
+                    <input type="text" id="yongsin" placeholder="예: 화(火)">
+                    <input type="text" id="yongsinDesc" placeholder="설명: 열정, 표현, 따뜻한 관계" style="margin-top: 8px; font-size: 0.85em;">
+                </div>
+                <div class="form-group" style="background: rgba(100,180,255,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(100,180,255,0.3);">
+                    <label style="color: #64b4ff;">👍 희신 (도움되는 기운)</label>
+                    <input type="text" id="huisin" placeholder="예: 목(木)">
+                    <input type="text" id="huisinDesc" placeholder="설명: 창의력과 확장의 기운" style="margin-top: 8px; font-size: 0.85em;">
+                </div>
+            </div>
+            <div class="form-row" style="margin-top: 10px;">
+                <div class="form-group" style="background: rgba(255,100,100,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,100,100,0.3);">
+                    <label style="color: #ff6464;">⚠️ 기신 (피해야 할 기운)</label>
+                    <input type="text" id="gisin" placeholder="예: 금(金)">
+                    <input type="text" id="gisinDesc" placeholder="설명: 과한 욕심, 무리한 확장" style="margin-top: 8px; font-size: 0.85em;">
+                </div>
+                <div class="form-group" style="background: rgba(255,150,50,0.1); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,150,50,0.3);">
+                    <label style="color: #ff9632;">🚫 구신 (더 피해야 할 기운)</label>
+                    <input type="text" id="gusin" placeholder="예: 토(土)">
+                    <input type="text" id="gusinDesc" placeholder="설명: 방향 없는 분산" style="margin-top: 8px; font-size: 0.85em;">
+                </div>
+            </div>
+        </div>
+        
+        <!-- 운 정보 -->
+        <div class="section">
+            <h3>🌊 대운 & 세운</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>현재 대운 (한자)</label>
+                    <input type="text" id="currentDaeun" placeholder="예: 丙子">
+                </div>
+                <div class="form-group">
+                    <label>대운 십성</label>
+                    <select id="daeunSipsung">
+                        <option value="비겁">비겁 대운</option>
+                        <option value="식상">식상 대운</option>
+                        <option value="재성">재성 대운</option>
+                        <option value="관성">관성 대운</option>
+                        <option value="인성">인성 대운</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>대운 시작 나이</label>
+                    <input type="number" id="daeunStartAge" placeholder="예: 9">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>2026 세운</label>
+                    <input type="text" id="seun2026" value="丙午 (병오)" readonly>
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>📅 전체 대운 목록</label>
+                <textarea id="daeunListText" class="question-textarea" style="min-height:100px;" placeholder="예:
+- 0-9세: 甲戌 (비겁/식상)
+- 10-19세: 乙亥 (겁재/재성)
+- 20-29세: 丙子 (편관/상관) ← 현재"></textarea>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>⚔️ 합충형파해 (사주 내 관계)</label>
+                <textarea id="hapchungText" class="question-textarea" style="min-height:60px;" placeholder="예:
+🤝 천간합: 갑기합
+💑 육합: 자축합
+⚔️ 충: 자오충"></textarea>
+            </div>
+            <div class="form-row" style="margin-top: 15px;">
+                <div class="form-group">
+                    <label>🌟 귀인 띠 (천을귀인)</label>
+                    <input type="text" id="guininDdi" placeholder="예: 소띠 🐮, 양띠 🐑">
+                </div>
+                <div class="form-group">
+                    <label>⚠️ 피해야 할 띠 (원진살)</label>
+                    <input type="text" id="avoidDdi" placeholder="예: 양띠 🐑">
+                </div>
+            </div>
+        </div>
+
+        <!-- 질문지 -->
+        <div class="section">
+            <h3>💬 질문지 응답</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>선택한 운세 분야</label>
+                    <input type="text" id="fortuneTypes" placeholder="연애, 직업, 재물">
+                </div>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>💭 핵심 고민 <span style="color:#c41e3a;font-size:11px;">(필수 - 소름 포인트 연결용)</span></label>
+                <textarea id="mainConcern" class="question-textarea" style="min-height:80px;" placeholder="예:
+• 3년 사귀었는데 결혼 얘기가 안 나와요
+• 이직을 고민 중인데 지금이 맞는 타이밍인지 모르겠어요
+• 요즘 뭘 해도 안 되는 기분이에요"></textarea>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>🔄 반복되는 패턴 <span style="color:#888;font-size:11px;">(선택)</span></label>
+                <textarea id="repeatPattern" class="question-textarea" style="min-height:60px;" placeholder="예:
+• 연애할 때 항상 비슷한 이유로 헤어져요
+• 직장에서 늘 상사와 트러블이 생겨요"></textarea>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>체크한 질문들 (각 줄에 하나씩)</label>
+                <textarea id="checkedQuestions" class="question-textarea" placeholder="Q1: 언제쯤 좋은 사람 만날 수 있을까요?
+Q2: 지금 만나는 사람이랑 결혼해도 될까요?
+Q3: 이직해도 될까요?"></textarea>
+            </div>
+            <!-- 지장간 (자동 파싱, 숨김) -->
+            <textarea id="jijangganText" style="display:none;"></textarea>
+            <!-- 격국/용신 (자동 파싱, 숨김) -->
+            <textarea id="gyeokgukText" style="display:none;"></textarea>
+            <!-- 신살 (자동 파싱, 숨김) -->
+            <textarea id="gilsinText" style="display:none;"></textarea>
+            <textarea id="yangmyeonText" style="display:none;"></textarea>
+            <textarea id="gilsinDetailText" style="display:none;"></textarea>
+            <textarea id="yangmyeonDetailText" style="display:none;"></textarea>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>✨ 맞춤 질문 (프리미엄)</label>
+                <input type="text" id="customQuestion" placeholder="프리미엄 패키지 선택 시 작성한 질문">
+            </div>
+        </div>
+        
+        <!-- Part 2 참조 미리보기 -->
+        <div class="reference-preview" id="referencePreview">
+            <h4>📚 Part 2 참조 섹션 미리보기</h4>
+            <div class="reference-list" id="referenceList">
+                데이터를 입력하면 자동으로 참조 섹션이 표시됩니다.
+            </div>
+        </div>
+        
+        <button class="generate-btn" onclick="generatePrompt()">🎴 프롬프트 생성하기</button>
+        
+        <!-- 결과 영역 (V6: 통합) -->
+        <div class="result-area" id="resultArea">
+            <h3>📋 생성된 프롬프트</h3>
+            <p style="font-size:12px; color:#666; margin-bottom:10px;">이걸 Claude에 한 번에 보내세요! 🚀</p>
+            <div class="result-box">
+                <pre id="promptResult"></pre>
+            </div>
+            <button class="copy-btn" onclick="copyPrompt()">📋 클립보드에 복사</button>
+        </div>
+    </div>
+    
+    <script>
+        // 일간 이름 매핑
+        const ilganNames = {
+            '甲': '갑목', '乙': '을목', '丙': '병화', '丁': '정화', '戊': '무토',
+            '己': '기토', '庚': '경금', '辛': '신금', '壬': '임수', '癸': '계수'
+        };
+        
+        // 지지 이름 매핑
+        const jijiNames = {
+            '子': '자수', '丑': '축토', '寅': '인목', '卯': '묘목', '辰': '진토', '巳': '사화',
+            '午': '오화', '未': '미토', '申': '신금', '酉': '유금', '戌': '술토', '亥': '해수'
+        };
+        
+        // 사주 한자 변환 함수 (庚辰 → 庚辰(경금/진토))
+        function convertPillar(pillar) {
+            if (!pillar || pillar.length < 2) return pillar;
+            const cheongan = pillar[0];
+            const jiji = pillar[1];
+            const cheonganName = ilganNames[cheongan] || cheongan;
+            const jijiName = jijiNames[jiji] || jiji;
+            return `${pillar}(${cheonganName}/${jijiName})`;
+        }
+        
+        // 오행 이름
+        const ohaengNames = ['목', '화', '토', '금', '수'];
+        const ohaengKeys = ['wood', 'fire', 'earth', 'metal', 'water'];
+        
+        // 십성 조합 매핑 (Part 2 K섹션에 있는 것들)
+        const sipsungCombinations = [
+            ['식상', '관성'],
+            ['재성', '비겁'],
+            ['관성', '비겁'],
+            ['인성', '식상'],
+            ['재성', '식상'],
+            ['관성', '인성'],
+            ['비겁', '식상'],
+            ['인성', '비겁'],
+            ['재성', '관성'],
+            ['식상', '인성', '재성']
+        ];
+        
+        // 자동 파싱
+        function parseCalculatorResult() {
+            const text = document.getElementById('autoInput').value;
+            const status = document.getElementById('parseStatus');
+            let parsed = 0;
+            
+            // 🔄 기존 필드 모두 초기화
+            const fieldsToReset = [
+                'orderCode', 'name', 'gender', 'partnerGender', 'birthDate', 'birthTime', 'birthPlace', 'package', 'age',
+                'loveStatus', 'jobStatus',
+                'yearPillar', 'monthPillar', 'dayPillar', 'hourPillar',
+                'yearSipsung', 'monthSipsung', 'daySipsung', 'hourSipsung',
+                'ilgan', 'dominantSipsung', 'secondSipsung',
+                'bigyeop', 'siksang', 'jaeseong', 'gwanseong', 'inseong',
+                'wood', 'fire', 'earth', 'metal', 'water',
+                'dayganStrength', 'yongsin', 'yongsinDesc', 'huisin', 'huisinDesc', 'gisin', 'gisinDesc',
+                'gyeokgukText', 'jijangganText',
+                'daeunStartAge', 'daeunDirection', 'currentDaeun', 'daeunSipsung', 'seun2026', 'daeunListText',
+                'hapchungText', 'guininDdi', 'avoidDdi', 'gilsinDetailText', 'yangmyeonDetailText',
+                'fortuneTypes', 'mainConcern', 'repeatPattern', 'customQuestion', 'checkedQuestions'
+            ];
+            fieldsToReset.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (el.tagName === 'SELECT') {
+                        el.selectedIndex = 0;
+                    } else if (el.type === 'number') {
+                        el.value = '0';
+                    } else {
+                        el.value = '';
+                    }
+                }
+            });
+            
+            // 기본 정보
+            const patterns = {
+                orderCode: /주문코드:\s*(.+)/,
+                name: /이름:\s*(.+)/,
+                gender: /성별:\s*(남자?|여자?)/,
+                partnerGender: /인연성별:\s*(.+)/,
+                birthDate: /생년월일:\s*(.+)/,
+                birthTime: /태어난 시간:\s*(.+)/,
+                birthPlace: /태어난 곳:\s*(.+)/,
+                loveStatus: /💕\s*연애 상태:\s*(.+)/,
+                jobStatus: /💼\s*직업 상태:\s*(.+)/,
+                package: /패키지:\s*(라이트|스탠다드|프리미엄|light|standard|premium)/i,
+                ilgan: /-\s*([甲乙丙丁戊己庚辛壬癸])\s*\(/,
+                dominantSipsung: /가장 강한 십성:\s*(비겁|식상|재성|관성|인성)/,
+                daeunStartAge: /대운 시작:\s*(\d+)/,
+                mainConcern: /(?:-\s*)?(?:💭\s*)?(?:가장 큰 고민|핵심 고민):\s*(.+)/,
+                repeatPattern: /(?:-\s*)?(?:🔄\s*)?반복되는 패턴:\s*(.+)/,
+                customQuestion: /(?:-\s*)?(?:✨\s*)?맞춤 질문(?:\s*\(프리미엄\))?:\s*(.+)/
+            };
+            
+            for (const [field, pattern] of Object.entries(patterns)) {
+                const match = text.match(pattern);
+                if (match) {
+                    const el = document.getElementById(field);
+                    if (el) {
+                        if (el.tagName === 'SELECT') {
+                            // 영문→한글 변환 (패키지)
+                            let val = match[1].trim().toLowerCase();
+                            if (field === 'package') {
+                                if (val === 'premium') val = '프리미엄';
+                                else if (val === 'standard') val = '스탠다드';
+                                else if (val === 'light') val = '라이트';
+                            }
+                            for (let opt of el.options) {
+                                if (opt.value.toLowerCase() === val || opt.text.toLowerCase().includes(val)) {
+                                    el.value = opt.value;
+                                    parsed++;
+                                    break;
+                                }
+                            }
+                        } else {
+                            el.value = match[1].trim();
+                            parsed++;
+                        }
+                    }
+                }
+            }
+            
+            // 사주 명식 파싱 (연주: 庚辰 → 형태에서 추출)
+            const pillarPatterns = {
+                yearPillar: /연주:\s*(\S{2})\s*→/,
+                monthPillar: /월주:\s*(\S{2})\s*→/,
+                dayPillar: /일주:\s*(\S{2})\s*→/,
+                hourPillar: /시주:\s*(\S{2})\s*→/
+            };
+            
+            for (const [field, pattern] of Object.entries(pillarPatterns)) {
+                const match = text.match(pattern);
+                if (match) {
+                    document.getElementById(field).value = match[1];
+                    parsed++;
+                }
+            }
+            
+            // 각 주별 십성 파싱 (천간(일간) / 지지(상관) 형태 → 일간/상관)
+            const sipsungFullPatterns = {
+                yearSipsung: /연주:.*천간\(([^)]+)\).*지지\(([^)]+)\)/,
+                monthSipsung: /월주:.*천간\(([^)]+)\).*지지\(([^)]+)\)/,
+                daySipsung: /일주:.*천간\(([^)]+)\).*지지\(([^)]+)\)/,
+                hourSipsung: /시주:.*천간\(([^)]+)\).*지지\(([^)]+)\)/
+            };
+            
+            for (const [field, pattern] of Object.entries(sipsungFullPatterns)) {
+                const match = text.match(pattern);
+                if (match) {
+                    document.getElementById(field).value = match[1] + '/' + match[2];
+                    parsed++;
+                }
+            }
+            
+            // 전체 대운 목록 파싱 (### 대운 섹션에서 모든 대운 추출)
+            const daeunSectionMatch = text.match(/### 대운[^\n]*\n([\s\S]*?)(?=###|$)/);
+            if (daeunSectionMatch) {
+                // 대운 목록만 추출 (- 0-9세: ... 형태의 라인들)
+                const daeunLines = daeunSectionMatch[1].match(/-\s*\d+-\d+세:[^\n]+/g);
+                if (daeunLines) {
+                    document.getElementById('daeunListText').value = daeunLines.join('\n');
+                    parsed++;
+                }
+            }
+
+            // 현재 대운 파싱 (← 현재 마커로 찾기, "20-29세: 丙子" 형태)
+            // 사주계산기 출력: "- 20-29세: 丙子 (편관/자) ← 현재"
+            const currentDaeunMatch = text.match(/(\d+)-(\d+)세:\s*(\S{2})\s*\([^)]+\)\s*←\s*현재/);
+            if (currentDaeunMatch) {
+                document.getElementById('currentDaeun').value = currentDaeunMatch[3]; // 한자 대운
+                document.getElementById('daeunStartAge').value = currentDaeunMatch[1]; // 시작 나이
+                parsed++;
+            }
+
+            // 현재 대운 십성 파싱 (편관/자 형태에서 천간 십성만 추출)
+            const daeunSipsungMatch = text.match(/(\d+)-(\d+)세:\s*\S+\s*\(([^/]+)\/[^)]+\)\s*←\s*현재/);
+            if (daeunSipsungMatch) {
+                const rawSipsung = daeunSipsungMatch[3].trim(); // 인덱스 3번이 십성
+                // 개별 십성 → 그룹으로 매핑
+                const sipsungMap = {
+                    '비견': '비겁', '겁재': '비겁',
+                    '식신': '식상', '상관': '식상',
+                    '편재': '재성', '정재': '재성',
+                    '편관': '관성', '정관': '관성',
+                    '편인': '인성', '정인': '인성',
+                    '일간': '비겁'
+                };
+                const sipsung = sipsungMap[rawSipsung] || rawSipsung;
+                document.getElementById('daeunSipsung').value = sipsung;
+                parsed++;
+            }
+            
+            // 세운 파싱 (乙巳 (을사년) 형태)
+            const seunMatch = text.match(/###\s*세운[^\n]*\n-\s*(\S{2}\s*\([^)]+\))/);
+            if (seunMatch) {
+                document.getElementById('seun2026').value = seunMatch[1];
+                parsed++;
+            }
+            
+            // 나이 계산 (생년월일에서)
+            const birthDateMatch = text.match(/생년월일:\s*(?:음력\s*)?(\d{4})년/);
+            if (birthDateMatch) {
+                const birthYear = parseInt(birthDateMatch[1]);
+                const currentYear = new Date().getFullYear();
+                const age = currentYear - birthYear;
+                document.getElementById('age').value = age;
+                parsed++;
+            }
+            
+            // 오행 파싱
+            const ohaengPatterns = {
+                wood: /목\(木\):\s*([\d.]+)/,
+                fire: /화\(火\):\s*([\d.]+)/,
+                earth: /토\(土\):\s*([\d.]+)/,
+                metal: /금\(金\):\s*([\d.]+)/,
+                water: /수\(水\):\s*([\d.]+)/
+            };
+            
+            for (const [field, pattern] of Object.entries(ohaengPatterns)) {
+                const match = text.match(pattern);
+                if (match) {
+                    document.getElementById(field).value = match[1];
+                    parsed++;
+                }
+            }
+            
+            // 십성 분포 파싱 (소수점 포함)
+            const sipsungCountPatterns = {
+                bigyeop: /비겁:\s*([\d.]+)/,
+                siksang: /식상:\s*([\d.]+)/,
+                jaeseong: /재성:\s*([\d.]+)/,
+                gwanseong: /관성:\s*([\d.]+)/,
+                inseong: /인성:\s*([\d.]+)/
+            };
+            
+            for (const [field, pattern] of Object.entries(sipsungCountPatterns)) {
+                const match = text.match(pattern);
+                if (match) {
+                    document.getElementById(field).value = match[1];
+                    parsed++;
+                }
+            }
+            
+            // 양/음 분포 파싱
+            const yinyangMatch = text.match(/### 양\/음 분포[^\n]*\n([\s\S]*?)(?=###|$)/);
+            if (yinyangMatch) {
+                document.getElementById('yinyangText').value = yinyangMatch[1].trim();
+                parsed++;
+            }
+
+            // 지장간 분석 파싱
+            const jijangganMatch = text.match(/### 지장간 분석[^\n]*\n([\s\S]*?)(?=###|$)/);
+            if (jijangganMatch) {
+                document.getElementById('jijangganText').value = jijangganMatch[1].trim();
+                parsed++;
+            }
+            
+            // 격국/용신 파싱
+            const gyeokgukMatch = text.match(/### 격국 & 용신[^\n]*\n([\s\S]*?)(?=###|$)/);
+            if (gyeokgukMatch) {
+                document.getElementById('gyeokgukText').value = gyeokgukMatch[1].trim();
+                parsed++;
+            }
+            
+            // 용신/희신/기신/구신 개별 파싱
+            const strengthMatch = text.match(/일간 강약:\s*(신강|신약)/);
+            if (strengthMatch) {
+                document.getElementById('dayganStrength').value = strengthMatch[1];
+                parsed++;
+            }
+            
+            const yongsinMatch = text.match(/용신:\s*([^\-\n]+)/);
+            if (yongsinMatch) {
+                document.getElementById('yongsin').value = yongsinMatch[1].trim();
+                parsed++;
+            }
+            const yongsinDescMatch = text.match(/용신:[^\-]*-\s*([^\n]+)/);
+            if (yongsinDescMatch) {
+                document.getElementById('yongsinDesc').value = yongsinDescMatch[1].trim();
+            }
+            
+            const huisinMatch = text.match(/희신:\s*([^\-\n]+)/);
+            if (huisinMatch) {
+                document.getElementById('huisin').value = huisinMatch[1].trim();
+                parsed++;
+            }
+            const huisinDescMatch = text.match(/희신:[^\-]*-\s*([^\n]+)/);
+            if (huisinDescMatch) {
+                document.getElementById('huisinDesc').value = huisinDescMatch[1].trim();
+            }
+            
+            const gisinMatch = text.match(/기신:\s*([^\-\n]+)/);
+            if (gisinMatch) {
+                document.getElementById('gisin').value = gisinMatch[1].trim();
+                parsed++;
+            }
+            const gisinDescMatch = text.match(/기신:[^\-]*-\s*([^\n]+)/);
+            if (gisinDescMatch) {
+                document.getElementById('gisinDesc').value = gisinDescMatch[1].trim();
+            }
+            
+            const gusinMatch = text.match(/구신:\s*([^\-\n]+)/);
+            if (gusinMatch) {
+                document.getElementById('gusin').value = gusinMatch[1].trim();
+                parsed++;
+            }
+            const gusinDescMatch = text.match(/구신:[^\-]*-\s*([^\n]+)/);
+            if (gusinDescMatch) {
+                document.getElementById('gusinDesc').value = gusinDescMatch[1].trim();
+            }
+
+            // 신살 파싱 (이름 목록)
+            const gilsinMatch = text.match(/🌟\s*길신[^:]*:\s*([^\n]+)/);
+            if (gilsinMatch) {
+                document.getElementById('gilsinText').value = gilsinMatch[1].trim();
+                parsed++;
+            }
+            const yangmyeonMatch = text.match(/⚡\s*양면신[^:]*:\s*([^\n]+)/);
+            if (yangmyeonMatch) {
+                document.getElementById('yangmyeonText').value = yangmyeonMatch[1].trim();
+                parsed++;
+            }
+
+            // 신살 상세 정보 파싱 (- 신살명: 설명 [위치] 형태)
+            // 신살 분석 섹션에서 상세 라인들 추출
+            const sinsalSectionMatch = text.match(/### 신살 분석[^\n]*\n([\s\S]*?)(?=###|$)/);
+            if (sinsalSectionMatch) {
+                const sinsalContent = sinsalSectionMatch[1];
+                // "- 신살명: 설명 [위치]" 형태의 라인들 추출
+                const detailLines = sinsalContent.match(/-\s*[^:]+:\s*[^\n]+\[[^\]]+\]/g);
+                if (detailLines) {
+                    // 길신과 양면신 분리 (길신 목록과 양면신 목록 기준)
+                    const gilsinNames = (document.getElementById('gilsinText').value || '').split(',').map(s => s.trim());
+                    const yangmyeonNames = (document.getElementById('yangmyeonText').value || '').split(',').map(s => s.trim());
+
+                    const gilsinDetails = [];
+                    const yangmyeonDetails = [];
+
+                    detailLines.forEach(line => {
+                        const nameMatch = line.match(/-\s*([^:]+):/);
+                        if (nameMatch) {
+                            const name = nameMatch[1].trim();
+                            if (gilsinNames.includes(name)) {
+                                gilsinDetails.push(line);
+                            } else if (yangmyeonNames.includes(name)) {
+                                yangmyeonDetails.push(line);
+                            }
+                        }
+                    });
+
+                    if (gilsinDetails.length > 0) {
+                        document.getElementById('gilsinDetailText').value = gilsinDetails.join('\n');
+                    }
+                    if (yangmyeonDetails.length > 0) {
+                        document.getElementById('yangmyeonDetailText').value = yangmyeonDetails.join('\n');
+                    }
+                }
+            }
+
+            // 합충형파해 파싱
+            const hapchungMatch = text.match(/### 합충형파해[^\n]*\n([\s\S]*?)(?=###|$)/);
+            if (hapchungMatch) {
+                const hapchungContent = hapchungMatch[1].trim();
+                // "사주 내 합충형파해 없음" 또는 "정보 없음"이 아닌 경우만 저장
+                if (hapchungContent && !hapchungContent.includes('없음')) {
+                    document.getElementById('hapchungText').value = hapchungContent;
+                    parsed++;
+                }
+            }
+
+            // 귀인/피해야할 띠 파싱
+            const guininMatch = text.match(/🌟\s*귀인 띠[^:]*:\s*([^←\n]+)/);
+            if (guininMatch) {
+                const guininText = guininMatch[1].trim();
+                if (guininText && !guininText.includes('정보 없음')) {
+                    document.getElementById('guininDdi').value = guininText;
+                    parsed++;
+                }
+            }
+            const avoidMatch = text.match(/⚠️\s*피해야 할 띠[^:]*:\s*([^←\n]+)/);
+            if (avoidMatch) {
+                const avoidText = avoidMatch[1].trim();
+                if (avoidText && !avoidText.includes('정보 없음')) {
+                    document.getElementById('avoidDdi').value = avoidText;
+                    parsed++;
+                }
+            }
+
+            // 질문 분야 파싱
+            const fortuneMatch = text.match(/선택한 운세(?:\s*분야)?:\s*(.+)/);
+            if (fortuneMatch) {
+                document.getElementById('fortuneTypes').value = fortuneMatch[1].trim();
+                parsed++;
+            }
+            
+            // 체크 질문 파싱
+            const questionMatches = text.match(/Q\d+:[^\n]+/g);
+            if (questionMatches) {
+                document.getElementById('checkedQuestions').value = questionMatches.join('\n');
+                parsed++;
+            }
+            
+            // 상태 표시
+            status.style.display = 'block';
+            if (parsed > 0) {
+                status.className = 'parse-status success';
+                status.textContent = `✅ ${parsed}개 항목 자동 채움 완료!`;
+                updateReferencePreview();
+            } else {
+                status.className = 'parse-status error';
+                status.textContent = '❌ 파싱할 데이터를 찾지 못했어요. 계산기 결과를 확인해주세요.';
+            }
+        }
+        
+        function clearAutoInput() {
+            document.getElementById('autoInput').value = '';
+            document.getElementById('parseStatus').style.display = 'none';
+        }
+        
+        // ========== 인연상 데이터 관련 함수 ==========
+        let inyeonData = null; // 전역 인연상 데이터
+        
+        // 인연상 입력 섹션 표시/숨김 (패키지 변경 시)
+        function updateInyeonSectionVisibility() {
+            const packageType = document.getElementById('package').value;
+            const inyeonSection = document.getElementById('inyeonInputSection');
+            if (packageType === '프리미엄' || packageType === 'premium') {
+                inyeonSection.classList.add('show');
+            } else {
+                inyeonSection.classList.remove('show');
+            }
+        }
+        
+        // 패키지 변경 이벤트 리스너
+        document.addEventListener('DOMContentLoaded', function() {
+            const packageSelect = document.getElementById('package');
+            if (packageSelect) {
+                packageSelect.addEventListener('change', updateInyeonSectionVisibility);
+                // 초기 상태 설정
+                updateInyeonSectionVisibility();
+            }
+        });
+        
+        // 인연상 데이터 파싱
+        function parseInyeonData() {
+            const input = document.getElementById('inyeonInput').value.trim();
+            const statusEl = document.getElementById('inyeonParseStatus');
+            
+            if (!input) {
+                statusEl.innerHTML = '❌ 인연상 데이터를 입력해주세요.';
+                statusEl.style.display = 'block';
+                statusEl.style.color = '#ff6b6b';
+                return;
+            }
+            
+            try {
+                const data = JSON.parse(input);
+                inyeonData = data;
+                
+                // 파싱된 정보 요약 표시
+                const inyeon = data.인연상 || data.inyeon || {};
+                const baewuja = data.배우자상 || data.baewuja || {};
+                
+                let summary = '✅ 인연상 데이터 적용 완료!<br>';
+                summary += `💘 인연상: ${inyeon.오행 || '?'}오행, ${inyeon.년주대표납음 || inyeon.일주도출납음 || inyeon.도출납음 || inyeon.대표납음 || '?'}<br>`;
+                summary += `💍 배우자상: ${baewuja.오행 || '?'}오행, ${baewuja.년주대표납음 || baewuja.일주도출납음 || baewuja.도출납음 || baewuja.대표납음 || '?'}`;
+                
+                statusEl.innerHTML = summary;
+                statusEl.style.display = 'block';
+                statusEl.style.color = '#6bff9b';
+            } catch (e) {
+                statusEl.innerHTML = '❌ JSON 파싱 오류: ' + e.message;
+                statusEl.style.display = 'block';
+                statusEl.style.color = '#ff6b6b';
+                inyeonData = null;
+            }
+        }
+        
+        // 인연상 입력 지우기
+        function clearInyeonInput() {
+            document.getElementById('inyeonInput').value = '';
+            document.getElementById('inyeonParseStatus').style.display = 'none';
+            inyeonData = null;
+        }
+        
+        // 인연상 프롬프트 정보 생성 (프롬프트에 삽입할 텍스트)
+        function getInyeonPromptText() {
+            if (!inyeonData) return '';
+            
+            const input = inyeonData.입력 || inyeonData.input || {};
+            const myInfo = inyeonData.본인 || {};
+            const inyeon = inyeonData.인연상 || inyeonData.inyeon || {};
+            const baewuja = inyeonData.배우자상 || inyeonData.baewuja || {};
+            
+            let text = '\n\n---\n## 📌 인연상 계산기 결과 (프리미엄 전용)\n\n';
+            
+            // 본인 정보
+            text += `### 본인 정보\n`;
+            text += `- 일주: ${input.일주 || '?'}\n`;
+            text += `- 성별: ${input.본인성별 || '?'}\n`;
+            text += `- 본인 납음: ${myInfo.납음 || '?'}\n`;
+            text += `- 본인 오행: ${myInfo.오행 || '?'}\n`;
+            text += `- 찾는 상대: ${input.상대성별 || '?'}\n\n`;
+            
+            // 인연상 정보
+            const inyeonNapeum = inyeon.년주대표납음 || inyeon.일주도출납음 || inyeon.도출납음 || inyeon.대표납음 || '?';
+            const inyeonOemo = inyeon.외모 || {};
+            text += `### 💘 인연상 (끌림의 인연)\n`;
+            text += `| 항목 | 내용 |\n|:--:|:--|\n`;
+            text += `| 오행 | ${inyeon.오행 || '?'} |\n`;
+            text += `| 납음 | ${inyeonNapeum} |\n`;
+            if (inyeonOemo.얼굴형) text += `| 얼굴형 | ${inyeonOemo.얼굴형} |\n`;
+            if (inyeonOemo.눈) text += `| 눈 | ${inyeonOemo.눈} |\n`;
+            if (inyeonOemo.피부톤) text += `| 피부톤 | ${inyeonOemo.피부톤} |\n`;
+            if (inyeonOemo.분위기) text += `| 분위기 | ${inyeonOemo.분위기} |\n`;
+            if (inyeonOemo.체형) text += `| 체형 | ${inyeonOemo.체형} |\n`;
+            text += '\n';
+            
+            // 배우자상 정보
+            const baewujaNapeum = baewuja.년주대표납음 || baewuja.일주도출납음 || baewuja.도출납음 || baewuja.대표납음 || '?';
+            const baewujaOemo = baewuja.외모 || {};
+            text += `### 💍 배우자상 (안정의 인연)\n`;
+            text += `| 항목 | 내용 |\n|:--:|:--|\n`;
+            text += `| 오행 | ${baewuja.오행 || '?'} |\n`;
+            text += `| 납음 | ${baewujaNapeum} |\n`;
+            if (baewujaOemo.얼굴형) text += `| 얼굴형 | ${baewujaOemo.얼굴형} |\n`;
+            if (baewujaOemo.눈) text += `| 눈 | ${baewujaOemo.눈} |\n`;
+            if (baewujaOemo.피부톤) text += `| 피부톤 | ${baewujaOemo.피부톤} |\n`;
+            if (baewujaOemo.분위기) text += `| 분위기 | ${baewujaOemo.분위기} |\n`;
+            if (baewujaOemo.체형) text += `| 체형 | ${baewujaOemo.체형} |\n`;
+            text += '\n';
+            
+            // 해석 안내
+            text += `### ⚠️ 작성 안내 (필독!)\n`;
+            text += `\n🚨🚨🚨 **중요: 가이드 파일의 예시가 아닌, 위 표의 실제 데이터를 반드시 사용하세요!**\n`;
+            text += `- 인연상 오행: **${inyeon.오행}** ← 이 값 사용!\n`;
+            text += `- 인연상 납음: **${inyeon.년주대표납음 || inyeon.일주도출납음 || inyeon.도출납음 || inyeon.대표납음 || '?'}** ← 이 값 사용!\n`;
+            text += `- 배우자상 오행: **${baewuja.오행}** ← 이 값 사용!\n`;
+            text += `- 배우자상 납음: **${baewuja.년주대표납음 || baewuja.일주도출납음 || baewuja.도출납음 || baewuja.대표납음 || '?'}** ← 이 값 사용!\n\n`;
+            text += `**⛔ 절대 금지:**\n`;
+            text += `- \`<!-- 인연상 SVG: ... -->\` 이런 형식 사용 ❌\n`;
+            text += `- \`< >\` 꺾쇠 괄호로 이미지 위치 표시 ❌\n\n`;
+            text += `**✅ 필수:**\n`;
+            text += `- 이미지 위치는 반드시 \`[인연상_이미지_삽입]\` 대괄호 형식으로!\n`;
+            text += `- **인연상 + 배우자상 둘 다 작성** (하나라도 빠지면 오류!)\n\n`;
+            text += `위 인연상/배우자상 정보를 바탕으로 아래 내용을 작성해주세요:\n`;
+            text += `1. **외형적 특징** - 위 표의 얼굴형, 눈, 피부톤, 분위기를 자연스럽게 풀어서 묘사\n`;
+            text += `2. **성격적 특징** - 오행(${inyeon.오행}/${baewuja.오행}) 기반 성격을 해석\n`;
+            text += `3. **인연상 이미지는 별도 제공** - 카드 이미지가 삽입될 위치에 \`[인연상_이미지_삽입]\` 표시\n`;
+            text += `\n(이미지 생성이나 SVG 코드는 필요 없습니다.)\n`;
+            
+            return text;
+        }
+        
+        // Part 2 참조 미리보기 업데이트
+        function updateReferencePreview() {
+            const ilgan = document.getElementById('ilgan').value;
+            const ilganName = ilganNames[ilgan] || ilgan;
+            const dominantSipsung = document.getElementById('dominantSipsung').value;
+            const secondSipsung = document.getElementById('secondSipsung').value;
+            const daeunSipsung = document.getElementById('daeunSipsung').value;
+            const packageType = document.getElementById('package').value;
+            
+            // 오행 분석
+            const ohaengValues = ohaengKeys.map(k => parseFloat(document.getElementById(k).value) || 0);
+            const maxOhaeng = Math.max(...ohaengValues);
+            const minOhaeng = Math.min(...ohaengValues);
+            const strongOhaeng = ohaengNames[ohaengValues.indexOf(maxOhaeng)] || '없음';
+            const weakOhaeng = ohaengNames[ohaengValues.indexOf(minOhaeng)] || '없음';
+            
+            let refs = [];
+            
+            // 공통
+            refs.push(`<div class="ref-item">📌 <span class="ref-section">[B. 공통 프롬프트 원칙]</span> — 어투, 소름 원칙, 질문지 연결</div>`);
+            
+            // 일간
+            refs.push(`<div class="ref-item">1️⃣ <span class="ref-section">[C. 일간 해석] > [${ilgan} ${ilganName}]</span></div>`);
+            
+            // 오행
+            refs.push(`<div class="ref-item">2️⃣ <span class="ref-section">[D. 오행 분석]</span> — 강한 오행: ${strongOhaeng}, 약한 오행: ${weakOhaeng}</div>`);
+            
+            // 연애/직업/재물
+            refs.push(`<div class="ref-item">3️⃣ <span class="ref-section">[E. 연애운] > [${dominantSipsung} 강함]</span></div>`);
+            refs.push(`<div class="ref-item">4️⃣ <span class="ref-section">[F. 직업운] > [${dominantSipsung} 강함]</span></div>`);
+            refs.push(`<div class="ref-item">5️⃣ <span class="ref-section">[G. 재물운] > [${dominantSipsung} 강함]</span></div>`);
+            
+            // 대운
+            refs.push(`<div class="ref-item">6️⃣ <span class="ref-section">[H. 대운 해석] > [${daeunSipsung} 대운]</span></div>`);
+            
+            // 세운
+            refs.push(`<div class="ref-item">7️⃣ <span class="ref-section">[I. 세운 해석] > [일간별 2026년 운세] > [${ilgan}]</span></div>`);
+            
+            // 십성 조합
+            if (secondSipsung && secondSipsung !== dominantSipsung) {
+                refs.push(`<div class="ref-item">8️⃣ <span class="ref-section">[K. 십성 조합 해석] > [${dominantSipsung} + ${secondSipsung}]</span></div>`);
+            }
+            
+            // 월운
+            refs.push(`<div class="ref-item">9️⃣ <span class="ref-section">[L. 월운 해석 원칙]</span> — 일간 ${ilgan} 기준 12개월</div>`);
+            
+            // 자주 묻는 질문
+            refs.push(`<div class="ref-item">🔟 <span class="ref-section">[M. 자주 묻는 질문 템플릿]</span> — 체크된 질문 유형별</div>`);
+            
+            // 건강운 (프리미엄)
+            if (packageType === '프리미엄') {
+                refs.push(`<div class="ref-item">1️⃣1️⃣ <span class="ref-section">[N. 건강운]</span> — ${strongOhaeng} 강함 (오행 수치는 참고값, 종합 해석 필요)</div>`);
+                // V5 추가: 역학통합 14~18번
+                refs.push(`<div class="ref-item">1️⃣4️⃣ <span class="ref-section">[O1. 성명학]</span> — 이름의 기운 <span class="expansion-badge vibration">③진동</span></div>`);
+                refs.push(`<div class="ref-item">1️⃣5️⃣ <span class="ref-section">[O2. 주역]</span> — 올해의 방향 <span class="expansion-badge psyche">②심리</span></div>`);
+                refs.push(`<div class="ref-item">1️⃣6️⃣ <span class="ref-section">[O3. 택일학]</span> — 좋은 타이밍 <span class="expansion-badge celestial">④천문</span></div>`);
+                refs.push(`<div class="ref-item">1️⃣7️⃣ <span class="ref-section">[O4. 관상학]</span> — 외형 조언 <span class="expansion-badge sensory">⑤감각</span></div>`);
+                refs.push(`<div class="ref-item">1️⃣8️⃣ <span class="ref-section">[O5. 풍수학]</span> — 공간 조언 <span class="expansion-badge sensory">⑤감각</span></div>`);
+            }
+            
+            document.getElementById('referenceList').innerHTML = refs.join('');
+        }
+        
+        // 입력값 변경 시 미리보기 업데이트
+        document.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('change', updateReferencePreview);
+        });
+        
+        // 프롬프트 생성
+        function generatePrompt() {
+            try {
+            const name = document.getElementById('name').value || '고객';
+            const gender = document.getElementById('gender').value;
+            const partnerGender = document.getElementById('partnerGender').value || '';
+            const birthDate = document.getElementById('birthDate').value;
+            const birthTime = document.getElementById('birthTime').value;
+            const birthPlace = document.getElementById('birthPlace').value;
+            const packageType = document.getElementById('package').value;
+            const packageTypeEn = packageType === '프리미엄' ? 'premium' : packageType === '스탠다드' ? 'standard' : 'light';
+            const age = document.getElementById('age').value;
+            const loveStatus = document.getElementById('loveStatus').value;
+            const jobStatus = document.getElementById('jobStatus').value;
+            
+            const yearPillar = document.getElementById('yearPillar').value;
+            const monthPillar = document.getElementById('monthPillar').value;
+            const dayPillar = document.getElementById('dayPillar').value;
+            const hourPillar = document.getElementById('hourPillar').value;
+            
+            const yearSipsung = document.getElementById('yearSipsung').value;
+            const monthSipsung = document.getElementById('monthSipsung').value;
+            const daySipsung = document.getElementById('daySipsung').value;
+            const hourSipsung = document.getElementById('hourSipsung').value;
+            
+            const ilgan = document.getElementById('ilgan').value;
+            const ilganName = ilganNames[ilgan] || ilgan;
+            const dominantSipsung = document.getElementById('dominantSipsung').value;
+            const secondSipsung = document.getElementById('secondSipsung').value;
+            const daeunSipsung = document.getElementById('daeunSipsung').value;
+            
+            const bigyeop = document.getElementById('bigyeop').value;
+            const siksang = document.getElementById('siksang').value;
+            const jaeseong = document.getElementById('jaeseong').value;
+            const gwanseong = document.getElementById('gwanseong').value;
+            const inseong = document.getElementById('inseong').value;
+            
+            const jijangganText = document.getElementById('jijangganText').value;
+            const gyeokgukText = document.getElementById('gyeokgukText').value;
+            const gilsinText = document.getElementById('gilsinText').value;
+            const yangmyeonText = document.getElementById('yangmyeonText').value;
+            const gilsinDetailText = document.getElementById('gilsinDetailText').value;
+            const yangmyeonDetailText = document.getElementById('yangmyeonDetailText').value;
+            const hapchungText = document.getElementById('hapchungText').value;
+            const guininDdi = document.getElementById('guininDdi').value;
+            const avoidDdi = document.getElementById('avoidDdi').value;
+
+            // 용신/기신 변수
+            const dayganStrength = document.getElementById('dayganStrength').value;
+            const yongsin = document.getElementById('yongsin').value;
+            const yongsinDesc = document.getElementById('yongsinDesc').value;
+            const huisin = document.getElementById('huisin').value;
+            const huisinDesc = document.getElementById('huisinDesc').value;
+            const gisin = document.getElementById('gisin').value;
+            const gisinDesc = document.getElementById('gisinDesc').value;
+            const gusin = document.getElementById('gusin').value;
+            const gusinDesc = document.getElementById('gusinDesc').value;
+            
+            const wood = parseFloat(document.getElementById('wood').value) || 0;
+            const fire = parseFloat(document.getElementById('fire').value) || 0;
+            const earth = parseFloat(document.getElementById('earth').value) || 0;
+            const metal = parseFloat(document.getElementById('metal').value) || 0;
+            const water = parseFloat(document.getElementById('water').value) || 0;
+            
+            const currentDaeun = document.getElementById('currentDaeun').value;
+            const daeunStartAge = document.getElementById('daeunStartAge').value;
+            const daeun = currentDaeun + (daeunSipsung ? `(${daeunSipsung})` : '');
+            const seun = document.getElementById('seun2026').value;
+            const daeunListText = document.getElementById('daeunListText').value;
+            
+            // ⭐ 인연상 자동 매핑 (프리미엄용)
+            const yukHapMap = {
+                '子': { partner: '丑', name: '신뢰의 인연', animal: '소' },
+                '丑': { partner: '子', name: '지혜의 인연', animal: '쥐' },
+                '寅': { partner: '亥', name: '감동의 인연', animal: '돼지' },
+                '卯': { partner: '戌', name: '충성의 인연', animal: '개' },
+                '辰': { partner: '酉', name: '세련의 인연', animal: '닭' },
+                '巳': { partner: '申', name: '지성의 인연', animal: '원숭이' },
+                '午': { partner: '未', name: '포용의 인연', animal: '양' },
+                '未': { partner: '午', name: '에너지의 인연', animal: '말' },
+                '申': { partner: '巳', name: '통찰의 인연', animal: '뱀' },
+                '酉': { partner: '辰', name: '비전의 인연', animal: '용' },
+                '戌': { partner: '卯', name: '감성의 인연', animal: '토끼' },
+                '亥': { partner: '寅', name: '열정의 인연', animal: '호랑이' }
+            };
+            
+            // 인연상 상세 해석 데이터 (인연 지지 기준)
+            const inyeonDetailMap = {
+                '子': {
+                    keyword: '차분함, 이성적, 분석력, 신중함',
+                    외형: '차분하고 지적인 인상, 눈빛이 깊고 생각이 많아 보이는 얼굴, 단정하고 깔끔한 스타일, 과하지 않은 자연스러운 매력',
+                    성격: '감정보다 이성으로 판단하는 타입, 조용히 관찰하고 분석하는 편, 속마음을 쉽게 드러내지 않지만 한번 마음 열면 깊이 있는 대화 가능, 계획적이고 신중한 성격',
+                    주의: '처음엔 차갑게 느껴질 수 있어요. 감정 표현이 서툴러서 오해받기도 해요. 너무 분석적으로 접근하면 거리감 생길 수 있어요.',
+                    궁합힌트: '급하게 다가가지 말고 천천히 신뢰 쌓기, 논리적인 대화로 마음 열기, 지적인 관심사 공유하면 급속도로 가까워져요',
+                    만남장소: '도서관, 서점, 독서 모임, 세미나, 강연회, 조용한 카페, 전시회'
+                },
+                '丑': {
+                    keyword: '안정감, 성실함, 실행력, 묵묵함',
+                    외형: '듬직하고 안정감 있는 인상, 화려하기보다 편안한 느낌, 체격이 탄탄하거나 든든해 보이는 편, 꾸밈없는 자연스러운 스타일',
+                    성격: '말보다 행동으로 보여주는 타입, 한번 약속하면 반드시 지키려 해요, 급하게 변하지 않는 일관된 성격, 묵묵히 옆에서 지켜주는 스타일',
+                    주의: '변화에 느린 편이라 답답할 수 있어요. 감정 표현이 서툴러서 무뚝뚝해 보여요. 고집이 있어서 설득에 시간 걸려요.',
+                    궁합힌트: '꾸준함과 성실함을 인정해주기, 급하게 재촉하지 않기, 작은 행동의 의미를 알아봐 주면 감동해요',
+                    만남장소: '직장, 업무 관련 모임, 동네 단골 가게, 취미 동호회 (등산, 운동 등)'
+                },
+                '寅': {
+                    keyword: '추진력, 보호본능, 리더십, 카리스마',
+                    외형: '눈빛이 강렬하고 카리스마 있는 인상, 자신감 있는 걸음걸이와 자세, 스포티하거나 활동적인 스타일, 존재감이 확실한 편',
+                    성격: '목표가 생기면 강하게 밀어붙이는 타입, 정의감 강하고 약자 편 들어주는 성격, 솔직하고 직설적인 화법, 겉은 강해 보여도 속정 깊어요',
+                    주의: '성격이 급해서 충돌 있을 수 있어요. 자존심 강해서 먼저 사과 잘 안 해요. 통제하려 들면 역효과.',
+                    궁합힌트: '자존심 세워주면서 의견 전달하기, 함께 도전할 수 있는 활동 좋아요, 진심 어린 응원이 큰 힘이 돼요',
+                    만남장소: '스포츠 동호회, 헬스장, 아웃도어 활동 (등산, 캠핑), 사회활동, 봉사 모임'
+                },
+                '卯': {
+                    keyword: '예술적, 공감력, 섬세함, 부드러움',
+                    외형: '부드럽고 감성적인 인상, 예술가 느낌, 독특한 개성, 패션 센스가 있거나 스타일리시한 편, 눈빛이 맑고 표정이 풍부해요',
+                    성격: '감수성 풍부하고 공감 능력 뛰어나요, 예술적 감각이 있는 편, 분위기 파악 빠르고 눈치 있어요, 갈등 싫어하고 평화로운 관계 추구',
+                    주의: '우유부단해 보일 때 있어요. 감정 기복이 있는 편. 직접적인 표현보다 돌려 말해요.',
+                    궁합힌트: '감성을 존중하고 공감해주기, 예술적 취향 함께 나누면 가까워져요, 강압적으로 다가가면 도망가요',
+                    만남장소: '갤러리, 미술관, 전시회, 음악 공연, 페스티벌, 감성 카페, 소품샵'
+                },
+                '辰': {
+                    keyword: '리더십, 야망, 큰 그림, 카리스마',
+                    외형: '당당하고 자신감 넘치는 인상, 눈빛에 야망이 보이는 편, 고급스럽거나 세련된 스타일 선호, 존재감과 아우라가 있어요',
+                    성격: '큰 꿈과 비전을 가진 타입, 리더 역할을 자연스럽게 맡아요, 자존심 높고 인정욕구 있어요, 능력 있는 사람에게 끌려요',
+                    주의: '이상이 높아서 현실과 괴리 있을 수 있어요. 자존심 건드리면 관계 어려워져요. 가끔 허세로 보일 때도 있어요.',
+                    궁합힌트: '꿈과 비전을 진지하게 들어주기, 능력을 인정해주면 마음 열어요, 함께 성장할 수 있는 파트너로 어필',
+                    만남장소: '비즈니스 네트워킹, 고급 레스토랑, 호텔 라운지, 스타트업 모임, 투자 세미나'
+                },
+                '巳': {
+                    keyword: '신비로움, 전략적, 직관력, 깊이',
+                    외형: '신비롭고 미스터리한 인상, 눈빛이 깊고 꿰뚫어 보는 느낌, 세련되고 도시적인 스타일, 말수는 적지만 존재감 있어요',
+                    성격: '직관력이 뛰어나고 눈치 빨라요, 속마음을 잘 드러내지 않아요, 전략적으로 생각하고 행동해요, 한번 마음 주면 깊이 빠져요',
+                    주의: '속을 알 수 없어서 답답할 수 있어요. 의심이 많은 편이에요. 마음 열기까지 시간 오래 걸려요.',
+                    궁합힌트: '급하게 캐묻지 않기, 신뢰를 쌓으면 깊은 관계 가능, 지적인 대화로 관심 끌기',
+                    만남장소: '와인바, 재즈바, 심리학/철학 모임, 타로, 명상 관련 모임'
+                },
+                '午': {
+                    keyword: '열정, 낙천적, 활력, 사교성',
+                    외형: '밝고 화사한 인상, 표정이 풍부하고 웃음이 많아요, 화려하거나 눈에 띄는 스타일, 에너지가 넘쳐 보여요',
+                    성격: '긍정적이고 낙천적인 성격, 사교성 좋고 어디서든 인기 있어요, 열정적으로 사랑하는 타입, 분위기 메이커 역할, 자유로운 영혼',
+                    주의: '관심이 쉽게 바뀔 수 있어요. 깊이보다 넓이를 추구하는 편. 충동적인 결정할 때 있어요.',
+                    궁합힌트: '함께 즐길 수 있는 활동 제안하기, 자유로움을 존중해주기, 밝은 에너지로 맞춰주면 좋아요',
+                    만남장소: '파티, 모임, 페스티벌, 여행 동호회, 댄스, 운동 클래스'
+                },
+                '未': {
+                    keyword: '따뜻함, 조화, 배려, 평화',
+                    외형: '온화하고 편안한 인상, 미소가 따뜻하고 친근해요, 부드러운 색감의 스타일 선호, 함께 있으면 편안해지는 느낌',
+                    성격: '배려심 깊고 남 챙기기 좋아해요, 갈등 싫어하고 조화를 추구해요, 다정하고 포용력 있는 성격, 가정적이고 안정 지향적',
+                    주의: '우유부단해 보일 때 있어요. 자기 의견 표현이 약한 편. 너무 맞춰주다 지칠 수 있어요.',
+                    궁합힌트: '따뜻함을 알아봐 주기, 편안한 분위기에서 대화하기, 급하게 결정 요구하지 않기',
+                    만남장소: '요리 클래스, 베이킹, 반려동물 모임, 힐링 여행, 템플스테이'
+                },
+                '申': {
+                    keyword: '재치, 유연함, 다재다능, 영리함',
+                    외형: '똑똒하고 영리해 보이는 인상, 눈빛이 빠르고 생기 있어요, 트렌디하고 센스 있는 스타일, 젊어 보이고 활기찬 느낌',
+                    성격: '머리 회전 빠르고 재치 있어요, 새로운 것에 대한 호기심 많아요, 어떤 상황에든 잘 적응해요, 유머 감각 있고 대화 재밌어요',
+                    주의: '가볍게 보일 때 있어요. 한 가지에 집중 못 할 수 있어요. 진심인지 장난인지 헷갈려요.',
+                    궁합힌트: '지적인 자극 주고받기, 새로운 경험 함께하기, 유머로 마음 열 수 있어요',
+                    만남장소: 'IT/테크 모임, 보드게임 카페, 방탈출, 외국어 스터디'
+                },
+                '酉': {
+                    keyword: '디테일, 품격, 완벽주의, 심미안',
+                    외형: '세련되고 단정한 인상, 옷, 헤어 등 디테일 신경 많이 써요, 깔끔하고 정돈된 스타일, 품위 있고 고급스러운 느낌',
+                    성격: '완벽주의 성향이 있어요, 심미안이 뛰어나고 안목 있어요, 자기 관리 철저한 편, 논리적이고 분석적, 인정받고 싶은 욕구',
+                    주의: '기준이 높아서 까다로워 보여요. 비판적으로 느껴질 수 있어요. 감정보다 논리 앞세워요.',
+                    궁합힌트: '센스와 안목 인정해주기, 정성 들인 모습 보여주기, 디테일한 배려에 감동해요',
+                    만남장소: '와인 클래스, 미식 모임, 패션/뷰티 관련 행사, 클래식 공연, 오페라'
+                },
+                '戌': {
+                    keyword: '의리, 신뢰, 보호, 정직',
+                    외형: '믿음직하고 듬직한 인상, 눈빛이 진실되고 따뜻해요, 꾸밈없는 자연스러운 스타일, 편안하고 친근한 느낌',
+                    성격: '의리 있고 한번 편 들면 끝까지, 정직하고 거짓말 못 해요, 보호본능 강해서 챙겨주려 해요, 약속 중시하고 신뢰 중요하게 생각해요',
+                    주의: '의심하면 마음 닫아요. 융통성 부족할 때 있어요. 낯선 사람에게 경계심 있어요.',
+                    궁합힌트: '신뢰를 보여주는 게 중요해요, 진심을 알아봐 주면 평생 편, 가족/친구 소개하면 진지한 거예요',
+                    만남장소: '봉사활동, 사회공헌 모임, 반려동물 카페/공원, 오래된 친구 소개'
+                },
+                '亥': {
+                    keyword: '감성, 순수함, 희생, 로맨틱',
+                    외형: '순수하고 맑은 인상, 눈빛이 몽글몽글하고 부드러워요, 편안하고 자연스러운 스타일, 친근하고 다가가기 쉬운 느낌',
+                    성격: '감수성 풍부하고 눈물 많아요, 남을 위해 희생하는 마음 있어요, 순수하고 때 묻지 않은 느낌, 로맨틱하고 감동받기 쉬워요',
+                    주의: '너무 퍼주다 이용당할 수 있어요. 현실적 판단 부족할 때 있어요. 우유부단하게 보여요.',
+                    궁합힌트: '순수한 마음 지켜주기, 작은 감동 포인트 만들어주기, 진심으로 대하면 다 알아요',
+                    만남장소: '봉사활동, 종교 모임, 자연 속 힐링 장소, 감성 영화관, 북카페'
+                }
+            };
+            
+            // 일지에서 지지 추출 (두 번째 글자)
+            const dayJi = dayPillar ? dayPillar[1] : null;
+            const inyeonInfo = dayJi ? yukHapMap[dayJi] : null;
+            
+            const inyeonJiji = inyeonInfo ? inyeonInfo.partner : '?';
+            const inyeonName = inyeonInfo ? inyeonInfo.name : '?';
+            const inyeonAnimal = inyeonInfo ? inyeonInfo.animal : '?';
+            
+            // 해당 인연의 상세 해석 가져오기
+            const inyeonDetail = inyeonInfo ? inyeonDetailMap[inyeonInfo.partner] : null;
+            
+            // 🆕 인연상 태그 생성 (결과생성기 파싱용)
+            const hanjaToHangul = {
+                '子': '자', '丑': '축', '寅': '인', '卯': '묘',
+                '辰': '진', '巳': '사', '午': '오', '未': '미',
+                '申': '신', '酉': '유', '戌': '술', '亥': '해'
+            };
+            let inyeonTag = '[인연상_이미지_삽입]';
+            let inyeonTagBoth = null;
+            // 인연상 계산기 정보가 있으면 프롬프트에 포함
+            const inyeonCalcInfo = getInyeonPromptText();
+            
+            const fortuneTypes = document.getElementById('fortuneTypes').value;
+            const mainConcern = document.getElementById('mainConcern').value;
+            const repeatPattern = document.getElementById('repeatPattern').value;
+            const checkedQuestions = document.getElementById('checkedQuestions').value;
+            const customQuestion = document.getElementById('customQuestion').value;
+            
+            // 오행 분석
+            const ohaengValues = [wood, fire, earth, metal, water];
+            const maxVal = Math.max(...ohaengValues);
+            const minVal = Math.min(...ohaengValues);
+            const strongOhaeng = ohaengNames[ohaengValues.indexOf(maxVal)] || '없음';
+            const weakOhaeng = minVal === 0 ? (ohaengNames[ohaengValues.indexOf(minVal)] || '없음') : null;
+            
+            // 오행 순환 판정
+            const flowChain = [
+                ['목', '화', wood, fire],
+                ['화', '토', fire, earth],
+                ['토', '금', earth, metal],
+                ['금', '수', metal, water],
+                ['수', '목', water, wood]
+            ];
+            
+            let flowCount = 0;
+            let flowDetails = [];
+            
+            flowChain.forEach(([from, to, fromVal, toVal]) => {
+                const valid = fromVal > 0 && toVal > 0;
+                flowDetails.push(`${from}→${to} ${valid ? '✓' : '✗'}`);
+                if (valid) flowCount++;
+            });
+            
+            const flowType = flowCount >= 4 ? '완전순환형' : (flowCount >= 2 ? '부분순환형' : '단절형');
+            
+            // 프롬프트 생성 시작 (V6: 한 번에 생성)
+
+            let prompt = `## 🚨 해석 전 필수 규칙 (반드시 먼저 읽기!)
+
+### 0. ⛔ 절대 금지 사항 (가장 중요!)
+\`\`\`
+❌ 직접 계산 금지 - 오행/신살/십성 직접 계산하지 마세요
+❌ 신살 추가 금지 - 아래 목록에 없는 신살 만들지 마세요
+❌ 질문 만들기 금지 - 아래 질문 외에 추가하지 마세요
+\`\`\`
+
+### 1. 스킬 파일 먼저 읽기
+- \`0_MUST_READ_FIRST.md\` (데이터 규칙) ← 최우선!
+- \`09_종합해석_원칙.md\` (해석 원칙)
+
+### 2. 데이터 우선순위
+\`\`\`
+이 프롬프트의 데이터 > 스킬 파일의 공식/이론
+\`\`\`
+| 항목 | ✅ 사용할 것 | ❌ 금지 |
+|:---|:---|:---|
+| 오행 분포 | 아래 숫자 그대로 | 직접 계산 |
+| 양음 비율 | 아래 비율 그대로 | 다시 세기 |
+| 신살 | 아래 목록만 | 추가/계산 |
+| 질문 답변 | 아래 질문만 | 만들기 |
+
+### 3. 🚨 신살 규칙 (자주 틀리는 부분!)
+\`\`\`
+아래 신살 목록의 개수 = 해석할 개수
+14개면 14개만, 8개면 8개만!
+"신살 20종" 해석법은 참고용일 뿐, 채우려고 추가 금지!
+\`\`\`
+
+### 4. 🚨 질문 규칙
+\`\`\`
+아래 [맞춤 질문]에 있는 질문만 답변!
+"있을 법한 질문" 만들어서 추가 금지!
+\`\`\`
+
+### 5. 종합 해석 원칙
+- ❌ 단일 요소로 단정 금지 ("상관격이라 조직 안 맞아요")
+- ✅ 상충되면 둘 다 언급 ("창의적이지만, 양인살이 있어서 조직에서도 빛나요")
+- ✅ 격국 + 십성 + 신살 모두 확인 후 종합
+
+### 6. 카테고리별 필수 체크
+모든 운세(직업/연애/재물 등) 해석 시:
+\`\`\`
+□ 격국 → 큰 틀
+□ 십성 분포 → 강한 에너지
+□ 신살 → 특수 기운
+□ 상충점 → 있으면 둘 다 언급!
+\`\`\`
+
+### 7. ⚠️ 부정적 표현 3초 멈추기!
+**"피해야 할 것" 쓰기 전 확인:**
+1. 격국/십성만 보고 "~안 맞아요" 쓰려고 했나?
+2. 신살 목록에 반대되는 신살 있나?
+   - 양인살 → 군대/결단력 조직 OK
+   - 장성살 → 조직 성장 OK
+   - 협록 → 협업 OK
+3. 있으면 → **둘 다 언급** 필수!
+
+❌ "상관격이라 군대식 조직 피하세요"
+✅ "상관격이라 애매한 권위는 불편하지만, 양인살이 있어서 명확한 규칙의 조직에서는 오히려 빛나요"
+
+---
+
+# 🚀 한 번에 전체 생성해주세요!
+
+⚠️ **중요: 끊지 말고 처음부터 끝까지 완성!**
+- ❌ "1차 완료", "이어서" 같은 문구 넣지 마세요
+- ✅ META 블록부터 마무리까지 하나의 연속된 문서로!
+
+---
+
+## 📚 필수 참조 파일
+
+| 순위 | 파일 | 용도 |
+|:---:|------|------|
+| 1️⃣ | **good_example_premium_v5.md** | 🎨 구조/표형식/톤앤매너 (🔴 그대로 따라하기) |
+| 2️⃣ | **pattern_${packageTypeEn}.md** | 📋 해석 내용/분석 공식 |
+
+---
+
+## 🔴 스킬 파일 필수 참조 (해석 전 반드시 읽기!)
+
+⚠️ **절대 규칙: 스킬 파일을 읽지 않고 해석하면 안 됩니다!**
+
+| 스킬 파일 | 용도 | 언제 참조? |
+|-----------|------|-----------|
+| **09_종합해석_원칙.md** | 🔴 종합 해석 원칙 | ⭐ 모든 해석 전 필독! |
+| **01_기초_천간지지오행.md** | 천간/지지/오행 기초 | 모든 해석 |
+| **02_십성_해석.md** | 십성 해석 | 성격, 직업, 연애 |
+| **03_합충형파해.md** | 합충형파해 | 관계, 운세 변화 |
+| **04_병존반복구조.md** | 병존/반복 구조 | 특수 패턴 |
+| **05_신살_48종.md** | 신살 해석 톤/문체 | ⚠️ 계산기 결과 신살만 해석! |
+| **06_대운세운.md** | 대운/세운 | 올해 운세, 월별 |
+| **07_격국용신.md** | 격국/용신 | 직업, 에너지 |
+| **08_프리미엄_해석방법.md** | 해석 방법 + ⭐톤앤매너 | 문체, HTML주석태그, 공감포인트 |
+| **10_인연상_가이드.md** | 인연상/배우자상 도출 | 🟣 프리미엄 필수! |
+
+### ⭐ 톤앤매너 필수 규칙 (08_프리미엄_해석방법.md 참조)
+
+**1. HTML 주석 태그 사용:**
+- \`<!-- 공감 -->\` ~ \`<!-- /공감 -->\`: 독자 감정에 공감 ("이런 적 있죠?")
+- \`<!-- 왜그런지 -->\` ~ \`<!-- /왜그런지 -->\`: 명리학적 근거 설명
+- \`<!-- 주의 -->\` ~ \`<!-- /주의 -->\`: 주의사항
+- \`<!-- 희망 -->\` ~ \`<!-- /희망 -->\`: 희망적 메시지
+- \`<!-- 조언 -->\` ~ \`<!-- /조언 -->\`: 실질적 해결법
+
+**2. 문체:**
+- ✅ "~예요", "~거든요", "~있죠?", "~거예요" (친근)
+- ❌ "~합니다", "~입니다" (딱딱함)
+- 공감 패턴: "이런 적 있죠?" → "맞아요. 그게 바로~"
+
+**3. 공감 포인트 4개 형식:**
+각 주요 섹션(일간, 성격 등)에 **공감 포인트 1~4** 필수!
+
+**4. 오행 막대그래프:**
+\`\`\`
+화(火) ████████████████████████ 5.9개 ⭐ 최강
+목(木) ██████████ 2.6개
+금(金) █ 0.3개 ⚠️ 최약
+\`\`\`
+
+**5. 감정 흐름 순서:**
+공감 → 왜그런지 → 주의점 → 희망 → 조언
+
+---
+
+### ❌ 스킬 파일 안 읽고 쓴 해석 (나쁜 예)
+> "건강에 주의가 필요해요."
+> "이 시기는 조심하세요."
+→ 두리뭉실, 근거 없음, 해결법 없음
+
+### ✅ 스킬 파일 참조해서 쓴 해석 (좋은 예)
+> "8월에 심장이랑 혈압 조심하세요. 화(火) 기운이 과해지는 달이에요.
+> - 야근 줄이세요
+> - 매운 음식, 술 피하세요
+> - 물 하루 2리터 드세요"
+→ 구체적, 근거 있음, 해결법 있음
+
+---
+
+⚠️ **주의:** "도대성" 이름이 결과물에 나오면 ❌ 치명적 오류!
+${inyeonCalcInfo ? `
+🚨🚨🚨 **인연상/배우자상 해석 시 필독!**
+
+📌 **반드시 참조:** \`10_인연상_가이드.md\`
+- 도출 공식, 궁합 유형 A/B/C/D, 12지지 성격
+- **외모** = 일간 상생 오행
+- **성격** = 일지 육합 지지
+- ⚠️ **띠 언급 금지!** ("양띠" ❌ → "포용의 에너지" ✅)
+
+**⛔ 절대 금지:**
+- \`<!-- 인연상 SVG: ... -->\` 이런 형식 사용 금지!
+- \`< >\` 꺾쇠 괄호 사용 금지!
+- 가이드 파일의 예시 오행(목, 화 등)을 그대로 쓰면 ❌ 오류!
+- "양띠", "말띠" 등 띠로 표현 금지!
+
+**✅ 반드시 지켜야 할 것:**
+- 이미지 위치는 \`[인연상_이미지_삽입]\` 형식으로만 표시!
+- 아래 [📌 인연상 계산기 결과]의 **실제 데이터** 사용!
+- **인연상 + 배우자상 둘 다 작성** (배우자상 빠뜨리면 ❌ 오류!)
+- **외모/성격 분리 표** 필수!
+- **궁합 유형 A/B/C/D** 명시 필수!
+- 마지막에 **"외모는 오행 상생, 성격은 일지 육합으로 도출했어요"** 문구 필수!
+` : ''}
+---
+
+## 📦 등급별 구조 가이드
+
+### 포함 섹션
+| 섹션 | 라이트 | 스탠다드 | 프리미엄 |
+|------|:------:|:--------:|:--------:|
+| 사주 명식 | ✅ | ✅ | ✅ |
+| 일간 성향 | ✅ | ✅ | ✅ |
+| 오행 분석 | ✅ | ✅ | ✅ |
+| 양음 비율 | ✅ | ✅ | ✅ |
+| 성격/심리 패턴 | ❌ | ✅ | ✅ |
+| 신살 분석 | ❌ | ✅ 3종 | ✅ 20종 |
+| 올해 운세 | ✅ | ✅ | ✅ |
+| 월별 운세 | ✅ 키워드만 | ✅ +한줄평 | ✅ +점수+조합 |
+| 연애운 | ✅ 기본 | ✅ 상세 | ✅ 심층 |
+| 직업운 | ✅ 기본 | ✅ 상세 | ✅ 심층 |
+| 재물운 | ✅ 기본 | ✅ 상세 | ✅ 심층 |
+| 건강운 | ❌ | ❌ | ✅ |
+| 대운 흐름 | ❌ | ✅ | ✅ |
+| 인간관계운 | ❌ | ❌ | ✅ |
+| 맞춤 질문 | ❌ | ❌ | ✅ |
+| 성명학+주역 | ❌ | ❌ | ✅ |
+| 택일+관상+풍수 | ❌ | ❌ | ✅ |
+| 인연상 | ❌ | ❌ | ✅ |
+
+### 해석 깊이
+| 항목 | 라이트 | 스탠다드 | 프리미엄 |
+|------|:------:|:--------:|:--------:|
+| 공감 포인트 | 2개 | 3개 | 4개 |
+| 신살 | ❌ | 3종 | 20종 |
+| 연운표 | ❌ | 3년 | 10년 |
+| 연애/직업/재물 | 기본 | 상세 | 심층 |
+| 성격 분석 | ❌ | 심화+패턴 | 심층+심리리듬 |
+| 양음 분석 | 기본 비율 | +성향 요약 | +인연 조화 |
+
+### 월별 운세 형식
+- **라이트**: 키워드만
+- **스탠다드**: 키워드 + 한줄평
+- **프리미엄**: 문단 형식 (아래 예시 참고)
+
+**프리미엄 월별 운세 예시:**
+\`\`\`
+### 1월 (寅월): 시작의 에너지 ⭐
+
+**키워드:** 새출발, 계획, 의욕  
+**십성:** 편인
+
+✦ **좋은 점:** 새해 다짐이 힘을 받아요. 배우고 싶은 것 있으면 이달에 시작하세요.
+✦ **조심할 점:** 너무 많은 걸 한꺼번에 시작하지 마세요.
+✦ **이렇게 보내면 좋아요:** 이직 관련 정보 수집 시작.
+\`\`\`
+
+**📊 월별 점수 이모지 변환 규칙:**
+| 점수 | 이모지 | 의미 |
+|:----:|:------:|------|
+| 90~100% | 🌕 | 최고의 달 |
+| 70~89% | 🌔 | 좋은 달 |
+| 50~69% | 🌓 | 보통 |
+| 30~49% | 🌒 | 주의 |
+| 0~29% | 🌑 | 조심 |
+
+---
+
+## 📄 결과물 형식
+- **마크다운(.md) 파일**로 만들어주세요
+- 파일명: ${name}_${packageType}_사주보고서.md
+
+---
+
+# ${name}님 사주 해석 요청
+
+## 📦 패키지: ${packageType}
+
+---
+
+## 👤 고객 정보
+- 이름: ${name}
+- 성별: ${gender}
+- 생년월일: ${birthDate}
+- 태어난 시간: ${birthTime}
+${birthPlace ? `- 태어난 곳: ${birthPlace}\n` : ''}- 나이: 만 ${age}세
+${loveStatus ? `- 💕 연애 상태: ${loveStatus}` : ''}
+${jobStatus ? `- 💼 직업 상태: ${jobStatus}` : ''}
+
+---
+
+## 🎴 사주 명식
+
+| 구분 | 연주 | 월주 | 일주 | 시주 |
+|------|------|------|------|------|
+| 천간/지지 | ${convertPillar(yearPillar)} | ${convertPillar(monthPillar)} | ${convertPillar(dayPillar)} | ${convertPillar(hourPillar)} |
+| 십성 | ${yearSipsung} | ${monthSipsung} | ${daySipsung} | ${hourSipsung} |
+
+### 일간
+- **${ilgan} (${ilganName})**
+
+### 십성 분포
+| 비겁 | 식상 | 재성 | 관성 | 인성 |
+|------|------|------|------|------|
+| ${bigyeop}개 | ${siksang}개 | ${jaeseong}개 | ${gwanseong}개 | ${inseong}개 |
+
+- 📌 **가장 강한 십성: ${dominantSipsung}**${secondSipsung ? `\n- 📌 **두 번째 강한 십성: ${secondSipsung}**` : ''}
+
+### 지장간 분석 (숨겨진 내면)
+${jijangganText || '(지장간 정보 없음)'}
+
+### 격국 & 용신 (인생의 큰 틀)
+${gyeokgukText || '(격국/용신 정보 없음)'}
+
+### ⚖️ 용신/기신 상세 (균형의 열쇠)
+- **일간 강약**: ${dayganStrength || '미입력'}
+- ✨ **용신 (필요한 기운)**: ${yongsin || '미입력'}${yongsinDesc ? ` - ${yongsinDesc}` : ''}
+- 👍 **희신 (도움되는 기운)**: ${huisin || '미입력'}${huisinDesc ? ` - ${huisinDesc}` : ''}
+- ⚠️ **기신 (피해야 할 기운)**: ${gisin || '미입력'}${gisinDesc ? ` - ${gisinDesc}` : ''}
+- 🚫 **구신 (더 피해야 할 기운)**: ${gusin || '미입력'}${gusinDesc ? ` - ${gusinDesc}` : ''}
+
+### 🌟 신살 분석 (사주계산기 결과)
+
+## 🚨 신살 해석 절대 규칙
+⛔ **절대 금지:**
+- 05_신살_48종.md로 신살을 직접 계산하지 마세요
+- 아래 목록에 없는 신살을 추가로 해석하지 마세요
+- 스킬 파일은 "해석 톤/방법" 참고용입니다
+
+✅ **필수 준수:**
+- 아래 신살 목록은 **사주계산기가 검증된 규칙으로 계산한 결과**입니다
+- 이 목록에 있는 신살**만** 해석하세요
+- 설명과 위치 정보를 그대로 활용하세요
+
+${gilsinText || yangmyeonText ? `**🌟 길신 (좋은 기운):**
+${gilsinDetailText ? gilsinDetailText : (gilsinText ? gilsinText.split(',').map(s => '- ' + s.trim()).join('\\n') : '- 없음')}
+
+**⚡ 양면신 (양면의 기운):**
+${yangmyeonDetailText ? yangmyeonDetailText : (yangmyeonText ? yangmyeonText.split(',').map(s => '- ' + s.trim()).join('\\n') : '- 없음')}` : '(신살 정보 없음 - 사주계산기 결과를 붙여넣으세요)'}
+
+### ⚔️ 합충형파해 (사주 내 천간/지지 관계)
+${hapchungText ? hapchungText : '(합충형파해 정보 없음 - 사주계산기 결과를 확인하세요)'}
+
+### 🎯 귀인/피해야 할 띠 (인연 해석 시 필수 참조!)
+- 🌟 **귀인 띠 (천을귀인)**: ${guininDdi || '정보 없음'} ← 이 띠의 사람과 만나면 도움받음
+- ⚠️ **피해야 할 띠 (원진살)**: ${avoidDdi || '정보 없음'} ← 이 띠의 사람과는 갈등 소지
+
+⚠️ **중요: 인연수/배우자상 해석 시 반드시 위 띠 정보를 언급하세요!**
+
+### 오행 분포
+| 목(木) | 화(火) | 토(土) | 금(金) | 수(水) |
+|--------|--------|--------|--------|--------|
+| ${wood}개 | ${fire}개 | ${earth}개 | ${metal}개 | ${water}개 |
+
+- 📌 **가장 강한 오행: ${strongOhaeng}**${weakOhaeng ? `\n- 📌 **없거나 약한 오행: ${weakOhaeng}**` : ''}
+
+### 양/음 분포 (陽陰 밸런스)
+${document.getElementById('yinyangText').value || '(양/음 데이터 없음 - 사주계산기에서 다시 변환 필요)'}
+
+### 오행 순환 구조
+- 순환 유형: **${flowType}**
+- 연결 상태: ${flowDetails.join(', ')}
+- 순환 점수: ${flowCount}/5
+
+※ 오행이 다 있는 게 아니라, 오행이 **이어지는 것**이 중요합니다.
+- 완전순환형: 기운이 스스로 도는 자생 구조
+- 부분순환형: 일부 끊김, 조건부 활성
+- 단절형: 특정 오행이 순환을 막음, 용신 보완 필요
+
+---
+
+## 🌊 운(運) 정보
+
+### 전체 대운 목록
+${daeunListText ? daeunListText : '(대운 목록 정보 없음)'}
+
+### 현재 대운
+- **${currentDaeun}** (${daeunStartAge}세~)
+- 대운 십성: **${daeunSipsung}**
+
+${packageType !== '라이트' ? `### 📊 개인 맞춤 연운표 (오행 기반)
+
+아래 표를 **이 사람의 용신/희신/기신**을 기준으로 채워주세요.
+
+**기본 점수:**
+- 용신 오행이 오는 해 → 높은 점수 (85~95%)
+- 희신 오행이 오는 해 → 중상 점수 (70~84%)
+- 보통 오행이 오는 해 → 중간 점수 (50~69%)
+- 기신 오행이 오는 해 → 낮은 점수 (30~49%)
+
+**⭐ 대운×세운 조합 보너스/페널티:**
+- 대운 오행과 세운 오행이 **같으면** → 🔥 공진점 (+10%) "에너지 폭발기"
+- 대운을 세운이 **생(生)하면** → ↑ 상승 (+5%) "순풍"
+- 대운을 세운이 **극(剋)하면** → ⚠️ 주의 (-10%) "역풍"
+
+| 연도 | 세운 | 오행 | 점수 | 이 사람에게 의미 |
+|------|------|------|------|-----------------|
+${packageType === '프리미엄' ? `| 2025 | 乙巳 (을사) | 木火 | ??% | (용신/기신 기준 해석) |
+| 2026 | 丙午 (병오) | 火火 | ??% | (용신/기신 기준 해석) |
+| 2027 | 丁未 (정미) | 火土 | ??% | (용신/기신 기준 해석) |
+| 2028 | 戊申 (무신) | 土金 | ??% | (용신/기신 기준 해석) |
+| 2029 | 己酉 (기유) | 土金 | ??% | (용신/기신 기준 해석) |
+| 2030 | 庚戌 (경술) | 金土 | ??% | (용신/기신 기준 해석) |
+| 2031 | 辛亥 (신해) | 金水 | ??% | (용신/기신 기준 해석) |
+| 2032 | 壬子 (임자) | 水水 | ??% | (용신/기신 기준 해석) |
+| 2033 | 癸丑 (계축) | 水土 | ??% | (용신/기신 기준 해석) |
+| 2034 | 甲寅 (갑인) | 木木 | ??% | (용신/기신 기준 해석) |
+| 2035 | 乙卯 (을묘) | 木木 | ??% | (용신/기신 기준 해석) |` : `| 2025 | 乙巳 (을사) | 木火 | ??% | (용신/기신 기준 해석) |
+| 2026 | 丙午 (병오) | 火火 | ??% | (용신/기신 기준 해석) |
+| 2027 | 丁未 (정미) | 火土 | ??% | (용신/기신 기준 해석) |`}
+
+※ 점수가 가장 높은 해에 ⭐ 표시, 가장 낮은 해에 ⚠️ 표시해주세요.
+
+**📝 연운표 해설 (표 아래에 반드시 작성!):**
+
+1️⃣ **최고의 해 해설** (⭐ 표시된 해)
+   - 왜 이 해가 좋은지 (대운×세운 조합 + 용신 관점)
+   - 이 시기에 뭘 하면 좋을지 구체적 조언
+
+2️⃣ **주의할 해 해설** (⚠️ 표시된 해)
+   - 왜 조심해야 하는지 (기신/극 관계 설명)
+   - 어떻게 대비하면 좋을지 실천 조언
+
+3️⃣ **전체 흐름 한줄 요약**
+   - 예: "2025~2027은 준비기 🌱, 2028~2029가 수확기 🌾, 2030은 정리기 📦"
+` : ''}
+### 2026년 세운 ⚠️ 중요!
+- **丙午 (병오년)** ← 乙巳(2025)와 혼동 금지!
+- 세운 천간: 丙 (병화) - 火
+- 세운 지지: 午 (오화) - 火
+- 세운 오행: **火火** (쌍화)
+
+> 💡 2025년은 乙巳(을사), 2026년은 丙午(병오)입니다!
+
+${packageType === '프리미엄' ? `### 📅 2026년 월별 기운 흐름 (프리미엄 전용)
+
+세운 오행과 월운 오행의 조합으로 각 달의 점수를 매겨주세요.
+
+| 월 | 월운 | 오행 | 조합 | 점수 | 한줄평 |
+|----|------|------|------|------|--------|
+| 1월 | 己丑 | 土土 | ↑/↓/🔥 | ??% | (키워드) |
+| 2월 | 庚寅 | 金木 | ↑/↓/🔥 | ??% | (키워드) |
+| 3월 | 辛卯 | 金木 | ↑/↓/🔥 | ??% | (키워드) |
+| 4월 | 壬辰 | 水土 | ↑/↓/🔥 | ??% | (키워드) |
+| 5월 | 癸巳 | 水火 | ↑/↓/🔥 | ??% | (키워드) |
+| 6월 | 甲午 | 木火 | ↑/↓/🔥 | ??% | (키워드) |
+| 7월 | 乙未 | 木土 | ↑/↓/🔥 | ??% | (키워드) |
+| 8월 | 丙申 | 火金 | ↑/↓/🔥 | ??% | (키워드) |
+| 9월 | 丁酉 | 火金 | ↑/↓/🔥 | ??% | (키워드) |
+| 10월 | 戊戌 | 土土 | ↑/↓/🔥 | ??% | (키워드) |
+| 11월 | 己亥 | 土水 | ↑/↓/🔥 | ??% | (키워드) |
+| 12월 | 庚子 | 金水 | ↑/↓/🔥 | ??% | (키워드) |
+
+※ 조합: 🔥공진 / ↑생 / ↓극 / ─보통
+※ 가장 좋은 달에 ⭐, 주의할 달에 ⚠️ 표시
+※ 표 아래에 "상반기 vs 하반기" 흐름 요약 작성
+` : ''}
+
+### 🔥 용신과 번아웃 — 균형의 예술 (프리미엄)
+<!-- 페이지 43-44: 용신과 번아웃 -->
+(본문 자동 삽입: 용신의 끌림성 + 과잉성 + 균형 철학 + 번아웃 원리 + 회복 루틴)
+
+**작성 구조:**
+1. 이 사람의 용신이 왜 끌리는지 — "당신은 자꾸 [용신] 에너지에 끌려요"
+2. 용신 과잉 시 번아웃 패턴 — "[용신]만 추구하면 이런 증상이..."
+3. 균형 회복 루틴 — 희신 활용법 + 일상 실천 팁
+
+---
+
+## 💬 질문지 응답
+
+### ⚠️ 필수 답변 항목 (절대 빠뜨리지 마세요!)
+아래 항목들은 **맞춤 질문 섹션에서 반드시 전용 답변을 작성**해야 합니다:
+1. 💭 **핵심 고민** → 이 고민에 대해 사주 관점에서 깊이 있는 답변 필수!
+2. 🔄 **반복되는 패턴** → 왜 이런 패턴이 생기는지 사주로 설명 필수!
+3. ✅ **체크한 질문들 (Q1~Q10)** → 각 질문에 개별 답변
+4. ✍️ **맞춤 질문** → 프리미엄인 경우 상세 답변
+
+### 선택한 운세 분야
+${fortuneTypes || '(선택 없음)'}
+
+### 💭 핵심 고민 ⭐ (소름 포인트 연결용!)
+"${mainConcern || '(작성 안 함)'}"
+${repeatPattern ? `
+### 🔄 반복되는 패턴
+"${repeatPattern}"
+` : ''}
+### 체크한 질문들
+${checkedQuestions || '(체크한 질문 없음)'}
+`;
+
+            // 맞춤 질문 (프리미엄)
+            if (packageType === '프리미엄' && customQuestion) {
+                prompt += `
+### ✍️ 맞춤 질문 (직접 작성)
+${customQuestion}
+`;
+            }
+
+            
+            // 프롬프트 계속 (V6: 통합)
+            
+            // 사주 해석 원리 프레임워크 추가
+            prompt += `
+---
+
+# 🧭 사주 해석 원리 프레임워크
+
+해석 시 아래 구조를 이해하고 적용해주세요:
+
+| 요소 | 비유 | 의미 | 역할 |
+|------|------|------|------|
+| **사주 (명식)** | 지도 | 타고난 기질/성향 | 기본 설계도 |
+| **오행** | 에너지 밸런스 | 성격 & 관계 방식 | 뭐가 많고/부족한지 |
+| **십성** | 인생의 배역들 | 세상과의 관계 | 어떤 역할에 강한지 |
+| **대운** | 날씨 | 외부 환경 | 현재 기회/도전 |
+| **세운/월운** | 오늘 날씨 | 올해/이번 달 | 구체적 타이밍 |
+
+### 🔑 종합 해석 공식
+\`\`\`
+내부 에너지(사주) + 외부 에너지(대운/세운) = 현재 삶의 변화
+\`\`\`
+
+### ⚠️ 종합 해석 필수 규칙 (반드시 준수!)
+
+**🚨 핵심: 단일 요소로 단정짓지 마세요!**
+
+각 카테고리(연애운, 직업운, 재물운 등) 해석 시 **반드시 다음 순서로 확인**:
+
+1. **일간** 특성 → 기본 성향
+2. **십성 분포** → 어떤 에너지가 강한가
+3. **오행 분포** → 넘치고 부족한 것
+4. **격국** → 큰 틀의 성향
+5. **신살** → 특수한 기운
+6. **⭐ 상충점 확인** → 서로 다른 방향 가리키면 **둘 다 언급!**
+
+**🔴 상충 해석 규칙:**
+- 서로 다른 요소가 반대 방향을 가리키면, **하나를 선택하지 말고 둘 다 설명**
+- 예시:
+  - 상관격 + 양인살 → "창의적 표현을 원하지만, 양인살이 있어서 명확한 규칙의 조직에선 오히려 빛나요"
+  - 비겁 과다 + 협록 → "독립심이 강하지만, 협록이 있어서 협업할 때 시너지도 나요"
+  - 화개살 + 장성살 → "예술적 감각이 있으면서, 조직에서 성장하는 힘도 있어요"
+
+**❌ 절대 금지:**
+- "~격이라 ~는 안 맞아요" (단정적 표현)
+- 하나의 요소만으로 결론 내리기
+- "절대 안 됩니다", "불가능합니다" 같은 부정적 단정
+
+**✅ 필수 표현:**
+- "~한 면이 있지만, ~도 있어서 ~할 수 있어요"
+- "상황에 따라 다르게 발현될 수 있어요"
+- "~할 수 있어요", "~하는 경향이 있어요" (가능성 열어두기)
+
+### 📝 각 섹션 해석 구조
+\`\`\`
+[질문지 연결] → "~라고 하셨죠?" 고객 고민 인용
+[왜 그런지] → 일간 + 십성 + 오행 조합으로 설명
+[대운/세운] → 현재 타이밍이 어떤지
+[조언] → 구체적 행동 지침
+\`\`\`
+
+---
+
+# 📚 참조 지시 (중요!)
+
+## 📚 필수 참조 파일 (반드시 읽고 시작!)
+| 순위 | 파일 | 역할 |
+|:---:|------|------|
+| 1️⃣ | **good_example_premium_v5.md** | 🎨 구조/표형식/톤앤매너 (🔴 그대로 따라하기) |
+| 2️⃣ | **pattern_${packageTypeEn}.md** | 📋 해석 내용/분석 공식 |
+| 3️⃣ | **saju_plan_part2_v5.md** | 해석 레퍼런스 (일간별/십성별) |
+| 4️⃣ | **인연상_배우자상_통합가이드_v5.md** | 인연상+배우자상 정보 (프리미엄) |
+
+⚠️ **good_example 파일의 구조와 톤앤매너를 100% 따르세요!**
+
+---
+
+## 🔍 이 고객 맞춤 참조 (saju_plan_part2_v5.md에서 찾기)
+
+## 필수 참조 섹션
+
+### 1️⃣ 공통 원칙 (모든 해석에 적용)
+→ **[B. 공통 프롬프트 원칙]** 전체
+- 역할: "운명을 듣다" 명리학 상담사
+- 경쟁자 단점 해결 체크리스트 적용
+- 어투: "~할 수 있어요", "~하는 경향이 있어요"
+- 소름 유발 원칙: 구체적 일상 상황 + "~할 때 있죠?"
+- 질문지 연결: "~라고 하셨죠?" 인용 필수
+
+### 2️⃣ 일간 해석 ⭐ (모든 해석의 시작점!)
+→ **[C. 일간 해석] > [${ilgan} ${ilganName}]** 참조
+
+**⚠️ 일간 = 모든 해석의 기준점!**
+- 성격 → 일간 기준
+- 운세 → 일간과 세운/대운의 관계
+- 연애 → 일간과 재성/관성 관계
+- 직업 → 일간의 특성 + 적합 분야
+
+- 자연 비유 + "이런 적 있죠?" 소름 포인트
+- [강점], [주의] 그대로 활용
+
+### 3️⃣ 오행 분석
+→ **[D. 오행 분석]** 참조
+- 강한 오행 **[${strongOhaeng}]** 해석${weakOhaeng ? `\n- 약한/없는 오행 **[${weakOhaeng}]** 해석` : ''}
+
+### 3️⃣-2 격국 & 용신/기신 해석 (균형의 열쇠)
+→ **[J. 격국/용신 해석 원칙]** 참조
+
+**📌 격국별 핵심 해석 가이드:**
+
+| 격국 | 핵심 성향 | 강점 | 주의점 | 어울리는 직업군 |
+|------|----------|------|--------|----------------|
+| **상관격** | 표현력, 창의성, 자유로움 | 말재주, 예술성, 독창성, 비판적 사고 | 권위 충돌, 반항심, 입이 화 부름 | 작가, 예술가, 강사, 평론가, 유튜버 |
+| **식신격** | 베풂, 여유, 낙천성 | 인복, 안정감, 예체능, 요리/미식 | 나태함, 결단력 부족, 게으름 | 요리사, 교사, 상담사, 예체능, 서비스업 |
+| **정관격** | 책임감, 명예, 원칙 | 신뢰, 리더십, 조직력, 성실함 | 융통성 부족, 스트레스, 고지식 | 공무원, 대기업, 법조인, 관리직 |
+| **편관격** | 추진력, 권위, 카리스마 | 결단력, 승부욕, 돌파력, 위기대응 | 급함, 강압적, 다혈질 | 군인, 경찰, 스포츠, CEO, 정치인 |
+| **정재격** | 안정, 실속, 계획성 | 성실함, 저축, 꾸준함, 신용 | 보수적, 인색함, 변화 두려움 | 회계사, 은행원, 공무원, 안정직장 |
+| **편재격** | 모험, 투자, 융통성 | 사업수완, 인맥, 재테크, 기회포착 | 변덕, 투기성, 낭비 | 사업가, 영업, 투자자, 무역업 |
+| **정인격** | 학구열, 수용, 배려 | 학습능력, 지혜, 자격증, 어머니 복 | 의존성, 우유부단, 수동적 | 학자, 연구원, 교수, 전문직 |
+| **편인격** | 탐구, 특수성, 영감 | 창의성, 전문성, 독특한 시각 | 외로움, 괴팍함, 소통 어려움 | 연구직, IT, 종교, 점술, 특수분야 |
+| **비견격** | 자존심, 독립, 자립 | 자립심, 경쟁력, 주관, 끈기 | 고집, 대인관계, 양보 어려움 | 프리랜서, 자영업, 운동선수 |
+| **겁재격** | 승부욕, 과감함, 야망 | 결단력, 돌파력, 경쟁심 | 충동, 재물 손실, 도박성 | 영업, 스포츠, 투자, 경쟁업종 |
+
+**⚠️ 격국 해석 시 주의:**
+- 격국은 "경향성"이지 "운명"이 아님! 부정적 특성도 긍정적으로 승화 가능
+- 혼합격(예: 상관+식신)인 경우 두 성향이 함께 나타남
+- 용신이 격국과 다르면 그 기운으로 균형 맞추기 필요
+
+**일간 강약**: ${dayganStrength || '(확인 필요)'}
+
+| 구분 | 오행 | 의미 | 해석 방향 |
+|------|------|------|----------|
+| ✨ 용신 | ${yongsin || '미입력'} | ${yongsinDesc || '필요한 기운'} | 이 기운이 들어오는 시기/환경이 좋음 |
+| 👍 희신 | ${huisin || '미입력'} | ${huisinDesc || '도움되는 기운'} | 용신을 도와주는 보조 기운 |
+| ⚠️ 기신 | ${gisin || '미입력'} | ${gisinDesc || '피해야 할 기운'} | 이 기운 강한 시기 조심 필요 |
+| 🚫 구신 | ${gusin || '미입력'} | ${gusinDesc || '더 피해야 할 기운'} | 기신보다 더 주의 |
+
+**해석 적용법:**
+- 좋은 시기: 용신/희신 기운이 대운/세운에서 들어올 때
+- 주의 시기: 기신/구신 기운이 강해지는 때
+- 보완 조언: 부족한 용신 기운을 일상에서 채우는 방법 제시
+- 색상/방향 추천: 용신 오행에 맞는 컬러/방위 안내
+
+### 3️⃣-3 양음 밸런스
+→ **[Part F. 양음 비율 레퍼런스]** 참조
+
+**해석 구조:**
+- 양음 비율 표시 (양기 vs 음기 %)
+- 밸런스 유형 판정 (양기 우세형 / 음기 우세형 / 균형형)
+- 성향 해석 + 인연 조화 힌트
+- 보완 조언
+
+| 유형 | 특징 | 보완 방향 |
+|------|------|----------|
+| 양기 우세 | 적극적, 외향적, 추진력 | 차분함, 깊이 보완 |
+| 음기 우세 | 신중함, 내향적, 깊이 | 행동력, 표현력 보완 |
+| 균형형 | 상황에 따라 유연 | 현재 리듬 유지 |
+
+### 4️⃣ 연애운
+→ **[E. 연애운] > [${dominantSipsung} 강함]** 참조
+- [이런 적 있죠?], [연애 스타일], [주의], [이렇게 하면 좋아요] 구조
+
+**📋 연애운 해석 필수 체크리스트:**
+- [ ] 재성/관성 유무 확인
+- [ ] 일지(배우자궁) 분석
+- [ ] 비겁 유무 (경쟁/삼각관계 가능성)
+- [ ] 도화살, 홍염살 등 신살 확인
+- [ ] **⭐ 상충점 있으면 둘 다 언급!**
+  - 예: 재성 약함 + 금여록 → "재성이 약해서 연애가 쉽지 않지만, 금여록이 있어서 좋은 배우자를 만날 복은 있어요"
+
+### 5️⃣ 직업운
+→ **[F. 직업운] > [${dominantSipsung} 강함]** 참조
+- [이런 적 있죠?], [적성], [맞는 환경], [피할 곳], [이렇게 하면 좋아요]
+
+**📋 직업운 해석 필수 체크리스트:**
+- [ ] 격국 → 큰 성향 (자유로움 vs 안정)
+- [ ] 십성 분포 → 강한 에너지
+- [ ] 신살 → 양인살(조직), 장성살(성장), 화개살(예술), 천의성(의료) 등
+- [ ] 용신 → 필요한 환경
+- [ ] **⭐ 상충점 있으면 둘 다 언급!**
+  - 예: 상관격 + 양인살 → "창의적 표현을 원하지만, 양인살이 있어서 명확한 규칙의 조직에선 오히려 빛나요. 프리랜서 OR 조직 내 독립적 역할, 둘 다 가능!"
+  - 예: 비겁 과다 + 협록 → "독립심이 강하지만, 협록이 있어서 협업할 때 시너지도 나요"
+
+### 6️⃣ 재물운
+→ **[G. 재물운] > [${dominantSipsung} 강함]** 또는 관련 섹션 참조
+- [이런 적 있죠?], [재물 스타일], [새는 구멍], [이렇게 하면 좋아요]
+
+**📋 재물운 해석 필수 체크리스트:**
+- [ ] 재성 강약
+- [ ] 비겁 유무 (새는 구멍)
+- [ ] 식상생재 흐름
+- [ ] 용신과 재성 관계
+- [ ] **⭐ 상충점 있으면 둘 다 언급!**
+  - 예: 재성 약함 + 식상생재 → "타고난 재물운은 낮지만, 식상이 있어서 노력으로 벌 수 있어요"
+  - 예: 비겁 강함 + 협록 → "돈이 새지만, 협업하면 돈이 들어와요"
+
+### 7️⃣ 대운 해석
+→ **[H. 대운 해석] > [${daeunSipsung} 대운]** 참조
+- 현재 대운의 특징 + 주의점 + 활용법
+
+### 8️⃣ 2026년 세운 (올해 운세)
+→ **[I. 세운 해석] > [일간별 2026년 운세] > [${ilgan}]** 참조
+- [테마], [이런 일], [상반기/하반기], [조언] 그대로 활용
+`;
+
+            // 십성 조합 (두 번째 십성이 있을 경우)
+            if (secondSipsung && secondSipsung !== dominantSipsung) {
+                prompt += `
+### 9️⃣ 십성 조합 해석
+→ **[K. 십성 조합 해석] > [${dominantSipsung} + ${secondSipsung}]** 참조
+- 조합이 없으면 가장 유사한 조합 참조
+- [이런 적 있죠?], [왜 그런지], [장점], [주의], [이렇게 하면 좋아요]
+
+### 9️⃣-2 신살 분석 (프리미엄/스탠다드)
+→ **[Part E. 신살 레퍼런스]** 참조
+
+**⚠️ 필수 형식 (HTML 파서 호환):**
+- 각 신살 제목 = \`**번호. 이름(한자) — 설명**\` 형식 필수!
+- 예: \`**1. 천을귀인(天乙貴人) — 귀인의 별**\`
+- 번호는 길신/양면신 통틀어 연속 (1, 2, 3...)
+- 이름과 한자 사이 공백 없음: ✅ \`천을귀인(\` / ❌ \`천을귀인 (\`
+- 각 신살마다 \`###\` 제목 쓰지 않기! \`**번호.\` 형식만!
+
+**구조:**
+1. 보유 신살 목록 (길신 🌟 / 양면신 ⚡ 분류)
+2. \`### ✨ 길신 (좋은 기운)\` 섹션 → 각 길신 상세
+3. \`### ⚡ 양면신 (양면의 기운)\` 섹션 → 각 양면신 상세
+4. 신살 조합 해석 (시너지/충돌)
+
+⚠️ **양면신/흉신도 긍정적으로 활용 가능!** 무조건 나쁘다고 하지 말고 활용법 제시
+`;
+            }
+
+            // 월운 (스탠다드 이상)
+            if (packageType !== '라이트') {
+                prompt += `
+### 🔟 월별 운세
+→ **[L. 월운 해석 원칙]** 참조
+- 일간 **${ilgan}** 기준으로 각 월의 십성 관계 해석
+- [월지별 에너지] 표 참조 (1월=寅, 2월=卯...)
+- [월운 해석 공식] 적용 (좋은 달 신호 / 조심할 달 신호)
+- 각 월: [키워드 3개] + [좋은 점] + [조심할 점] + [이렇게 보내면 좋아요]
+`;
+            }
+
+            // 자주 묻는 질문
+            prompt += `
+### 1️⃣1️⃣ 질문 답변
+→ **[M. 자주 묻는 질문 템플릿]** 참조
+- 체크된 질문과 유사한 템플릿 찾아서 구조 활용
+- [질문 인용] → [사주로 보는 관점] → [사주 기반 해석] → [현실적 조언] → [희망적 마무리]
+`;
+
+            // 건강운 (프리미엄)
+            if (packageType === '프리미엄') {
+                prompt += `
+### 1️⃣2️⃣ 건강운 (프리미엄)
+→ **[N. 건강운]** 참조
+- 강한 오행 **[${strongOhaeng}] 기운 강하면** 섹션
+- ※ 오행 수치는 지장간 비율 포함 참고값이니 단정짓지 말고 종합 해석
+- ⚠️ **[건강운 어투 규칙]** 필수 적용
+  - ❌ "~병에 걸릴 수 있어요" 절대 금지
+  - ✅ "~가 약해지기 쉬운 체질이에요"
+
+**📌 건강운 맨 앞에 반드시 이 문구 삽입:**
+\`\`\`
+### ⚠️ 참고해주세요
+
+**사주는 체질적 경향성을 보는 거예요.**
+"이런 부분이 약해지기 쉬운 체질이니 미리 관리하세요" 정도로 받아들여 주세요.
+정확한 건강 상태는 전문의 상담을 통해 확인하시는 게 좋아요.
+\`\`\`
+
+### 1️⃣4️⃣ 이름의 기운 (프리미엄)
+→ **[O1. 성명학]** 참조
+
+⛔ **절대 금지: 이름 한자 임의 추측!**
+- ❌ "OO의 한자는 OO(漢字)로 추정됩니다" → 틀리면 치명적!
+- ✅ **한글 초성/발음 기반 분석만** 허용
+
+- 이름 초성 → 오행 변환 (ㄱ/ㅋ=木, ㄴ/ㄷ/ㄹ/ㅌ=火, ㅇ/ㅎ=土, ㅅ/ㅈ/ㅊ=金, ㅁ/ㅂ/ㅍ=水)
+- 사주 부족 오행과 비교 → 보완/강화 여부 판단
+- ✨ **어감 분석**: 이름의 진동이 주는 감정선 (온화형/카리스마형/신뢰형 등)
+
+### 1️⃣5️⃣ 올해의 방향 (프리미엄)
+→ **[O2. 주역]** 참조
+- 올해 세운 기반 괘상 도출
+- 🔮 **행동 방향성 한줄 요약**:
+  - 예: 火風鼎 → "내면을 다져 실행으로"
+  - 예: 水雷屯 → "인내하며 때를 기다려"
+- 상반기/하반기 방향 구분
+
+### 1️⃣6️⃣ 좋은 타이밍 (프리미엄)
+→ **[O3. 택일학]** 참조
+- 용신 오행 기준 좋은 날/요일
+- 📅 **피해야 할 날도 함께 제시** (예: "금(金)일은 충돌 주의")
+- 월별 길일 추천
+
+### 1️⃣7️⃣ 외형 조언 (프리미엄)
+→ **[O4. 관상학]** 참조
+- 오행별 얼굴형/인상 분석
+- 🎨 **현실 보완 조언**:
+  - 보완 컬러 (예: 火 부족 → 코랄/버건디)
+  - 패션 포인트 (소재, 라인)
+  - 메이크업/헤어 방향
+
+### 1️⃣8️⃣ 공간 조언 (프리미엄)
+→ **[O5. 풍수학]** 참조
+- 용신 기반 좋은 방향/색상
+- 책상/침대 배치 조언
+- 🏠 **공간 정화 루틴**: 향, 빛, 식물 등 체감형 조언
+
+### 1️⃣9️⃣ 운명의 상대 기운상 (프리미엄)
+
+**📌 핵심 개념: 인연상 vs 배우자상**
+
+| 구분 | 인연상 (운명상) | 배우자상 (현실상) |
+|------|----------------|------------------|
+| **의미** | 운명적 끌림 | 현실적 안정 |
+| **느낌** | "왜 이렇게 끌리지?" | "함께 있으면 편해" |
+| **오행 관계** | 상극 (나를 극하는 것) | 식상 (내가 생하는 것) |
+
+**📌 인연상 계산기 정보 활용:**
+${inyeonCalcInfo ? inyeonCalcInfo : '(인연상 계산기 정보가 없으면 일지 기반으로 작성)'}
+
+**⚠️ 이 고객의 인연상 정보:**
+- 일지: **${dayPillar ? dayPillar[1] : '?'}**
+- 인연 지지: **${inyeonJiji}**
+- 인연감성명: **${inyeonName}**
+
+**작성 구조:**
+1. "인연상이 이렇게 만들어졌어요" - 일지 → 육합 설명
+2. "왜 이런 인연이 잘 맞을까요?" - 고객 일간+오행 기준 근거
+3. 음양 밸런스 설명
+4. **[인연상_이미지_삽입]** 표시 (이미지는 별도 제공됨)
+5. 외형적 특징 / 성격적 특징 (인연상 계산기 정보 기반)
+6. 궁합 힌트 + 만남 시기 + 장소 조언
+7. 정확도 안내 (성격 85~90%, 외형 55~65%)
+
+**📋 작성 안내:**
+- 인연상 계산기 정보의 **오행, 납음, 외모 특징**을 바탕으로 해석
+- 이미지 삽입 위치에 **[인연상_이미지_삽입]** 표시
+- 성별에 맞는 문체 사용 (남성 고객 → "그녀", 여성 고객 → "그")
+
+**출력 구조:**
+\`\`\`markdown
+## 운명의 상대 기운상
+
+### 인연상이 이렇게 만들어졌어요
+
+당신의 일지는 **{일지}({읽음})**예요.
+사주에서 일지는 "배우자의 자리"라고 불려요.
+
+{일지}와 육합(六合) 관계인 **{인연지지}({읽음})**의 기운이
+당신에게 가장 편안하고 조화로운 에너지예요.
+
+### 왜 이런 인연이 잘 맞을까요?
+
+{고객이름}님은 **{일간}({오행})** 일간으로, {일간 특성 설명}...
+{고객 사주 특성에 맞게 왜 이 인연이 필요한지 근거 설명}
+쉽게 말해, **"{한 줄 요약}"**이에요.
+
+**음양 밸런스:**
+{고객이름}님의 일간은 {양/음}의 기운이에요.
+그래서 {보완 설명}한 에너지를 가진 사람에게 자연스럽게 끌려요.
+
+> ※ 외모보다 **'첫인상'**에 가까워요. "왠지 끌리는 느낌"을 시각화한 거예요.
+
+---
+
+### 당신과 어울리는 인연의 모습
+
+[인연상_이미지_삽입]
+⬆️ **이 형식 그대로 사용! \`<!-- -->\` 형식 절대 금지!**
+
+> *위 이미지는 실제 외모가 아닌, 당신과 조화로운 '기운의 형상'을 표현한 거예요.*
+
+**인연 유형: ${inyeonName}**
+**키워드: ${inyeonDetail ? inyeonDetail.keyword : '?'}**
+
+### 이런 느낌의 사람이에요 (성별별 문체 적용!)
+
+**외형적 특징**
+${inyeonDetail ? inyeonDetail.외형 : '(해당 인연 정보 없음)'}
+
+**성격적 특징**
+${inyeonDetail ? inyeonDetail.성격 : '(해당 인연 정보 없음)'}
+
+### 이런 점은 주의하세요
+${inyeonDetail ? inyeonDetail.주의 : '(해당 인연 정보 없음)'}
+
+### 궁합 힌트
+${inyeonDetail ? inyeonDetail.궁합힌트 : '(해당 인연 정보 없음)'}
+
+### 💕 현재 연인과 비교해보세요 (연애 상태가 솔로/이별 후면 이 섹션 생략)
+
+위에서 설명한 특징들, 현재 연인에게서 느껴지시나요?
+비슷한 부분이 있다면 사주적으로도 잘 맞는 인연일 가능성이 높아요!
+
+> 💡 **체크해보세요:**
+> ✦ 이 사람과 있으면 마음이 편안한가요?
+> ✦ {인연 특성에 맞는 체크 항목}
+> ✦ {인연 특성에 맞는 체크 항목}
+
+"그렇다"가 많다면, 사주가 말해주는 좋은 인연을 이미 만났을 수도 있어요 😊
+
+### 💫 언제 이런 인연을 만날 수 있을까요?
+
+**연애 기회의 시기:**
+> 📌 근거: 대운/세운에서 {재성운/관성운}이 들어오는 시기
+현재 대운이 {관성운/재성운}이면, 이성 인연 전반이 활성화되는 시기예요.
+
+**인연상(끌림)을 만나기 쉬운 시기:**
+> 📌 근거: 인연상 오행({오행})의 대표 지지가 오는 년도
+{인연지지}의 기운이 들어오는 해나 대운에,
+이런 에너지를 가진 사람과 자연스럽게 연결될 수 있어요.
+
+### 어디서 만날 수 있을까요?
+${inyeonDetail ? inyeonDetail.만남장소 : '(해당 인연 정보 없음)'}
+
+---
+
+## 💍 배우자상 (안정의 인연)
+
+### 배우자상이 이렇게 만들어졌어요
+
+인연상이 "끌림"이라면, 배우자상은 "안정"이에요.
+
+{고객이름}님의 일간 **{일간}({오행})**이 생(生)하는 오행은 **{배우자오행}**이에요.
+{오행}이 {배우자오행}을 생하는 관계라서, 함께 있으면 편안하고 자연스러워요.
+
+> ※ 외모보다 **'첫인상'**에 가까워요. "함께 있으면 편한 느낌"을 시각화한 거예요.
+
+### 평생 함께할 인연의 모습
+
+*(인연상 이미지에 배우자상 카드도 포함되어 있습니다)*
+
+**배우자 유형: {배우자명}**
+
+### 이런 느낌의 사람이에요 (성별별 문체 적용!)
+
+**외형적 특징**
+{JSON 기반 외모 해석}
+
+**성격적 특징**
+{오행 대표지지 기반 성격 해석}
+
+### 이런 점은 주의하세요
+{주의사항}
+
+### 💍 배우자상을 만나기 쉬운 시기
+> 📌 근거: 배우자궁(일지)과 육합하는 지지가 오는 년도
+배우자궁({일지})과 육합하는 **{육합지지}년({년도})**에
+평생 함께할 인연을 만날 확률이 높아요.
+
+### 어디서 만날 수 있을까요?
+{만남 장소 조언}
+
+---
+
+### 💞 인연상 vs 배우자상 비교
+
+**⚡ 운명 점수 한눈에 보기:**
+| 💘 끌림 점수 (인연상) | 💍 안정 점수 (배우자상) |
+|:-------------------:|:---------------------:|
+| ??점/100 | ??점/100 |
+
+※ 점수 산정: 오행 궁합 + 납음 조화 + 음양 밸런스 종합
+
+| 구분 | 인연상 (끌림) | 배우자상 (안정) |
+|:----:|:------------:|:--------------:|
+| **느낌** | 심장이 뛰어요 | 마음이 편해요 |
+| **오행 관계** | 상극 (긴장감) | 상생 (편안함) |
+
+> 💡 인연상 느낌도 있고 배우자상 느낌도 있는 사람이라면? 그게 최고의 궁합이에요! 😊
+
+---
+
+### 📊 이 분석의 정확도
+
+**성격/궁합 일치도: 약 85~90%**
+일주(태어난 날)의 납음 오행을 기반으로 분석했어요.
+명리학에서 가장 신뢰도가 높은 영역이에요.
+
+**외형/분위기 유사도: 약 55~65%**
+년주(태어난 해) 납음 기반이라 "느낌, 분위기, 인상"은 맞지만,
+구체적 얼굴형까지 정확하진 않아요.
+
+**종합 체감 일치도: 약 70%**
+실제로 "이런 느낌의 사람에게 끌린다" 수준까지는 체감 가능해요.
+
+> 💡 쉽게 말해, **"이런 성격의 사람에게 끌린다"**는 거의 맞고,
+> **"이런 얼굴이다"**는 분위기 단위로 비슷해요.
+\`\`\`
+
+**📌 위 내용을 참고하여 이 고객에게 맞게 자연스럽게 풀어서 작성해주세요.**
+**인연상_배우자상_통합가이드_v5.md의 톤앤매너(Part 2 예시)를 참고하세요.**
+
+**🚨 마지막 점검:**
+- \`[인연상_이미지_삽입]\` 형식 사용했나요? (\`<!-- -->\` 형식 ❌)
+- 인연상 + 배우자상 **둘 다** 작성했나요?
+- 위 표의 **실제 오행/납음** 데이터를 사용했나요?
+`;
+            }
+
+            // 출력할 섹션
+            prompt += `
+---
+
+# 📝 출력할 섹션 (${packageType})
+
+`;
+
+            if (packageType === '라이트') {
+                prompt += `## 🌱 라이트 패키지 (20페이지)
+
+각 페이지를 \`<!-- 페이지 N: 제목 -->\` 주석으로 구분하여 작성해주세요.
+
+| 페이지 | 내용 | 분량 |
+|--------|------|------|
+| 1 | 표지 (이름, 생년월일, 사주) | 1페이지 |
+| 2-3 | 사주 명식 + 구조 설명 | 2페이지 |
+| 4-5 | 일간 해석 (공감 포인트 2개 + 강점) | 2페이지 |
+| 6-7 | 오행 분포 + 분석 | 2페이지 |
+| 8 | 양음 비율 | 1페이지 |
+| 9-10 | 올해 운세 흐름 (테마 + 상반기/하반기) | 2페이지 |
+| 11-12 | 월별 키워드 (간단히 1~12월) | 2페이지 |
+| 13-14 | 연애운 | 2페이지 |
+| 15-16 | 직업운 | 2페이지 |
+| 17-18 | 재물운 | 2페이지 |
+| 19-20 | 종합 조언 + 마무리 | 2페이지 |
+
+**출력 형식:** 각 페이지를 \`<!-- 페이지 N: 제목 -->\` 주석으로 구분
+`;
+            } else if (packageType === '스탠다드') {
+                prompt += `## ⭐ 스탠다드 패키지 (25페이지)
+
+각 페이지를 \`<!-- 페이지 N: 제목 -->\` 주석으로 구분하여 작성해주세요.
+
+| 페이지 | 내용 | 분량 |
+|--------|------|------|
+| 1 | 표지 | 1페이지 |
+| 2-3 | 사주 명식 + 구조 설명 | 2페이지 |
+| 4-5 | 일간 해석 (공감 포인트 3개) | 2페이지 |
+| 6-7 | 오행 분포 + 상세 분석 | 2페이지 |
+| 8 | 양음 비율 | 1페이지 |
+| 9-10 | 성격 분석 (강점/약점 + 십성 조합) | 2페이지 |
+| 11 | 신살 분석 | 1페이지 |
+| 12-13 | 올해 운세 흐름 | 2페이지 |
+| 14-15 | 월별 운세 (상세 키워드 + 한줄평) | 2페이지 |
+| 16-17 | 연애운 | 2페이지 |
+| 18-19 | 직업운 | 2페이지 |
+| 20-21 | 재물운 | 2페이지 |
+| 22-23 | 대운 흐름 (현재 대운 해석) | 2페이지 |
+| 24-25 | 종합 조언 + 마무리 | 2페이지 |
+
+**출력 형식:** 각 페이지를 \`<!-- 페이지 N: 제목 -->\` 주석으로 구분
+`;
+            } else { // 프리미엄
+                // 인연상 정보는 이미 인연상 섹션에 포함됨 (inyeonCalcInfo)
+                
+                prompt += `## 👑 프리미엄 패키지 (42페이지)
+
+각 페이지를 \`<!-- 페이지 N: 제목 -->\` 주석으로 구분하여 작성해주세요.
+
+| 페이지 | 내용 | 분량 |
+|--------|------|------|
+| 1 | 표지 + 올해 핵심 요약 (3줄) | 1페이지 |
+| 2-3 | 사주 명식 + 구조 설명 | 2페이지 |
+| 4-5 | 일간 해석 (공감 포인트 4개 + 심화) | 2페이지 |
+| 6-7 | 오행 분포 + 상세 분석 | 2페이지 |
+| 8 | 양음 밸런스 | 1페이지 |
+| 9-11 | 성격 + 심리 패턴 분석 | 3페이지 |
+| 12-14 | 신살 분석 | 3페이지 |
+| 15-16 | 올해 운세 흐름 | 2페이지 |
+| 17-18 | 월별 운세 (상세) | 2페이지 |
+| 19-21 | 연애/결혼운 | 3페이지 |
+| 22-24 | 직업/진로운 | 3페이지 |
+| 25-26 | 재물/사업운 | 2페이지 |
+| 27-28 | 건강운 + 주의사항 | 2페이지 |
+| 29-30 | 대운 흐름 (향후 10년) | 2페이지 |
+| 31-32 | 귀인 / 피할 사람 | 2페이지 |
+| 33-34 | 맞춤 질문 답변 | 2페이지 |
+| 35-36 | 이름의 기운 (성명학) + 올해 방향 (주역) | 2페이지 |
+| 37-38 | 좋은 타이밍 (택일) + 외형/공간 조언 (관상/풍수) | 2페이지 |
+| 39-42 | 운명의 상대 기운상 (인연상 + 배우자상) | 4페이지 |
+| 43-44 | 용신과 번아웃 — 균형의 예술 | 2페이지 |
+| 45-46 | 종합 조언 + 개인 테마 색상 + 다음 운세 리마인더 | 2페이지 |
+
+**출력 형식:** 각 페이지를 \`<!-- 페이지 N: 제목 -->\` 주석으로 구분
+
+### ⚠️ 프리미엄 필수 포함 사항:
+- 건강운 참조 문구 필수
+- 맞춤 질문에 상세 답변 (최소 1페이지)
+- 귀인/피할 사람 구체적 특징 제시
+- **📋 올해 핵심 요약** (표지에 3줄로): 올해 테마, 핵심 키워드, 주의사항
+- **✨ 이 해의 대표 문장** (표지에 1줄): 감정적 임팩트 문장 (예: "올해 당신의 키워드는 '균형'이에요.")
+- **🎨 개인 테마 색상**: 부족 오행(${weakOhaeng || '확인필요'}) 기반 추천 컬러 (예: 화 부족 → 레드/오렌지 계열 #FF6347)
+- **📅 다음 운세 갱신 안내**: "2027년 2월, 새해 운세를 다시 확인해보세요!" + 카카오 채널 @unmyeong 안내
+
+**📦 마무리 페이지 시각 박스 형식 (45-46페이지):**
+\`\`\`
+┌─────────────────────────────────────┐
+│  🎨 당신의 2026년 테마 색상         │
+│  ████████ ${weakOhaeng || '?'} 보완 컬러         │
+│  (색상코드: #XXXXXX)                │
+├─────────────────────────────────────┤
+│  📅 다음 운세 체크 리마인더         │
+│  2027년 2월, 새해 운세 확인하세요!  │
+│  카카오 채널: @unmyeong             │
+└─────────────────────────────────────┘
+\`\`\`
+`;
+            }
+
+            // 출력 형식 및 핵심 규칙
+            // 오행 문자열 생성
+            const ohengString = `木${wood} 火${fire} 土${earth} 金${metal} 水${water}`;
+            
+            // 사주 문자열 파싱 (甲子 형태에서 분리)
+            const parseGanJi = (pillar) => {
+                if (!pillar || pillar.length < 2) return { gan: '?', ji: '?' };
+                return { gan: pillar[0], ji: pillar[1] };
+            };
+            const yearGJ = parseGanJi(yearPillar);
+            const monthGJ = parseGanJi(monthPillar);
+            const dayGJ = parseGanJi(dayPillar);
+            const hourGJ = parseGanJi(hourPillar);
+            
+            const sajuString = `${convertPillar(yearPillar)}年 ${convertPillar(monthPillar)}月 ${convertPillar(dayPillar)}日 ${convertPillar(hourPillar)}時`;
+            
+            prompt += `
+---
+
+# ✍️ 출력 규칙
+
+## 🚫 텍스트 출력 규칙
+- 따옴표는 그대로 사용: ✅ "이렇게" / ❌ \\"이렇게\\"
+- 백슬래시 이스케이프(\\) 절대 금지!
+- 모든 텍스트는 이스케이프 없이 자연스럽게 출력
+
+## 🔴 필수: META 블록 (맨 앞에!)
+**반드시** 해석 결과 맨 앞에 아래 형식의 META 블록을 작성하세요.
+이 정보는 결과 생성기에서 자동 파싱됩니다.
+
+\`\`\`
+<!-- META
+주문코드: ${document.getElementById('orderCode').value || ''}
+이름: ${name}
+패키지: ${packageType}
+생년월일: ${birthDate} ${birthTime || ''}
+성별: ${gender}
+사주: ${sajuString}
+일간: ${ilgan}
+오행: ${ohengString}
+십성: 비겁:${bigyeop} 식상:${siksang} 재성:${jaeseong} 관성:${gwanseong} 인성:${inseong}
+연주: ${convertPillar(yearPillar)} (${yearSipsung})
+월주: ${convertPillar(monthPillar)} (${monthSipsung})
+일주: ${convertPillar(dayPillar)} (${daySipsung})
+시주: ${convertPillar(hourPillar)} (${hourSipsung})
+격국: [격국명]
+일간강약: ${dayganStrength}
+용신: ${yongsin}
+희신: ${huisin}
+기신: ${gisin}
+구신: ${gusin}
+길신: ${gilsinText || '없음'}
+양면신: ${yangmyeonText || '없음'}
+대운: ${daeun}
+세운: ${seun}
+테마색상: [용신 오행에 맞는 색상코드]
+<!-- 색상코드 자동화 규칙
+목 부족 → #2E8B57 (그린)
+화 부족 → #FF6347 (코랄레드)
+토 부족 → #DAA520 (골드)
+금 부족 → #B0C4DE (실버블루)
+수 부족 → #1E90FF (딥블루)
+-->
+-->
+\`\`\`
+
+## 페이지 구분 방식
+META 블록 다음에, 각 페이지를 아래 형식으로 **반드시** 구분해주세요:
+
+\`\`\`html
+<!-- 페이지 1: 표지 -->
+[표지 내용]
+
+<!-- 페이지 2: 일간 해석 -->
+[일간 해석 내용]
+
+<!-- 페이지 3: 오행 분포 -->
+[오행 분포 내용]
+\`\`\`
+
+## 📖 사주 한눈에 보기 (표지 다음, 상세 분석 전)
+고객이 자신의 사주를 쉽게 이해할 수 있도록 상세 분석 전에 **반드시** 아래 형식의 "3줄 요약"을 작성하세요.
+한자를 모르는 분도 자신의 사주가 무엇을 의미하는지 직관적으로 이해할 수 있게 해주는 중요한 섹션입니다.
+
+\`\`\`
+💡 **당신의 사주, 한눈에 보기**
+
+• [일간 천간 한자](한글 음) = [자연물 비유] → [핵심 성향 1줄]
+• [일지 지지 한자](한글 음) = [자연물/계절 비유] → [핵심 에너지 1줄]  
+• [천간+지지 조합] = "[형상을 그림처럼 표현]" → [이 조합이 의미하는 성격/운명 1줄]
+
+✨ 한마디로: "[15자 이내 핵심 정리]"
+\`\`\`
+
+## 각 섹션 작성 구조
+
+\`\`\`
+### [섹션명]
+
+💫 **[공감 포인트]**
+"~할 때 있죠?" / "~하는 편 아니에요?"
+(Part 2에서 가져온 구체적 일상 상황)
+
+📌 **[왜 그런지 - 사주 조합 설명]**
+"${ilgan} 일간에 ${dominantSipsung}이 강하고, ${strongOhaeng} 오행이 많아서..."
+→ 일간 + 십성 + 오행 조합으로 "왜 그런지" 설명
+
+⚠️ **[주의점 + 해결법]**
+"~할 수 있어요. 그럴 땐 이렇게 해보세요."
+
+✨ **[희망적 마무리]**
+긍정적인 한마디
+\`\`\`
+
+## 질문지 연결 필수!
+고객이 작성한 고민을 반드시 인용하세요:
+
+> "${mainConcern || '(고민 내용)'}"
+> 
+> ~라고 하셨죠? 사주로 보면...
+
+---
+
+# ⚠️ 핵심 체크리스트
+
+해석 전 반드시 확인:
+
+- [ ] **🔴 스킬 파일 참조**: 최소 3개 이상의 스킬 가이드 파일을 읽었는가?
+- [ ] **페이지 구분**: \`<!-- 페이지 N: 제목 -->\` 형식으로 구분했는가?
+- [ ] **좋은 예시 참고**: 톤앤매너가 예시 파일과 유사한가?
+- [ ] **질문지 인용**: "~라고 하셨죠?" 인용이 있는가?
+- [ ] **소름 포인트**: 구체적 상황인가? (일반적 나열 ❌)
+- [ ] **사주 조합 설명**: "왜 그런지" 일간+십성+오행으로 설명했는가?
+- [ ] **어투**: "~할 수 있어요" 형태인가? ("~입니다" ❌)
+- [ ] **해결법**: 안 좋은 내용에 반드시 해결법이 있는가?
+- [ ] **희망적 마무리**: 각 섹션이 긍정적으로 끝나는가?
+${packageType === '프리미엄' ? '- [ ] **건강운 참조**: 참조 문구가 포함되어 있는가?' : ''}
+- [ ] **페이지 수**: ${packageType === '라이트' ? '10~12페이지' : packageType === '스탠다드' ? '20~25페이지' : '33~40페이지'} 분량인가?
+
+---
+
+# ⚠️ 생성 순서 (한 번에 연속 작성)
+
+⚠️ **중요: 아래 단계는 작성 순서일 뿐, "1단계 완료" 같은 문구를 결과물에 쓰지 마세요!**
+
+**1단계 → 2단계 → 3단계 → 4단계 순서로 끊김 없이 연속 작성:**
+
+1. 기본 명리 해석: 표지, 명식표, 일간, 오행, 성격 분석
+2. 운세 해석: 올해 운세, 월별 운세, 대운, 연애운, 직업운, 재물운
+3. 프리미엄 전용: 건강운, 귀인/피할 사람, 역학 통합
+4. 마무리: 종합 메시지
+
+💡 모든 내용을 하나의 연속된 문서로 작성해주세요. 단계 구분 문구 넣지 마세요!
+
+---
+
+# ⭐ 공감 & 연결성 체크 (핵심!)
+
+**필수 체크:**
+- [ ] 질문지 답변을 직접 인용했는가? ("~라고 하셨죠?")
+- [ ] 인용한 답변과 사주 해석이 연결되었는가?
+- [ ] 연결에 사주 근거가 있는가? (일간+십성+오행 조합)
+- [ ] 구체적 상황/행동이 포함되었는가?
+- [ ] 일반적인 말이 아닌 "이 사람만의" 해석인가?
+
+**❌ 피해야 할 것:**
+- "당신은 섬세합니다" (누구한테나 맞음)
+- 질문지 답변 무시하고 사주만 해석
+- 연결 없이 따로따로 나열
+
+**✅ 좋은 예시:**
+"새로운 걸 시작하면 흥미가 금방 식는다고 하셨죠?
+그게 바로 비겁이 강하고 식상이 받쳐주는 사주 특징이에요.
+시작의 에너지는 넘치는데, 마무리의 금(金) 기운이 부족해서 그래요."
+
+---
+
+# ⭐ 최우선: 고객 중심 해석
+
+**해석 순서:**
+1. 고객 고민 인용 ("~라고 하셨죠?")
+2. 공감 ("~한 적 있죠?")
+3. 사주/역학으로 "왜"인지 설명
+4. 구체적 행동 제시 ("언제, 뭘 하세요")
+
+**❌ 일반 사주 (이렇게 하면 안 됨):**
+"당신은 비겁이 강해서 독립심이 강합니다."
+
+**✅ 우리 사주 (이렇게 해야 함):**
+"이직 고민이라고 하셨죠?
+사실 당신은 '내가 직접 해야 마음 편한' 타입이에요.
+위에서 시키는 대로 하는 게 답답하죠?
+그게 비겁이 강한 사주 특징이에요.
+그래서 이직보다 독립/창업 쪽이 맞는데...
+지금은 때가 아니에요. 2026년 하반기에 움직이세요."
+
+---
+
+# 🎯 톤앤매너 체크
+
+- 따뜻하지만 지침형 ("~하세요")
+- 부정적 내용엔 대안 필수
+- ⛔ **"소름", "소름 포인트" 단어 절대 금지!** → "공감 포인트", "이런 적 있죠?" 등으로 대체
+- 이모티콘 페이지당 1~2개만
+- "~입니다" 딱딱한 문체 ❌ → "~예요/~거든요" ✅
+
+---
+
+# ✨ 문체 & 서사 가이드 (프리미엄 품질)
+
+## 📝 문체 리듬 변주 (필수!)
+
+**⚠️ 핵심 원칙: "~예요/~거예요/~이기도 해요" 패턴 일관 유지!**
+딱딱한 "~입니다/~습니다" 절대 금지. 친근하고 부드러운 문체로 전체 통일!
+
+단조로운 어미 반복 금지! 아래처럼 변주하세요:
+
+| ❌ 피해야 할 어미 | ✅ 사용할 어미 |
+|-----------------|--------------|
+| ~입니다 | ~이죠 / ~이기도 해요 |
+| ~이에요 (반복) | ~예요 / ~거예요 / ~같아요 |
+| ~해야 합니다 | ~해보세요 / ~하면 좋아요 |
+
+**❌ 나쁜 예:** "수가 부족하므로 감정 표현이 어렵습니다."
+**✅ 좋은 예:** "수가 부족하면 마음은 넘치는데, 말로 꺼내기가 어려워요. 그래서 '그냥 알아줬으면 좋겠다'는 마음이 생기죠."
+
+## 📖 챕터 구조 (감정 서사)
+
+**① 챕터 시작: 감정 문장으로!**
+❌ "오행 분포표를 보면 금이 강하고 수가 약합니다."
+✅ "지금의 OO님은 마치 반짝이지만 건조한 가을 공기 속에 서 있는 사람 같아요."
+
+**② 챕터 끝: 다음으로 넘어가는 다리 문장!**
+✅ "이처럼 에너지의 균형은 마음의 패턴과 연결돼요. 그럼 이제, 이 에너지가 당신의 심리에서 어떻게 작동하는지 함께 볼게요."
+
+## 🔄 3단계 해석 공식 (모든 섹션에 적용)
+
+| 단계 | 내용 | 예시 |
+|-----|------|------|
+| ① 분석 | 명리적 사실 | "비겁이 강해 혼자 해결하려는 성향이에요." |
+| ② 공감 | 감정 공감 | "그래서 도와주는 사람조차 피곤하게 느껴질 수 있죠." |
+| ③ 제안 | 실천 조언 | "이럴 땐 '도움을 받는 연습'을 해보세요." |
+
+⚠️ **분석만 하고 끝내지 마세요! 반드시 공감+제안까지!**
+
+## 🈲 한자 용어 처리 (필수!)
+한자 뒤에 반드시 **괄호로 감정 해석** 추가:
+
+| 용어 | 괄호 해석 |
+|-----|----------|
+| 비겁(比肩) | "나와 같은 힘, 자립심" |
+| 식상(食傷) | "표현력, 창의성, 재능" |
+| 재성(財星) | "현실 감각, 재물, 관계" |
+| 관성(官星) | "책임감, 사회적 역할" |
+| 인성(印星) | "학습, 보호, 어머니의 기운" |
+| 용신(用神) | "나를 살려주는 핵심 기운" |
+
+## 🔁 반복 키워드 변주 (중요!)
+같은 사주 특성을 여러 번 언급할 때, **각도를 바꿔서 설명**:
+
+**예: "비겁이 강하다"를 3번 써야 할 때:**
+1. 성향 관점: "혼자서도 잘하는 독립적인 성향이에요."
+2. 관계 관점: "내 마음의 무게를 나 혼자 지려는 습관이 있어요."
+3. 치유 관점: "도움받는 연습이 필요한 시기예요."
+
+→ 같은 말 반복 ❌ → 깊이 있는 서사 확장 ✅
+
+## 📌 티저 → 상세 전개 규칙
+- "아래에서 자세히 볼게요" 형태로 **예고 가능**
+- 단, 아래에서 풀 때 위에서 한 말 **그대로 반복 금지**
+- 인용은 가능: "앞서 말했듯이~", "위에서 본 것처럼~"
+
+❌ 나쁜 예: 
+위: "금 기운이 강해서 결단력이 있어요."
+아래: "금 기운이 강해서 결단력이 있어요." (똑같음)
+
+✅ 좋은 예:
+위: "금 기운이 강해서 결단력이 있어요. 아래에서 더 자세히 볼게요."
+아래: "앞서 말한 결단력, 이게 직장에서는 '빠른 판단'으로 나타나요."
+
+## 🎭 감정선 통일 (테마)
+리포트 전체를 관통하는 **하나의 감정 테마**를 설정하세요:
+- 예: "강함 속의 여림", "차가운 겉과 따뜻한 속", "혼자 걸어온 길"
+- 시작~중간~끝까지 이 테마가 자연스럽게 흐르도록!
+
+---
+
+# 🔍 누락 방지 체크
+
+### ⚠️ 맞춤 질문 필수 답변 (빠뜨리면 안 됨!)
+- [ ] 💭 **핵심 고민**에 전용 답변 섹션이 있는가? (공감 포인트 + 사주 해석)
+- [ ] 🔄 **반복되는 패턴**에 전용 답변이 있는가? (왜 그런지 사주로 설명)
+- [ ] ✅ **체크한 질문들** 100% 답변했는가?
+- [ ] ✍️ **맞춤 질문**(프리미엄)에 상세 답변했는가?
+
+### 기타 체크
+- [ ] 시기 제시할 때 "왜"가 있는가?
+- [ ] 선택한 운세 분야 다 다뤘는가?
+
+---
+
+# 📅 현재 시기 반영 (필수!)
+
+⚠️ **지금은 ${new Date().getFullYear()}년 ${new Date().getMonth() + 1}월입니다!**
+- 2026년 운세를 해석할 때, 현재 시점과의 거리를 고려하세요
+- 월별 운세에서 "지난 달", "이번 달" 같은 표현 쓰지 마세요
+- 미래 시점은 미래로 해석해주세요
+
+---
+
+# 📄 출력 형식
+
+**결과물을 반드시 .md (마크다운) 파일로 제공해주세요!**
+- 파일명: \`{이름}_사주결과_{패키지}.md\`
+- 예시: \`홍길동_사주결과_프리미엄.md\`
+
+---
+
+# 📌 보조 명리 해석 가이드 (정밀 분석용)
+
+아래 가이드를 참고하여 더 정교한 명리학적 해석을 해주세요:
+
+**🔢 오행 분석**
+- 지장간 가중치(본기 1.0 / 중기 0.8 / 여기 0.6) 반영된 수치임을 인지
+- 단순 개수 나열이 아닌 실질 작용 강도로 해석
+
+**⚖️ 용신 판단**
+- 단순 부족 오행이 아닌 제화(制化, 불균형을 조절하는 힘) 관계 중심 판단
+- 가능하면 희신·기신 역할도 설명
+
+**🏛️ 격국 해석**
+- 혼합격(混格, 두 성향이 섞인 구조), 종격 여부 고려
+- 단순 명칭보다 "어떤 성향의 격국인지" 설명
+
+**💪 신강·신약 판정**
+- 중강형(身强而困, 강하지만 막힌 상태) 등 세분화 고려
+- 단순 "신강/신약"보다 구체적 상태 설명
+
+**🔗 천간·지지 관계**
+- 합(合, 화합)·충(沖, 충돌)·형(刑, 제약)·해(害)·파(破) 관계 간단히 기술
+- 삼합(三合), 방합(方合) 등 지지 관계 반영
+
+**🌡️ 조후(調候) 반영**
+- 월령의 계절적 온기·습기 균형 고려
+- 예: "진토(辰土)는 봄의 습토로, 화(火)의 온기가 필요"
+
+**📚 학문 용어 처리**
+- 전문 용어는 괄호 안에 쉬운 비유 병기
+- 예: "통근(通根, 뿌리가 땅에 닿아 힘을 받는 것)"
+
+**📝 해석 구조**
+- 모든 해석은 **"분석(명리 논리) → 공감(심리적 언어) → 조언(실행 가이드)"** 순서로 서술
+
+**🔄 입체 구조 해석 (오행 순환)**
+- 오행은 개수뿐 아니라 "순환 흐름(목→화→토→금→수→목)"을 함께 봐야 함
+- 끊긴 구간이 있으면 그 부분이 인생의 보완 포인트
+- 예: "화는 없지만 목이 강하면 화 기운이 잠재적으로 존재"
+- 완전순환형: 아이디어→표현→현실→성과→지혜가 자연스럽게 이어짐
+- 부분순환형: 특정 구간에서 에너지 전환에 노력 필요
+- 단절형: 끊긴 오행을 의식적으로 보완해야 흐름이 살아남
+
+**🎯 정확도 향상 규칙**
+① 격국이 혼합일 때 언급 (예: "상관격에 식신도 함께 작용")
+② 오행 결핍 시 지장간 언급 (예: "겉으론 약하지만 내면엔 가능성 있음")
+③ 대운은 구체 연도 표기 (예: "2032년 이후엔...")
+④ 건강운은 구체 실천법 제시 (예: "나무 자세, 전굴 동작")
+
+---
+
+이제 ${name}님의 사주를 위 참조 파일들을 바탕으로 해석해주세요! 🎴
+
+---
+
+⚠️⚠️⚠️ **[필독] 명리 용어 병기 규칙** ⚠️⚠️⚠️
+
+**반드시!! 모든 명리 용어 뒤에 괄호로 쉬운 표현을 붙여주세요.**
+**이 규칙은 절대 생략하지 마세요. 모든 문장에서 예외 없이 적용!**
+
+예시:
+- 비겁(내 편/라이벌)
+- 식신(끼/재능)
+- 상관(표현/반항기)
+- 재성(돈/현실)
+- 관성(직장/체면)
+- 인성(공부/보호)
+- 용신(꼭 필요한 것)
+- 희신(있으면 좋은 것)
+- 기신(피하면 좋은 것)
+- 격국(내 사주 DNA)
+- 신강(에너지 많음)
+- 신약(에너지 적음)
+- 대운(10년 흐름)
+- 세운(올해 운)
+- 지장간(숨은 내면)
+
+❌ 나쁜 예: "식신이 강해서 표현력이 좋아요"
+✅ 좋은 예: "식신(끼/재능)이 강해서 표현력이 좋아요"
+
+---
+
+⚠️⚠️⚠️ **[필독] 어미 반복 금지 규칙** ⚠️⚠️⚠️
+
+**같은 어미를 연속으로 쓰지 마세요! 반드시 변주하세요.**
+
+| ❌ 반복하면 안 됨 | ✅ 이렇게 변주 |
+|-----------------|---------------|
+| ~있어요, 있어요, 있어요 | ~있어요, ~이죠, ~거든요 |
+| ~이에요, 이에요, 이에요 | ~이에요, ~같아요, ~이기도 해요 |
+
+❌ 나쁜 예: "열정이 있어요. 끈기도 있어요. 리더십도 있어요."
+✅ 좋은 예: "열정이 넘치죠. 끈기도 대단하고요. 리더십까지 갖췄어요."
+`;
+
+            // 결과 표시 (V6: 통합)
+            document.getElementById('promptResult').textContent = prompt;
+            document.getElementById('resultArea').classList.add('show');
+            document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth' });
+            
+            // ★ Google Sheets에 자동 저장 (주문코드가 있으면)
+            const orderCode = document.getElementById('orderCode').value;
+            if (orderCode) {
+                savePromptToGoogleSheets(orderCode, prompt);
+            }
+            
+            } catch (error) {
+                alert('에러 발생: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        // ★ Google Sheets에 프롬프트 결과 저장
+        function savePromptToGoogleSheets(orderCode, prompt) {
+            const webAppUrl = 'https://script.google.com/macros/s/AKfycbzlnTB3d3tO_qvRNKgiLkGgy3EmH_92eYslv4mODGzV7QCiVHYTDLEl4duNlp3PO_kclA/exec';
+            
+            // form POST 방식 (CORS 우회)
+            const iframeName = 'saveFrame_' + Date.now();
+            const iframe = document.createElement('iframe');
+            iframe.name = iframeName;
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = webAppUrl;
+            form.target = iframeName;
+            form.style.display = 'none';
+            
+            const params = {
+                action: 'savePromptResult',
+                orderCode: orderCode,
+                promptResult: prompt
+            };
+            
+            for (const key in params) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = params[key];
+                form.appendChild(input);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+            
+            console.log('✅ 프롬프트 결과 자동 저장:', orderCode);
+            
+            // 정리 (3초 후)
+            setTimeout(() => {
+                if (form.parentNode) form.parentNode.removeChild(form);
+                if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+            }, 3000);
+        }
+        
+        // 복사 기능 (V6: 통합)
+        function copyPrompt() {
+            const promptText = document.getElementById('promptResult').textContent;
+            navigator.clipboard.writeText(promptText).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = '✅ 복사 완료!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = '📋 클립보드에 복사';
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(() => {
+                // 모바일 fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = promptText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('✅ 복사 완료!');
+            });
+        }
+        
+        // 초기 미리보기
+        updateReferencePreview();
+        
+        // ========== iframe 통신용 (관리자 페이지에서 호출) ==========
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.action === 'generatePrompt') {
+                try {
+                    // 사주계산기 결과 텍스트를 autoInput에 넣고 기존 파싱 함수 사용
+                    document.getElementById('autoInput').value = event.data.sajuResultText || '';
+                    
+                    // 기존 파싱 함수 호출
+                    parseCalculatorResult();
+                    
+                    // ★ 인연상 계산 결과가 있으면 처리
+                    if (event.data.inyeonCalcResult) {
+                        try {
+                            // JSON 문자열이면 파싱
+                            let inyeonResult = event.data.inyeonCalcResult;
+                            if (typeof inyeonResult === 'string') {
+                                // JSON 블록 추출 시도
+                                const jsonMatch = inyeonResult.match(/```json\s*([\s\S]*?)\s*```/);
+                                if (jsonMatch) {
+                                    inyeonResult = jsonMatch[1];
+                                }
+                                inyeonData = JSON.parse(inyeonResult);
+                            } else {
+                                inyeonData = inyeonResult;
+                            }
+                            console.log('[postMessage] 인연상 데이터 설정됨:', inyeonData);
+                        } catch (e) {
+                            console.warn('[postMessage] 인연상 데이터 파싱 실패:', e);
+                        }
+                    }
+                    
+                    // 프롬프트 생성
+                    generatePrompt();
+                    
+                    // 결과 반환 (DOM 업데이트 대기) - V6: 통합
+                    setTimeout(() => {
+                        const promptResult = document.getElementById('promptResult').textContent;
+                        event.source.postMessage({
+                            action: 'promptResult',
+                            success: true,
+                            result: promptResult
+                        }, '*');
+                    }, 500);
+                    
+                } catch (error) {
+                    event.source.postMessage({
+                        action: 'promptResult',
+                        success: false,
+                        error: error.message
+                    }, '*');
+                }
+            }
+        });
+    </script>
+<!-- 플로팅 관리자 버튼 -->
+<a href="index.html" style="position:fixed; bottom:20px; right:20px; z-index:9999; width:50px; height:50px; background:linear-gradient(135deg,#d4af82,#b8956a); border-radius:50%; display:flex; align-items:center; justify-content:center; text-decoration:none; font-size:24px; box-shadow:0 4px 15px rgba(0,0,0,0.3);">🏠</a>
+</body>
+</html>
