@@ -2534,6 +2534,29 @@ html,body{margin:0;padding:0;background:transparent;}
                     document.body.removeChild(iframe);
                     statusEl.innerHTML = '✅ <a href="' + fileUrl + '" target="_blank" style="color:#00ad9f;">' + fileUrl + '</a> (업로드 완료!)';
                     console.log('업로드 완료!');
+
+                    // ★ 관리자페이지로 결과 URL 전달 (window.opener 사용)
+                    console.log('🔍 window.opener 확인:', window.opener);
+                    console.log('🔍 metaData:', metaData);
+                    if (window.opener && !window.opener.closed) {
+                        window.opener.postMessage({
+                            action: 'resultUrlGenerated',
+                            orderCode: metaData.orderCode,
+                            resultUrl: fileUrl,
+                            resultType: 'main'
+                        }, '*');
+                        console.log('✅ 관리자페이지로 결과 URL 전달:', metaData.orderCode, fileUrl);
+                    } else {
+                        console.log('⚠️ window.opener 없음 - 관리자페이지에서 열지 않았거나 닫힘');
+                        // localStorage 방식으로 백업 전달
+                        localStorage.setItem('lastResultUrl', JSON.stringify({
+                            orderCode: metaData.orderCode,
+                            resultUrl: fileUrl,
+                            resultType: 'main',
+                            timestamp: Date.now()
+                        }));
+                        console.log('💾 localStorage에 백업 저장');
+                    }
                 }, 5000);
                 
             } catch (error) {

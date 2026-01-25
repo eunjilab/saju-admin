@@ -332,3 +332,25 @@ Step 8: 결과파일 (HTML 결과지)
 
 ### 에이전트 시스템 상세
 `배포/에이전트/에이전트_시스템_계획.md` 참조
+
+---
+
+## GitHub 설정
+
+### 레포지토리
+- **URL**: https://github.com/eunjilab/saju-admin
+- **브랜치**: master
+
+### Personal Access Token (PAT)
+- **토큰명**: saju-admin-deploy
+- **타입**: Fine-grained PAT
+- **권한**: Contents (Read/Write), Metadata (Read)
+- **만료일**: 2026년 2월 23일
+- **저장위치**: 노션 비밀번호 관리 DB
+
+### Git 명령어
+```bash
+# 변경사항 커밋 & 푸시
+cd "/Users/eunji/클로드코드_맥/사주"
+git add -A && git commit -m "메시지" && git push origin master
+```

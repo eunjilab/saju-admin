@@ -4213,6 +4213,45 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadCustomers();
             setupInfiniteScroll(); // 무한 스크롤 설정
+
+            // ★ 결과생성기에서 결과 URL 수신 리스너
+            window.addEventListener('message', function(event) {
+                if (event.data && event.data.action === 'resultUrlGenerated') {
+                    handleResultUrlReceived(event.data);
+                }
+            });
+
+            // ★ localStorage 변경 감지 (다른 탭에서 저장 시)
+            window.addEventListener('storage', function(event) {
+                if (event.key === 'lastResultUrl' && event.newValue) {
+                    try {
+                        const data = JSON.parse(event.newValue);
+                        // 10초 이내의 데이터만 처리
+                        if (Date.now() - data.timestamp < 10000) {
+                            console.log('📬 localStorage에서 URL 수신:', data);
+                            handleResultUrlReceived(data);
+                        }
+                    } catch (e) {
+                        console.error('localStorage 파싱 오류:', e);
+                    }
+                }
+            });
+
+            // ★ 포커스 시 localStorage 체크 (같은 브라우저 내 탭 전환 시)
+            window.addEventListener('focus', function() {
+                const stored = localStorage.getItem('lastResultUrl');
+                if (stored) {
+                    try {
+                        const data = JSON.parse(stored);
+                        // 30초 이내의 데이터만 처리
+                        if (Date.now() - data.timestamp < 30000) {
+                            console.log('📬 포커스 시 localStorage에서 URL 발견:', data);
+                            handleResultUrlReceived(data);
+                            localStorage.removeItem('lastResultUrl'); // 처리 후 삭제
+                        }
+                    } catch (e) {}
+                }
+            });
         });
 
         // ========== 강제 새로고침 (캐시 완전 무효화) ==========
@@ -5009,7 +5048,63 @@
             document.execCommand('copy');
             alert('📋 사주계산기용 데이터가 복사되었습니다!\n\n사주계산기에 붙여넣기 하세요.');
         }
-        
+
+        // ========== 결과생성기에서 URL 수신 처리 ==========
+        function handleResultUrlReceived(data) {
+            const { orderCode, resultUrl, resultType } = data;
+            console.log('📬 결과 URL 처리:', orderCode, resultUrl, resultType);
+
+            // 현재 선택된 고객이 맞는지 확인 (selectedCustomer는 인덱스!)
+            const customer = selectedCustomer !== null ? customers[selectedCustomer] : null;
+            if (customer && customer.orderCode === orderCode) {
+                // UI 업데이트
+                if (resultType === 'main') {
+                    const mainStatus = document.getElementById('mainResultFileStatus');
+                    const mainLink = document.getElementById('mainResultLink');
+                    const mainInput = document.getElementById('mainResultUrlInput');
+
+                    if (mainStatus) {
+                        mainStatus.textContent = '등록됨';
+                        mainStatus.style.background = '#4a7c59';
+                    }
+                    if (mainLink) {
+                        mainLink.href = resultUrl;
+                        mainLink.style.display = 'block';
+                    }
+                    if (mainInput) mainInput.value = resultUrl;
+
+                    // 고객 데이터도 업데이트
+                    customer.resultUrl = resultUrl;
+
+                    // Supabase에 저장
+                    supabasePatch(orderCode, { result_url: resultUrl });
+
+                    console.log('✅ 스텝8 결과파일 URL 자동 업데이트 완료!');
+                } else if (resultType === 'additional') {
+                    const addStatus = document.getElementById('additionalResultFileStatus');
+                    const addLink = document.getElementById('additionalResultLink');
+                    const addInput = document.getElementById('additionalResultUrlInput');
+
+                    if (addStatus) {
+                        addStatus.textContent = '등록됨';
+                        addStatus.style.background = '#4a7c59';
+                    }
+                    if (addLink) {
+                        addLink.href = resultUrl;
+                        addLink.style.display = 'block';
+                    }
+                    if (addInput) addInput.value = resultUrl;
+
+                    customer.additionalResultUrl = resultUrl;
+                    supabasePatch(orderCode, { additional_result_url: resultUrl });
+
+                    console.log('✅ 추가질문 결과파일 URL 자동 업데이트 완료!');
+                }
+            } else {
+                console.log('⚠️ 현재 선택된 고객과 orderCode 불일치:', customer?.orderCode, '!=', orderCode);
+            }
+        }
+
         // ========== 결과 링크 업데이트 ==========
         function updateResultLink(customer) {
             // 기본 결과지
