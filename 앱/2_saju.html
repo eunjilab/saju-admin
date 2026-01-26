@@ -2728,6 +2728,115 @@
             };
         }
 
+        // ========== 월운 계산 (연도별 12개월 천간지지 + 점수) ==========
+        function calculateMonthlyFortune(targetYear, dayGan, yongsinOhaeng, huisinOhaeng, gisinOhaeng, gusinOhaeng) {
+            // 월별 지지 (고정): 1월=寅, 2월=卯, ... 12월=丑
+            const MONTH_JIJI = ['寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥', '子', '丑'];
+            const MONTH_JIJI_KR = ['인', '묘', '진', '사', '오', '미', '신', '유', '술', '해', '자', '축'];
+
+            // 연간에 따른 월간 시작 (년간→1월 천간)
+            const YEAR_MONTH_GAN_START = {
+                '甲': 2, '己': 2,  // 병인월 시작
+                '乙': 4, '庚': 4,  // 무인월 시작
+                '丙': 6, '辛': 6,  // 경인월 시작
+                '丁': 8, '壬': 8,  // 임인월 시작
+                '戊': 0, '癸': 0   // 갑인월 시작
+            };
+
+            // 해당 연도의 천간 구하기
+            const seun = calculateSeun(targetYear);
+            const yearGan = seun.gan;
+            const ganStartIndex = YEAR_MONTH_GAN_START[yearGan];
+
+            // 오행 매핑
+            const GAN_OHAENG = {'甲':'목','乙':'목','丙':'화','丁':'화','戊':'토','己':'토','庚':'금','辛':'금','壬':'수','癸':'수'};
+            const JI_OHAENG = {'寅':'목','卯':'목','辰':'토','巳':'화','午':'화','未':'토','申':'금','酉':'금','戌':'토','亥':'수','子':'수','丑':'토'};
+
+            const monthlyData = [];
+
+            for (let i = 0; i < 12; i++) {
+                const month = i + 1;
+                const ganIndex = (ganStartIndex + i) % 10;
+                const gan = CHEONGAN[ganIndex];
+                const ganKr = CHEONGAN_KR[ganIndex];
+                const ji = MONTH_JIJI[i];
+                const jiKr = MONTH_JIJI_KR[i];
+
+                // 오행 계산
+                const ganOhaeng = GAN_OHAENG[gan];
+                const jiOhaeng = JI_OHAENG[ji];
+
+                // 점수 계산 (용신/희신/기신/구신 기준)
+                let score = 50; // 기본 점수
+                let scoreFactors = [];
+
+                // 천간 오행 체크
+                if (ganOhaeng === yongsinOhaeng) { score += 25; scoreFactors.push('천간용신'); }
+                else if (ganOhaeng === huisinOhaeng) { score += 15; scoreFactors.push('천간희신'); }
+                else if (ganOhaeng === gisinOhaeng) { score -= 15; scoreFactors.push('천간기신'); }
+                else if (ganOhaeng === gusinOhaeng) { score -= 20; scoreFactors.push('천간구신'); }
+
+                // 지지 오행 체크
+                if (jiOhaeng === yongsinOhaeng) { score += 25; scoreFactors.push('지지용신'); }
+                else if (jiOhaeng === huisinOhaeng) { score += 15; scoreFactors.push('지지희신'); }
+                else if (jiOhaeng === gisinOhaeng) { score -= 15; scoreFactors.push('지지기신'); }
+                else if (jiOhaeng === gusinOhaeng) { score -= 20; scoreFactors.push('지지구신'); }
+
+                // 점수 범위 제한 (20~100)
+                score = Math.max(20, Math.min(100, score));
+
+                // 이모지 변환
+                let emoji = '';
+                if (score >= 90) emoji = '🌕🌕🌕🌕🌕';
+                else if (score >= 80) emoji = '🌕🌕🌕🌕🌔';
+                else if (score >= 70) emoji = '🌕🌕🌕🌔🌑';
+                else if (score >= 60) emoji = '🌕🌕🌕🌑🌑';
+                else if (score >= 50) emoji = '🌕🌕🌔🌑🌑';
+                else if (score >= 40) emoji = '🌕🌕🌑🌑🌑';
+                else if (score >= 30) emoji = '🌕🌔🌑🌑🌑';
+                else emoji = '🌕🌑🌑🌑🌑';
+
+                // 키워드 생성
+                let keyword = '';
+                if (score >= 80) keyword = '기회, 행운';
+                else if (score >= 70) keyword = '순조, 발전';
+                else if (score >= 60) keyword = '안정, 평온';
+                else if (score >= 50) keyword = '보통, 유지';
+                else if (score >= 40) keyword = '주의, 신중';
+                else keyword = '조심, 휴식';
+
+                // 특수 표시
+                let mark = '';
+                if (score >= 85) mark = '⭐';
+                else if (score <= 35) mark = '⚠️';
+
+                monthlyData.push({
+                    month: month,
+                    gan: gan,
+                    ganKr: ganKr,
+                    ji: ji,
+                    jiKr: jiKr,
+                    ganJi: gan + ji,
+                    ganJiKr: ganKr + jiKr,
+                    ganOhaeng: ganOhaeng,
+                    jiOhaeng: jiOhaeng,
+                    ohaengDisplay: ganOhaeng.charAt(0).toUpperCase() + jiOhaeng.charAt(0).toUpperCase(),
+                    score: score,
+                    emoji: emoji,
+                    keyword: keyword,
+                    mark: mark,
+                    factors: scoreFactors
+                });
+            }
+
+            return {
+                year: targetYear,
+                seun: seun.gan + seun.ji,
+                seunKr: seun.ganKr + seun.jiKr,
+                months: monthlyData
+            };
+        }
+
         // ========== 삼재(三災) 계산 ==========
         function calculateSamjae(yearJi) {
             // 삼재 규칙: 띠별로 3년간 삼재가 옴
@@ -4259,6 +4368,15 @@ ${birthChartData ? (() => {
                     seunYear: r.seun.year,
                     seunGanJi: r.seun.gan + r.seun.ji,
                     seunSipsung: r.seunSipsung.ganSipsung + '/' + r.seunSipsung.jiSipsung,
+                    // ★ 월운 데이터 (자동 계산)
+                    monthlyFortune: calculateMonthlyFortune(
+                        r.seun.year,
+                        r.dayP.gan,
+                        yongsin.yongsinOhaeng,
+                        yongsin.huisinOhaeng,
+                        yongsin.gisinOhaeng,
+                        yongsin.gusinOhaeng
+                    ),
                     fortuneTypes: r.fortuneTypes,
                     mainConcern: r.mainConcern,
                     repeatPattern: r.repeatPattern,
